@@ -1,0 +1,21 @@
+using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
+using Service.Helpers.Mappings;
+using Service.Helpers.Validators.Accounts;
+using Service.Services;
+using Service.Services.Interfaces;
+
+namespace Service
+{
+    public static class DependencyInjection
+    {
+        public static IServiceCollection AddServiceLayer(this IServiceCollection services)
+        {
+            services.AddAutoMapper(typeof(MappingProfile));
+            services.AddScoped<IAccountService, AccountService>();
+            services.AddScoped<ITokenService, TokenService>();
+            services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
+            return services;
+        }
+    }
+}

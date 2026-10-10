@@ -1,0 +1,6 @@
+@Discode_API_FinalProject_HostAddress = http://localhost:5246
+
+GET {{Discode_API_FinalProject_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

@@ -1,0 +1,18 @@
+﻿{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=YOUR_SERVER;Database=DiscodeDB;Trusted_Connection=true;TrustServerCertificate=true;"
+  },
+  "JwtSettings": {
+    "Key": "your-super-secret-key-minimum-32-characters-long-here-please-change",
+    "Issuer": "DiscodeAPI",
+    "Audience": "DiscodeClient",
+    "ExpirationInHours": 24
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*"
+}

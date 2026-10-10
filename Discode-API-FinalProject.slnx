@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Discode-API-FinalProject/Discode-API-FinalProject.csproj" />
+  <Project Path="Domain/Domain.csproj" />
+  <Project Path="Repository/Repository.csproj" />
+  <Project Path="Service/Service.csproj" />
+</Solution>

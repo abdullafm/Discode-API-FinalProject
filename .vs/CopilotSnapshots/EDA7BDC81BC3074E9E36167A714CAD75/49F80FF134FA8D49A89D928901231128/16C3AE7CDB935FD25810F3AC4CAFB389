@@ -1,0 +1,157 @@
+﻿using Domain.Models;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using Repository.Interfaces;
+using Service.DTOs;
+using Service.Exceptions;
+using Service.Interfaces;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+
+namespace Service.Implementations
+{
+    public class AuthService : IAuthService
+    {
+        private readonly IAuthRepository _authRepository;
+        private readonly IConfiguration _configuration;
+
+        public AuthService(IAuthRepository authRepository, IConfiguration configuration)
+        {
+            _authRepository = authRepository;
+            _configuration = configuration;
+        }
+
+        public async Task<TokenResponseDto> RegisterAsync(RegisterDto registerDto)
+        {
+            // Validate inputs
+            if (string.IsNullOrWhiteSpace(registerDto.Email) || 
+                string.IsNullOrWhiteSpace(registerDto.Username) ||
+                string.IsNullOrWhiteSpace(registerDto.Password))
+            {
+                return new TokenResponseDto
+                {
+                    Success = false,
+                    Message = "Email, Username ve Password zorunludur."
+                };
+            }
+
+            if (registerDto.Password != registerDto.ConfirmPassword)
+            {
+                throw new PasswordMismatchException("Şifreler eşleşmiyor.");
+            }
+
+            // Check if user exists by email
+            var existingUserByEmail = await _authRepository.GetUserByEmailAsync(registerDto.Email);
+            if (existingUserByEmail != null)
+            {
+                throw new UserAlreadyExistsException("Bu email zaten kayıtlı.");
+            }
+
+            // Check if username exists
+            var existingUserByUsername = await _authRepository.GetUserByUsernameAsync(registerDto.Username);
+            if (existingUserByUsername != null)
+            {
+                throw new UserAlreadyExistsException("Bu kullanıcı adı zaten alınmış.");
+            }
+
+            // Create new user
+            var user = new AppUser
+            {
+                UserName = registerDto.Username,
+                Email = registerDto.Email,
+                FirstName = registerDto.FirstName ?? "",
+                LastName = registerDto.LastName ?? "",
+                EmailConfirmed = true
+            };
+
+            var createdUser = await _authRepository.CreateUserAsync(user, registerDto.Password);
+
+            // Generate token
+            var token = GenerateJwtToken(createdUser);
+
+            return new TokenResponseDto
+            {
+                Success = true,
+                Message = "Kayıt başarılı.",
+                Token = token,
+                User = new AppUserDto
+                {
+                    Id = createdUser.Id,
+                    UserName = createdUser.UserName,
+                    Email = createdUser.Email,
+                    FirstName = createdUser.FirstName,
+                    LastName = createdUser.LastName
+                }
+            };
+        }
+
+        public async Task<TokenResponseDto> LoginAsync(LoginDto loginDto)
+        {
+            if (string.IsNullOrWhiteSpace(loginDto.Email) || 
+                string.IsNullOrWhiteSpace(loginDto.Password))
+            {
+                return new TokenResponseDto
+                {
+                    Success = false,
+                    Message = "Email ve Şifre zorunludur."
+                };
+            }
+
+            var user = await _authRepository.GetUserByEmailAsync(loginDto.Email);
+            if (user == null)
+            {
+                throw new NotFoundAuthException("Kullanıcı bulunamadı.");
+            }
+
+            var isPasswordValid = await _authRepository.VerifyPasswordAsync(user, loginDto.Password);
+            if (!isPasswordValid)
+            {
+                throw new InvalidCredentialsException("Email veya şifre yanlış.");
+            }
+
+            var token = GenerateJwtToken(user);
+
+            return new TokenResponseDto
+            {
+                Success = true,
+                Message = "Giriş başarılı.",
+                Token = token,
+                User = new AppUserDto
+                {
+                    Id = user.Id,
+                    UserName = user.UserName,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName
+                }
+            };
+        }
+
+        private string GenerateJwtToken(AppUser user)
+        {
+            var jwtSettings = _configuration.GetSection("JwtSettings");
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"]));
+            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Email, user.Email),
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim("FirstName", user.FirstName),
+                new Claim("LastName", user.LastName)
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: jwtSettings["Issuer"],
+                audience: jwtSettings["Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(int.Parse(jwtSettings["ExpirationInHours"])),
+                signingCredentials: credentials
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+    }
+}

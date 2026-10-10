@@ -1,0 +1,62 @@
+﻿using Discode_API_FinalProject;
+using Discode_API_FinalProject.Configurations;
+using Repository.Implementations;
+using Repository.Interfaces;
+using Service.Implementations;
+using Service.Interfaces;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Database Configuration
+builder.Services.ConfigureDbContext(builder.Configuration);
+
+// Identity Configuration
+builder.Services.ConfigureIdentity(builder.Configuration);
+
+// JWT Configuration
+builder.Services.ConfigureJwt(builder.Configuration);
+
+// Dependency Injection
+builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+// Add services to the container.
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+// CORS Configuration
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
+var app = builder.Build();
+
+// Apply migrations
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    dbContext.Database.Migrate();
+}
+
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+app.UseCors("AllowAll");
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
+app.Run();
