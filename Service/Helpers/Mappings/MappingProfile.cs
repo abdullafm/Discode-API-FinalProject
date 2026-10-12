@@ -21,6 +21,14 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.IsSuccess, o => o.MapFrom(_ => true));
 
             CreateMap<AppUser, ProfileDto>();
+
+            CreateMap<UpdateProfileDto, AppUser>()
+                .ForMember(d => d.UserName, o => o.MapFrom(s => s.UserName.Trim()))
+                .ForMember(d => d.DisplayName, o => o.MapFrom(s => s.DisplayName.Trim()))
+                .ForMember(d => d.AvatarUrl, o => o.MapFrom(s => s.AvatarUrl.Trim()))
+                .ForMember(d => d.CustomStatus, o => o.MapFrom(s => s.CustomStatus.Trim()))
+                .ForMember(d => d.Pronouns, o => o.MapFrom(s => s.Pronouns.Trim()))
+                .ForMember(d => d.Bio, o => o.MapFrom(s => s.Bio.Trim()));
         }
     }
 }

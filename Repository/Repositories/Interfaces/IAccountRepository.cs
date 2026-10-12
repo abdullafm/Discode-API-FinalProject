@@ -15,5 +15,6 @@ namespace Repository.Repositories.Interfaces
         Task<bool> IsLockedOutAsync(AppUser user);
         Task RegisterFailedAttemptAsync(AppUser user);
         Task ResetFailedAttemptsAsync(AppUser user);
+        Task<IdentityResult> UpdateAsync(AppUser user);
     }
 }

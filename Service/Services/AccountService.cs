@@ -4,6 +4,7 @@ using Domain.Entities;
 using FluentValidation;
 using Repository.Repositories.Interfaces;
 using Service.Helpers.DTOs.Accounts;
+using Service.Helpers.Exceptions;
 using Service.Helpers.Responses;
 using Service.Services.Interfaces;
 
@@ -97,5 +98,16 @@ namespace Service.Services
 
         private static LoginResponse FailLogin(params string[] errors)
             => new() { IsSuccess = false, Errors = errors };
+
+        public async Task<UpdateProfileResponse> IAccountService.UpdateProfileAsync(string userId, UpdateProfileDto model)
+        {
+            var user = await _accountRepository.GetByIdAsync(userId);
+            if(user is null)
+            {
+                throw new NotFoundException("User not found.");
+            }
+
+            var mapper = _mapper.Map.Create(model);
+        }
     }
 }

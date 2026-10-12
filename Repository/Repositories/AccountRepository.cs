@@ -42,5 +42,10 @@ namespace Repository.Repositories
 
         public Task ResetFailedAttemptsAsync(AppUser user)
             => _userManager.ResetAccessFailedCountAsync(user);
+
+        public Task<IdentityResult> UpdateAsync(AppUser user)
+        {
+            return _userManager.UpdateAsync(user);
+        }
     }
 }
