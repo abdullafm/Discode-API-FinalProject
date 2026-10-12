@@ -19,6 +19,9 @@ namespace Repository.Repositories
         public Task<IdentityResult> AddToRoleAsync(AppUser user, string role)
             => _userManager.AddToRoleAsync(user, role);
 
+        public Task<AppUser?> GetByIdAsync(string id)
+            => _userManager.FindByIdAsync(id);
+
         public Task<AppUser?> GetByEmailAsync(string email)
             => _userManager.FindByEmailAsync(email);
 

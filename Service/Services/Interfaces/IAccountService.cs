@@ -7,5 +7,6 @@ namespace Service.Services.Interfaces
     {
         Task<RegisterResponse> RegisterAsync(RegisterDto model);
         Task<LoginResponse> LoginAsync(LoginDto model);
+        Task<ProfileDto?> GetProfileAsync(string userId);
     }
 }

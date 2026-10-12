@@ -14,6 +14,22 @@ namespace Domain.Configurations
 
             builder.Property(u => u.BirthDay)
                 .IsRequired();
+
+            builder.Property(u => u.AvatarUrl)
+                .HasMaxLength(500);
+
+            builder.Property(u => u.Bio)
+                .HasMaxLength(190);
+
+            builder.Property(u => u.Pronouns)
+                .HasMaxLength(40);
+
+            builder.Property(u => u.CustomStatus)
+                .HasMaxLength(128);
+
+            builder.Property(u => u.IsPublic)
+                .IsRequired()
+                .HasDefaultValue(true);
         }
     }
 }

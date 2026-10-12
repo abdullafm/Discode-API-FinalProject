@@ -9,15 +9,16 @@ namespace Service.Helpers.Validators.Accounts
 
         public RegisterDtoValidator()
         {
-            RuleFor(x => x.Email)
+            RuleFor(x => x.Email.Trim())
                 .NotEmpty().WithMessage("Enter your email.")
                 .EmailAddress().WithMessage("Enter a valid email address.")
                 .MaximumLength(256);
 
-            RuleFor(x => x.DisplayName)
+            RuleFor(x => x.DisplayName.Trim())
+                .NotEmpty().WithMessage("Enter a display name.")
                 .MaximumLength(32).WithMessage("Display name can be at most 32 characters.");
 
-            RuleFor(x => x.UserName)
+            RuleFor(x => x.UserName.Trim())
                 .NotEmpty().WithMessage("Enter a username.")
                 .MinimumLength(2).WithMessage("Username must be at least 2 characters.")
                 .MaximumLength(32).WithMessage("Username can be at most 32 characters.")

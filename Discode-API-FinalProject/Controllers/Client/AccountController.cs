@@ -35,17 +35,15 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-        [HttpGet("me")]
-        public IActionResult Me()
+        [HttpGet("profile")]
+        public async Task<IActionResult> Profile()
         {
-            return Ok(new
-            {
-                Id = User.FindFirstValue(ClaimTypes.NameIdentifier),
-                Email = User.FindFirstValue(ClaimTypes.Email),
-                Name = User.FindFirstValue(ClaimTypes.Name),
-                UserName = User.FindFirstValue("userName"),
-                Roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value)
-            });
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var profile = await _accountService.GetProfileAsync(userId);
+            return profile is null ? NotFound() : Ok(profile);
         }
     }
 }

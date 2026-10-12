@@ -7,12 +7,12 @@ namespace Service.Helpers.Validators.Accounts
     {
         public LoginDtoValidator()
         {
-            RuleFor(x => x.Email)
+            RuleFor(x => x.Email.Trim())
                 .NotEmpty().WithMessage("Enter your email.")
                 .EmailAddress().WithMessage("Enter a valid email address.");
 
             RuleFor(x => x.Password)
-                .NotEmpty().WithMessage("Enter your password.");
+                .Must(x => !string.IsNullOrWhiteSpace(x)).WithMessage("Enter your password.");
         }
     }
 }

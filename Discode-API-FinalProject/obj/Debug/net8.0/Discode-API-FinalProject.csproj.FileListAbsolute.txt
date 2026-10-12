@@ -160,4 +160,5 @@ C:\Users\User\source\repos\Discode-API-FinalProject\Discode-API-FinalProject\obj
 C:\Users\User\source\repos\Discode-API-FinalProject\Discode-API-FinalProject\bin\Debug\net8.0\FluentValidation.dll
 C:\Users\User\source\repos\Discode-API-FinalProject\Discode-API-FinalProject\bin\Debug\net8.0\FluentValidation.DependencyInjectionExtensions.dll
 C:\Users\User\source\repos\Discode-API-FinalProject\Discode-API-FinalProject\bin\Debug\net8.0\AutoMapper.dll
+C:\Users\User\source\repos\Discode-API-FinalProject\Discode-API-FinalProject\obj\Debug\net8.0\Discode-API-FinalProject.sourcelink.json
 C:\Users\User\source\repos\Discode-API-FinalProject\Discode-API-FinalProject\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

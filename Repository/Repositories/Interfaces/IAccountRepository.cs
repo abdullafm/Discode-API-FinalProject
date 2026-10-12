@@ -7,6 +7,7 @@ namespace Repository.Repositories.Interfaces
     {
         Task<IdentityResult> RegisterAsync(AppUser user, string password);
         Task<IdentityResult> AddToRoleAsync(AppUser user, string role);
+        Task<AppUser?> GetByIdAsync(string id);
         Task<AppUser?> GetByEmailAsync(string email);
         Task<AppUser?> GetByUserNameAsync(string userName);
         Task<bool> CheckPasswordAsync(AppUser user, string password);

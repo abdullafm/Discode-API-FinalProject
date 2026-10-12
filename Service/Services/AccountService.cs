@@ -86,6 +86,12 @@ namespace Service.Services
             return response;
         }
 
+        public async Task<ProfileDto?> GetProfileAsync(string userId)
+        {
+            var user = await _accountRepository.GetByIdAsync(userId);
+            return user is null ? null : _mapper.Map<ProfileDto>(user);
+        }
+
         private static RegisterResponse Fail(params string[] errors)
             => new() { IsSuccess = false, Errors = errors };
 
