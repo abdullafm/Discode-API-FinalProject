@@ -99,15 +99,46 @@ namespace Service.Services
         private static LoginResponse FailLogin(params string[] errors)
             => new() { IsSuccess = false, Errors = errors };
 
-        public async Task<UpdateProfileResponse> IAccountService.UpdateProfileAsync(string userId, UpdateProfileDto model)
+        public async Task<UpdateProfileResponse> UpdateProfileAsync(string userId, UpdateProfileDto model)
         {
             var user = await _accountRepository.GetByIdAsync(userId);
-            if(user is null)
-            {
+            if (user is null)
                 throw new NotFoundException("User not found.");
-            }
 
-            var mapper = _mapper.Map.Create(model);
+            var displayName = string.IsNullOrWhiteSpace(model.DisplayName) ? user.DisplayName : model.DisplayName.Trim();
+            var userName = string.IsNullOrWhiteSpace(model.UserName) ? user.UserName ?? string.Empty : model.UserName.Trim();
+
+            var existing = await _accountRepository.GetByUserNameAsync(userName);
+            if (existing is not null && existing.Id != user.Id)
+                return new UpdateProfileResponse
+                {
+                    IsSuccess = false,
+                    Errors = new[] { "That username is already taken." }
+                };
+
+            user.DisplayName = displayName;
+            user.UserName = userName;
+            user.NormalizedUserName = userName.ToUpperInvariant();
+            user.AvatarUrl = (model.AvatarUrl ?? string.Empty).Trim();
+            user.CustomStatus = (model.CustomStatus ?? string.Empty).Trim();
+            user.Pronouns = (model.Pronouns ?? string.Empty).Trim();
+            user.Bio = (model.Bio ?? string.Empty).Trim();
+            user.IsPublic = model.IsPublic;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            var result = await _accountRepository.UpdateAsync(user);
+            if (!result.Succeeded)
+                return new UpdateProfileResponse
+                {
+                    IsSuccess = false,
+                    Errors = result.Errors.Select(e => e.Description).ToArray()
+                };
+
+            return new UpdateProfileResponse
+            {
+                IsSuccess = true,
+                Profile = _mapper.Map<ProfileDto>(user)
+            };
         }
     }
 }

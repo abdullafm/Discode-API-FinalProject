@@ -23,7 +23,12 @@ namespace Discode_API_FinalProject.Controllers.Client
         public async Task<IActionResult> Register([FromBody] RegisterDto model)
         {
             var result = await _accountService.RegisterAsync(model);
-            return result.IsSuccess ? Ok(result) : BadRequest(result);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
         }
 
         [EnableRateLimiting("auth")]
@@ -31,7 +36,12 @@ namespace Discode_API_FinalProject.Controllers.Client
         public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
             var result = await _accountService.LoginAsync(model);
-            return result.IsSuccess ? Ok(result) : Unauthorized(result);
+            if (!result.IsSuccess)
+            {
+                return Unauthorized(result);
+            }
+
+            return Ok(result);
         }
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
@@ -43,7 +53,29 @@ namespace Discode_API_FinalProject.Controllers.Client
                 return Unauthorized();
 
             var profile = await _accountService.GetProfileAsync(userId);
-            return profile is null ? NotFound() : Ok(profile);
+            if (profile is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(profile);
+        }
+
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto model)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var result = await _accountService.UpdateProfileAsync(userId, model);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
         }
     }
 }
