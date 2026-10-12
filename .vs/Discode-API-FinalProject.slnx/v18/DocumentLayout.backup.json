@@ -3,36 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{02B79BC5-153E-2FD9-CAE3-8149E0D9044F}|Service\\Service.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\service\\helpers\\responses\\updateprofileresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{02B79BC5-153E-2FD9-CAE3-8149E0D9044F}|Service\\Service.csproj|solutionrelative:service\\helpers\\responses\\updateprofileresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{64A71681-A4CC-1EAB-8700-360DB8DF1E35}|Discode-API-FinalProject\\Discode-API-FinalProject.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\discode-api-finalproject\\controllers\\client\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{64A71681-A4CC-1EAB-8700-360DB8DF1E35}|Discode-API-FinalProject\\Discode-API-FinalProject.csproj|solutionrelative:discode-api-finalproject\\controllers\\client\\accountcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{02B79BC5-153E-2FD9-CAE3-8149E0D9044F}|Service\\Service.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\service\\helpers\\mappings\\mappingprofile.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{02B79BC5-153E-2FD9-CAE3-8149E0D9044F}|Service\\Service.csproj|solutionrelative:service\\helpers\\mappings\\mappingprofile.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{02B79BC5-153E-2FD9-CAE3-8149E0D9044F}|Service\\Service.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\service\\helpers\\dtos\\accounts\\updateprofiledto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{02B79BC5-153E-2FD9-CAE3-8149E0D9044F}|Service\\Service.csproj|solutionrelative:service\\helpers\\dtos\\accounts\\updateprofiledto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{02B79BC5-153E-2FD9-CAE3-8149E0D9044F}|Service\\Service.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\service\\services\\accountservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{02B79BC5-153E-2FD9-CAE3-8149E0D9044F}|Service\\Service.csproj|solutionrelative:service\\services\\accountservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{02B79BC5-153E-2FD9-CAE3-8149E0D9044F}|Service\\Service.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\service\\services\\interfaces\\iaccountservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{02B79BC5-153E-2FD9-CAE3-8149E0D9044F}|Service\\Service.csproj|solutionrelative:service\\services\\interfaces\\iaccountservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{02B79BC5-153E-2FD9-CAE3-8149E0D9044F}|Service\\Service.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\service\\helpers\\responses\\registerresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{02B79BC5-153E-2FD9-CAE3-8149E0D9044F}|Service\\Service.csproj|solutionrelative:service\\helpers\\responses\\registerresponse.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\repository\\repositories\\accountrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|solutionrelative:repository\\repositories\\accountrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\repository\\repositories\\interfaces\\iaccountrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|solutionrelative:repository\\repositories\\interfaces\\iaccountrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -42,19 +22,19 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 12,
+          "SelectedChildIndex": 0,
           "Children": [
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "UpdateProfileDto.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Helpers\\DTOs\\Accounts\\UpdateProfileDto.cs",
-              "RelativeDocumentMoniker": "Service\\Helpers\\DTOs\\Accounts\\UpdateProfileDto.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Helpers\\DTOs\\Accounts\\UpdateProfileDto.cs",
-              "RelativeToolTip": "Service\\Helpers\\DTOs\\Accounts\\UpdateProfileDto.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 0,
+              "Title": "AccountController.cs",
+              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Discode-API-FinalProject\\Controllers\\Client\\AccountController.cs",
+              "RelativeDocumentMoniker": "Discode-API-FinalProject\\Controllers\\Client\\AccountController.cs",
+              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Discode-API-FinalProject\\Controllers\\Client\\AccountController.cs",
+              "RelativeToolTip": "Discode-API-FinalProject\\Controllers\\Client\\AccountController.cs",
+              "ViewState": "AgIAADUAAAAAAAAAAAAqwE8AAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-12T08:13:24.868Z",
+              "WhenOpened": "2026-10-12T09:02:49.828Z",
               "EditorCaption": ""
             },
             {
@@ -65,22 +45,22 @@
               "RelativeDocumentMoniker": "Service\\Helpers\\Mappings\\MappingProfile.cs",
               "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Helpers\\Mappings\\MappingProfile.cs",
               "RelativeToolTip": "Service\\Helpers\\Mappings\\MappingProfile.cs",
-              "ViewState": "AgIAAAUAAAAAAAAAAAAswBYAAAAtAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-12T08:06:19.667Z",
+              "WhenOpened": "2026-10-12T09:02:24.926Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "RegisterResponse.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Helpers\\Responses\\RegisterResponse.cs",
-              "RelativeDocumentMoniker": "Service\\Helpers\\Responses\\RegisterResponse.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Helpers\\Responses\\RegisterResponse.cs",
-              "RelativeToolTip": "Service\\Helpers\\Responses\\RegisterResponse.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 2,
+              "Title": "AccountService.cs",
+              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Services\\AccountService.cs",
+              "RelativeDocumentMoniker": "Service\\Services\\AccountService.cs",
+              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Services\\AccountService.cs",
+              "RelativeToolTip": "Service\\Services\\AccountService.cs",
+              "ViewState": "AgIAAF4AAAAAAAAAAAAkwGUAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-12T07:20:46.883Z",
+              "WhenOpened": "2026-10-12T08:35:16.995Z",
               "EditorCaption": ""
             },
             {
@@ -118,71 +98,6 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "UpdateProfileResponse.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Helpers\\Responses\\UpdateProfileResponse.cs",
-              "RelativeDocumentMoniker": "Service\\Helpers\\Responses\\UpdateProfileResponse.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Helpers\\Responses\\UpdateProfileResponse.cs",
-              "RelativeToolTip": "Service\\Helpers\\Responses\\UpdateProfileResponse.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAmAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-12T07:22:53.952Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "AccountService.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Services\\AccountService.cs",
-              "RelativeDocumentMoniker": "Service\\Services\\AccountService.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Services\\AccountService.cs",
-              "RelativeToolTip": "Service\\Services\\AccountService.cs",
-              "ViewState": "AgIAAGIAAAAAAAAAAAAmwGwAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-12T07:18:41.863Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "IAccountService.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Services\\Interfaces\\IAccountService.cs",
-              "RelativeDocumentMoniker": "Service\\Services\\Interfaces\\IAccountService.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Services\\Interfaces\\IAccountService.cs",
-              "RelativeToolTip": "Service\\Services\\Interfaces\\IAccountService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAIAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-12T07:16:45.3Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "AccountRepository.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\AccountRepository.cs",
-              "RelativeDocumentMoniker": "Repository\\Repositories\\AccountRepository.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\AccountRepository.cs",
-              "RelativeToolTip": "Repository\\Repositories\\AccountRepository.cs",
-              "ViewState": "AgIAAB8AAAAAAAAAAADwvy0AAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-12T07:15:57.002Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "IAccountRepository.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\Interfaces\\IAccountRepository.cs",
-              "RelativeDocumentMoniker": "Repository\\Repositories\\Interfaces\\IAccountRepository.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\Interfaces\\IAccountRepository.cs",
-              "RelativeToolTip": "Repository\\Repositories\\Interfaces\\IAccountRepository.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAA3AAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-12T07:13:00.424Z",
-              "EditorCaption": ""
             }
           ]
         }

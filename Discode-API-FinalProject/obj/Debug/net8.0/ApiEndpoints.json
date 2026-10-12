@@ -17,8 +17,8 @@
   },
   {
     "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
-    "Method": "Me",
-    "RelativePath": "api/Account/me",
+    "Method": "Profile",
+    "RelativePath": "api/Account/profile",
     "HttpMethod": "GET",
     "IsController": true,
     "Order": 0,
@@ -27,12 +27,18 @@
   },
   {
     "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
-    "Method": "Profile",
+    "Method": "UpdateProfile",
     "RelativePath": "api/Account/profile",
-    "HttpMethod": "GET",
+    "HttpMethod": "PUT",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Accounts.UpdateProfileDto",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {
