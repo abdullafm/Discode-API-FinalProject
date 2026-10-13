@@ -30,6 +30,9 @@ namespace Domain.Configurations
             builder.Property(u => u.IsPublic)
                 .IsRequired()
                 .HasDefaultValue(true);
+
+            builder.Property(u => u.EmailVerificationCode)
+                .HasMaxLength(4);
         }
     }
 }

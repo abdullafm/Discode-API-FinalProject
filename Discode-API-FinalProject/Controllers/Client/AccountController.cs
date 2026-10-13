@@ -31,6 +31,30 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(result);
         }
 
+        [HttpPost("verify-email")]
+        public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailDto model)
+        {
+            var result = await _accountService.VerifyEmailAsync(model);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+        [HttpPost("resend-code")]
+        public async Task<IActionResult> ResendCode([FromBody] ResendCodeDto model)
+        {
+            var result = await _accountService.ResendCodeAsync(model);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
         [EnableRateLimiting("auth")]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto model)

@@ -14,7 +14,7 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.Email, o => o.MapFrom(s => s.Email.Trim()))
                 .ForMember(d => d.DisplayName, o => o.MapFrom(s => s.DisplayName.Trim()))
                 .ForMember(d => d.BirthDay, o => o.MapFrom(s => s.BirthDay.Date))
-                .ForMember(d => d.EmailConfirmed, o => o.MapFrom(_ => true));
+                .ForMember(d => d.EmailConfirmed, o => o.MapFrom(_ => false));
 
             CreateMap<AppUser, LoginResponse>()
                 .ForMember(d => d.UserId, o => o.MapFrom(s => s.Id))

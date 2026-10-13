@@ -13,6 +13,7 @@ namespace Service
         {
             services.AddAutoMapper(typeof(MappingProfile));
             services.AddScoped<IAccountService, AccountService>();
+            services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
             return services;

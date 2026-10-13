@@ -6,6 +6,8 @@ namespace Service.Services.Interfaces
     public interface IAccountService
     {
         Task<RegisterResponse> RegisterAsync(RegisterDto model);
+        Task<RegisterResponse> VerifyEmailAsync(VerifyEmailDto model);
+        Task<RegisterResponse> ResendCodeAsync(ResendCodeDto model);
         Task<LoginResponse> LoginAsync(LoginDto model);
         Task<ProfileDto?> GetProfileAsync(string userId);
         Task<UpdateProfileResponse> UpdateProfileAsync(string userId, UpdateProfileDto model);
