@@ -56,5 +56,37 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
+    "Method": "ResendCode",
+    "RelativePath": "api/Account/resend-code",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Accounts.ResendCodeDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
+    "Method": "VerifyEmail",
+    "RelativePath": "api/Account/verify-email",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Accounts.VerifyEmailDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   }
 ]

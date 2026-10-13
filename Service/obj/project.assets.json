@@ -2823,6 +2823,7 @@
     "net8.0": [
       "AutoMapper >= 14.0.0",
       "FluentValidation.DependencyInjectionExtensions >= 11.11.0",
+      "Microsoft.Extensions.Logging.Abstractions >= 8.0.2",
       "Microsoft.Extensions.Options.ConfigurationExtensions >= 8.0.0",
       "Repository >= 1.0.0",
       "System.IdentityModel.Tokens.Jwt >= 8.0.0"
@@ -2891,6 +2892,10 @@
           "FluentValidation.DependencyInjectionExtensions": {
             "target": "Package",
             "version": "[11.11.0, )"
+          },
+          "Microsoft.Extensions.Logging.Abstractions": {
+            "target": "Package",
+            "version": "[8.0.2, )"
           },
           "Microsoft.Extensions.Options.ConfigurationExtensions": {
             "target": "Package",
