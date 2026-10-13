@@ -86,8 +86,10 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [HttpPut("myprofileupdate")]
+        [HttpPost("myprofileupdate")]
         [HttpPut("profile")]
-        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto model)
+        public async Task<IActionResult> MyProfileUpdate([FromBody] UpdateProfileDto model)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
