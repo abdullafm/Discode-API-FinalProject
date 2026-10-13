@@ -11,5 +11,6 @@ namespace Service.Services.Interfaces
         Task<LoginResponse> LoginAsync(LoginDto model);
         Task<ProfileDto?> GetProfileAsync(string userId);
         Task<UpdateProfileResponse> UpdateProfileAsync(string userId, UpdateProfileDto model);
+        Task<IEnumerable<UserSearchDto>> SearchUserAsync(string searchName, string currentUserId);
     }
 }

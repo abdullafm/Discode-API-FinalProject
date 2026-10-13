@@ -29,6 +29,12 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.CustomStatus, o => o.MapFrom(s => s.CustomStatus.Trim()))
                 .ForMember(d => d.Pronouns, o => o.MapFrom(s => s.Pronouns.Trim()))
                 .ForMember(d => d.Bio, o => o.MapFrom(s => s.Bio.Trim()));
+
+            CreateMap<AppUser, UserSearchDto>()
+                .ForMember(d => d.Id, o => o.MapFrom(s => s.Id))
+                .ForMember(d => d.UserName, o => o.MapFrom(s => s.UserName ?? string.Empty))
+                .ForMember(d => d.AvatarUrl, o => o.MapFrom(s => s.AvatarUrl ?? string.Empty))
+                .ForMember(d => d.DisplayName, o => o.MapFrom(s => s.DisplayName ?? string.Empty));
         }
     }
 }

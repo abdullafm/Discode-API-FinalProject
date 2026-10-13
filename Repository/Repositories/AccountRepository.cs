@@ -1,5 +1,6 @@
 using Domain.Entities;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Repository.Repositories.Interfaces;
 
 namespace Repository.Repositories
@@ -46,6 +47,15 @@ namespace Repository.Repositories
         public Task<IdentityResult> UpdateAsync(AppUser user)
         {
             return _userManager.UpdateAsync(user);
+        }
+
+        public async Task<IEnumerable<AppUser>> SearchUserAsync(string searchName)
+        {
+            var term = searchName.Trim();
+            return await _userManager.Users
+                .Where(n => (n.UserName != null && n.UserName.Contains(term)) || n.DisplayName.Contains(term))
+                .Take(20)
+                .ToListAsync();
         }
     }
 }

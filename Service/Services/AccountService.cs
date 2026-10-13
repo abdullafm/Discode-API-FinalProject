@@ -253,5 +253,13 @@ namespace Service.Services
                 Profile = _mapper.Map<ProfileDto>(user)
             };
         }
+
+        public async Task<IEnumerable<UserSearchDto>> SearchUserAsync(string searchName, string currentUserId)
+        {
+            var getallUsers = await _accountRepository.SearchUserAsync(searchName);
+            return getallUsers
+                .Where(u => u.Id != currentUserId)
+                .Select(u => _mapper.Map<UserSearchDto>(u));
+        }
     }
 }

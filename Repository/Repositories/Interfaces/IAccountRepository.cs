@@ -16,5 +16,6 @@ namespace Repository.Repositories.Interfaces
         Task RegisterFailedAttemptAsync(AppUser user);
         Task ResetFailedAttemptsAsync(AppUser user);
         Task<IdentityResult> UpdateAsync(AppUser user);
+        Task<IEnumerable<AppUser>> SearchUserAsync(string searchName);
     }
 }

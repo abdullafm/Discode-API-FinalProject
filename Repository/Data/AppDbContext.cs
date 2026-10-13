@@ -11,6 +11,8 @@ namespace Repository.Data
         {
         }
 
+        public DbSet<FriendRequest> FriendRequests { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);

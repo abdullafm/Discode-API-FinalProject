@@ -103,5 +103,17 @@ namespace Discode_API_FinalProject.Controllers.Client
 
             return Ok(result);
         }
+
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchUser([FromQuery] string searchName)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            var result = await _accountService.SearchUserAsync(searchName, userId);
+            return Ok(result);
+        }
     }
 }
