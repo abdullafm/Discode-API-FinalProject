@@ -37,9 +37,9 @@ namespace Discode_API_FinalProject.Middlewares
             }
         }
 
-        private static Task WriteAsync(HttpContext context, int statusCode, string message)
+        private static async Task WriteAsync(HttpContext context, int statusCode, string message)
         {
-            return WriteAsync(context, statusCode, new[] { message });
+            await WriteAsync(context, statusCode, new[] { message });
         }
 
         private static async Task WriteAsync(HttpContext context, int statusCode, string[] errors)

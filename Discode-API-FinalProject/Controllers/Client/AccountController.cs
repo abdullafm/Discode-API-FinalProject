@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -17,6 +16,14 @@ namespace Discode_API_FinalProject.Controllers.Client
         public AccountController(IAccountService accountService)
         {
             _accountService = accountService;
+        }
+
+        private string UserId
+        {
+            get
+            {
+                return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+            }
         }
 
         [HttpPost("register")]
@@ -56,6 +63,32 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [EnableRateLimiting("auth")]
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto model)
+        {
+            var result = await _accountService.ForgotPasswordAsync(model);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+        [EnableRateLimiting("auth")]
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto model)
+        {
+            var result = await _accountService.ResetPasswordAsync(model);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+        [EnableRateLimiting("auth")]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto model)
         {
@@ -68,34 +101,19 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(result);
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [Authorize]
         [HttpGet("profile")]
         public async Task<IActionResult> Profile()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
-
-            var profile = await _accountService.GetProfileAsync(userId);
-            if (profile is null)
-            {
-                return NotFound();
-            }
-
-            return Ok(profile);
+            return Ok(await _accountService.GetProfileAsync(UserId));
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [Authorize]
         [HttpPut("myprofileupdate")]
-        [HttpPost("myprofileupdate")]
         [HttpPut("profile")]
         public async Task<IActionResult> MyProfileUpdate([FromBody] UpdateProfileDto model)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
-
-            var result = await _accountService.UpdateProfileAsync(userId, model);
+            var result = await _accountService.UpdateProfileAsync(UserId, model);
             if (!result.IsSuccess)
             {
                 return BadRequest(result);
@@ -104,16 +122,38 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(result);
         }
 
-        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
+        [Authorize]
+        [HttpPut("username")]
+        public async Task<IActionResult> ChangeUsername([FromBody] ChangeUsernameDto model)
+        {
+            var result = await _accountService.ChangeUsernameAsync(UserId, model);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+        [Authorize]
+        [EnableRateLimiting("auth")]
+        [HttpPut("password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto model)
+        {
+            var result = await _accountService.ChangePasswordAsync(UserId, model);
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+        [Authorize]
         [HttpGet("search")]
         public async Task<IActionResult> SearchUser([FromQuery] string searchName)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-                return Unauthorized();
-
-            var result = await _accountService.SearchUserAsync(searchName, userId);
-            return Ok(result);
+            return Ok(await _accountService.SearchUserAsync(searchName, UserId));
         }
     }
 }
