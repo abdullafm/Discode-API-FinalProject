@@ -1,7 +1,13 @@
 using AutoMapper;
 using Domain.Entities;
 using Service.Helpers.DTOs.Accounts;
+using Service.Helpers.DTOs.Friends;
 using Service.Helpers.Responses;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Service.Helpers.Mappings
 {
@@ -22,19 +28,19 @@ namespace Service.Helpers.Mappings
 
             CreateMap<AppUser, ProfileDto>();
 
-            CreateMap<UpdateProfileDto, AppUser>()
-                .ForMember(d => d.UserName, o => o.MapFrom(s => s.UserName.Trim()))
-                .ForMember(d => d.DisplayName, o => o.MapFrom(s => s.DisplayName.Trim()))
-                .ForMember(d => d.AvatarUrl, o => o.MapFrom(s => s.AvatarUrl.Trim()))
-                .ForMember(d => d.CustomStatus, o => o.MapFrom(s => s.CustomStatus.Trim()))
-                .ForMember(d => d.Pronouns, o => o.MapFrom(s => s.Pronouns.Trim()))
-                .ForMember(d => d.Bio, o => o.MapFrom(s => s.Bio.Trim()));
-
             CreateMap<AppUser, UserSearchDto>()
                 .ForMember(d => d.Id, o => o.MapFrom(s => s.Id))
                 .ForMember(d => d.UserName, o => o.MapFrom(s => s.UserName ?? string.Empty))
                 .ForMember(d => d.AvatarUrl, o => o.MapFrom(s => s.AvatarUrl ?? string.Empty))
                 .ForMember(d => d.DisplayName, o => o.MapFrom(s => s.DisplayName ?? string.Empty));
+
+            CreateMap<AppUser, FriendRequestDto>()
+                .ForMember(d => d.Id, o => o.Ignore())
+                .ForMember(d => d.UserName, o => o.MapFrom(s => s.UserName ?? string.Empty))
+                .ForMember(d => d.DisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.DisplayName)
+                    ? s.UserName ?? string.Empty
+                    : s.DisplayName))
+                .ForMember(d => d.AvatarUrl, o => o.MapFrom(s => s.AvatarUrl ?? string.Empty));
         }
     }
 }
