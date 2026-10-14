@@ -20,12 +20,12 @@ namespace Domain.Configurations
                 .IsRequired();
 
             builder.HasOne(x => x.Sender)
-                .WithMany()
+                .WithMany(u => u.SentRequests)
                 .HasForeignKey(x => x.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             builder.HasOne(x => x.Receiver)
-                .WithMany()
+                .WithMany(u => u.ReceivedRequests)
                 .HasForeignKey(x => x.ReceiverId)
                 .OnDelete(DeleteBehavior.Restrict);
 
