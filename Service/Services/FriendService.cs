@@ -13,16 +13,19 @@ namespace Service.Services
     public class FriendService : IFriendService
     {
         private readonly IFriendRequestRepository _friendRequests;
+        private readonly IUserBlockRepository _blocks;
         private readonly IAccountRepository _accounts;
         private readonly IValidator<SendFriendRequestDto> _validator;
         private readonly IMapper _mapper;
 
         public FriendService(IFriendRequestRepository friendRequests,
+                             IUserBlockRepository blocks,
                              IAccountRepository accounts,
                              IValidator<SendFriendRequestDto> validator,
                              IMapper mapper)
         {
             _friendRequests = friendRequests;
+            _blocks = blocks;
             _accounts = accounts;
             _validator = validator;
             _mapper = mapper;
@@ -51,6 +54,11 @@ namespace Service.Services
             if (receiver.Id == senderId)
             {
                 throw new BadRequestException("You cannot add yourself.");
+            }
+
+            if (await _blocks.IsBlockedEitherWayAsync(senderId, receiver.Id))
+            {
+                throw new BadRequestException("You cannot send a friend request to this user.");
             }
 
             var existing = await _friendRequests.GetBetweenAsync(senderId, receiver.Id);

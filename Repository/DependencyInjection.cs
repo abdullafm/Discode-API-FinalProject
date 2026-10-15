@@ -10,6 +10,7 @@ namespace Repository
         {
             services.AddScoped<IAccountRepository, AccountRepository>();
             services.AddScoped<IFriendRequestRepository, FriendRequestRepository>();
+            services.AddScoped<IUserBlockRepository, UserBlockRepository>();
             services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
             return services;
         }
