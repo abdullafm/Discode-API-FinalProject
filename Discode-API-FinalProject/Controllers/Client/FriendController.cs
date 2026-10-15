@@ -44,6 +44,13 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(await _friendService.GetPendingAsync(UserId));
         }
 
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Remove(int id)
+        {
+            await _friendService.RemoveAsync(UserId, id);
+            return Ok();
+        }
+
         [HttpDelete("request/{id:int}")]
         public async Task<IActionResult> Cancel(int id)
         {

@@ -10,6 +10,9 @@ using Microsoft.OpenApi.Models;
 using Repository;
 using Repository.Data;
 using Service;
+using Repository.Repositories;
+using Repository.Repositories.Interfaces;
+using Repository.Settings;
 using Service.Helpers.Settings;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -54,6 +57,22 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddServiceLayer();
 builder.Services.AddRepositoryLayer();
+
+builder.Services.AddHttpClient<IEmailRepository, EmailRepository>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+})
+.ConfigurePrimaryHttpMessageHandler(() =>
+{
+    var handler = new HttpClientHandler();
+    if (builder.Environment.IsDevelopment())
+    {
+        handler.ServerCertificateCustomValidationCallback = (request, _, _, errors) =>
+            errors == System.Net.Security.SslPolicyErrors.None || request.RequestUri?.IsLoopback == true;
+    }
+
+    return handler;
+});
 
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {

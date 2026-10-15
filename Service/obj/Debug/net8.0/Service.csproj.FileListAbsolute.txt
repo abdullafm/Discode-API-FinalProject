@@ -16,3 +16,9 @@ C:\Users\User\source\repos\Discode-API-FinalProject\Service\obj\Debug\net8.0\ref
 C:\Users\User\source\repos\Discode-API-FinalProject\Service\obj\Debug\net8.0\Service.pdb
 C:\Users\User\source\repos\Discode-API-FinalProject\Service\obj\Debug\net8.0\ref\Service.dll
 C:\Users\User\source\repos\Discode-API-FinalProject\Service\obj\Debug\net8.0\Service.sourcelink.json
+C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ba4b813-3a1b-4562-84bf-23b01900085b\scratchpad\api\Service.deps.json
+C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ba4b813-3a1b-4562-84bf-23b01900085b\scratchpad\api\Service.dll
+C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ba4b813-3a1b-4562-84bf-23b01900085b\scratchpad\api\Service.pdb
+C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ec619b8-a8eb-4bea-afd2-9c276ba7c886\scratchpad\api\Service.deps.json
+C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ec619b8-a8eb-4bea-afd2-9c276ba7c886\scratchpad\api\Service.dll
+C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ec619b8-a8eb-4bea-afd2-9c276ba7c886\scratchpad\api\Service.pdb

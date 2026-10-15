@@ -1,58 +1,50 @@
 using Microsoft.Extensions.Options;
+using Repository.Repositories.Interfaces;
 using Service.Helpers.Settings;
 using Service.Services.Interfaces;
-using System.Net;
-using System.Net.Mail;
 
 namespace Service.Services
 {
     public class EmailService : IEmailService
     {
-        private readonly EmailSettings _settings;
+        private readonly IEmailRepository _emailRepository;
+        private readonly AppSettings _appSettings;
 
-        public EmailService(IOptions<EmailSettings> settings)
+        public EmailService(IEmailRepository emailRepository, IOptions<AppSettings> appSettings)
         {
-            _settings = settings.Value;
+            _emailRepository = emailRepository;
+            _appSettings = appSettings.Value;
         }
 
         public async Task SendVerificationCodeAsync(string to, string code)
         {
-            var html =
-                $"<p>Your Discode verification code is:</p><h2 style=\"letter-spacing:4px\">{code}</h2>" +
-                "<p>It expires in 10 minutes. If you did not request it, ignore this email.</p>";
+            var html = await RenderAsync("VerificationCode", new Dictionary<string, string>
+            {
+                ["code"] = code
+            });
 
             await SendAsync(to, "Your Discode verification code", html);
         }
 
-        public Task SendPasswordResetAsync(string to, string resetUrl)
+        public async Task SendPasswordResetAsync(string to, string resetUrl)
         {
-            var link = WebUtility.HtmlEncode(resetUrl);
-            var html =
-                "<p>We received a request to reset your Discode password.</p>" +
-                $"<p><a href=\"{link}\" style=\"display:inline-block;background:#5865F2;color:#ffffff;padding:12px 22px;border-radius:6px;text-decoration:none;font-weight:600;\">Reset password</a></p>" +
-                "<p>This link expires in 1 hour. If you did not request it, you can ignore this email.</p>";
+            var html = await RenderAsync("PasswordReset", new Dictionary<string, string>
+            {
+                ["resetUrl"] = resetUrl
+            });
 
-            return SendAsync(to, "Reset your Discode password", html);
+            await SendAsync(to, "Reset your Discode password", html);
         }
 
-        public async Task SendAsync(string to, string subject, string htmlBody)
+        public Task SendAsync(string to, string subject, string htmlBody)
         {
-            using var client = new SmtpClient(_settings.Host, _settings.Port)
-            {
-                EnableSsl = _settings.EnableSsl,
-                Credentials = new NetworkCredential(_settings.Username, _settings.Password)
-            };
+            return _emailRepository.SendAsync(to, subject, htmlBody);
+        }
 
-            using var message = new MailMessage
-            {
-                From = new MailAddress(_settings.From, "Discode"),
-                Subject = subject,
-                Body = htmlBody,
-                IsBodyHtml = true
-            };
-            message.To.Add(to);
-
-            await client.SendMailAsync(message);
+        private Task<string> RenderAsync(string template, Dictionary<string, string> values)
+        {
+            var url = $"{_appSettings.ClientUrl.TrimEnd('/')}/EmailTemplates/{template}";
+            return _emailRepository.RenderTemplateAsync(url, values);
         }
     }
 }

@@ -10,5 +10,6 @@ namespace Service.Services.Interfaces
         Task CancelAsync(string userId, int requestId);
         Task AcceptAsync(string userId, int requestId);
         Task DeclineAsync(string userId, int requestId);
+        Task RemoveAsync(string userId, int requestId);
     }
 }

@@ -139,6 +139,19 @@ namespace Service.Services
             await _friendRequests.DeleteAsync(request);
         }
 
+        public async Task RemoveAsync(string userId, int requestId)
+        {
+            var request = await _friendRequests.GetByIdAsync(requestId);
+            if (request is null ||
+                request.Status != FriendRequestStatus.Accepted ||
+                (request.SenderId != userId && request.ReceiverId != userId))
+            {
+                throw new NotFoundException("Friend not found.");
+            }
+
+            await _friendRequests.DeleteAsync(request);
+        }
+
         private FriendRequestDto MapFriend(int id, AppUser user)
         {
             var dto = _mapper.Map<FriendRequestDto>(user);
