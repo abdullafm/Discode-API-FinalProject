@@ -2,6 +2,7 @@ using AutoMapper;
 using Domain.Entities;
 using Service.Helpers.DTOs.Accounts;
 using Service.Helpers.DTOs.Friends;
+using Service.Helpers.DTOs.Presence;
 using Service.Helpers.Responses;
 using System;
 using System.Collections.Generic;
@@ -34,8 +35,17 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.AvatarUrl, o => o.MapFrom(s => s.AvatarUrl ?? string.Empty))
                 .ForMember(d => d.DisplayName, o => o.MapFrom(s => s.DisplayName ?? string.Empty));
 
+            CreateMap<AppUser, PresenceChangeDto>()
+                .ForMember(d => d.UserId, o => o.MapFrom(s => s.Id))
+                .ForMember(d => d.Status, o => o.Ignore())
+                .ForMember(d => d.PreferredStatus, o => o.MapFrom(s => PresenceStatusMap.ToWire(s.PreferredStatus)))
+                .ForMember(d => d.ShouldBroadcast, o => o.Ignore())
+                .ForMember(d => d.FriendIds, o => o.Ignore());
+
             CreateMap<AppUser, FriendRequestDto>()
                 .ForMember(d => d.Id, o => o.Ignore())
+                .ForMember(d => d.UserId, o => o.MapFrom(s => s.Id))
+                .ForMember(d => d.Status, o => o.Ignore())
                 .ForMember(d => d.UserName, o => o.MapFrom(s => s.UserName ?? string.Empty))
                 .ForMember(d => d.DisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.DisplayName)
                     ? s.UserName ?? string.Empty

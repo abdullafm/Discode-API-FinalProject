@@ -1,4 +1,5 @@
 using Domain.Entities;
+using Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -30,6 +31,10 @@ namespace Domain.Configurations
             builder.Property(u => u.IsPublic)
                 .IsRequired()
                 .HasDefaultValue(true);
+
+            builder.Property(u => u.PreferredStatus)
+                .IsRequired()
+                .HasDefaultValue(PresenceStatus.Online);
 
             builder.Property(u => u.EmailVerificationCode)
                 .HasMaxLength(4);

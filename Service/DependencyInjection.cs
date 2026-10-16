@@ -15,6 +15,8 @@ namespace Service
             services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<IFriendService, FriendService>();
             services.AddScoped<IBlockService, BlockService>();
+            services.AddScoped<IPresenceService, PresenceService>();
+            services.AddScoped<IPresenceTrackerService, PresenceTrackerService>();
             services.AddScoped<IEmailService, EmailService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();

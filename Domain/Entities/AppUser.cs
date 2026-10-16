@@ -1,3 +1,4 @@
+using Domain.Enums;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ namespace Domain.Entities
         public string Pronouns { get; set; } = string.Empty;
         public string CustomStatus { get; set; } = string.Empty;
         public bool IsPublic { get; set; } = true;
+        public PresenceStatus PreferredStatus { get; set; } = PresenceStatus.Online;
         public string? EmailVerificationCode { get; set; }
         public DateTime? EmailVerificationExpiresAt { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

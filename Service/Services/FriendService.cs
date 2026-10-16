@@ -15,17 +15,20 @@ namespace Service.Services
         private readonly IFriendRequestRepository _friendRequests;
         private readonly IUserBlockRepository _blocks;
         private readonly IAccountRepository _accounts;
+        private readonly IPresenceService _presence;
         private readonly IValidator<SendFriendRequestDto> _validator;
         private readonly IMapper _mapper;
 
         public FriendService(IFriendRequestRepository friendRequests,
                              IUserBlockRepository blocks,
                              IAccountRepository accounts,
+                             IPresenceService presence,
                              IValidator<SendFriendRequestDto> validator,
                              IMapper mapper)
         {
             _friendRequests = friendRequests;
             _blocks = blocks;
+            _presence = presence;
             _accounts = accounts;
             _validator = validator;
             _mapper = mapper;
@@ -107,7 +110,9 @@ namespace Service.Services
             foreach (var item in rows)
             {
                 var other = item.SenderId == userId ? item.Receiver : item.Sender;
-                friends.Add(MapFriend(item.Id, other));
+                var friend = MapFriend(item.Id, other);
+                friend.Status = await _presence.ResolveAsync(other);
+                friends.Add(friend);
             }
 
             return friends;

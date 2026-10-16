@@ -1,4 +1,5 @@
 using Discode_API_FinalProject.Helpers;
+using Discode_API_FinalProject.Hubs;
 using Discode_API_FinalProject.Middlewares;
 using Domain.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -20,6 +21,7 @@ using System.Threading.RateLimiting;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -129,6 +131,30 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
         ClockSkew = TimeSpan.FromMinutes(1)
     };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            if (!string.IsNullOrEmpty(accessToken) && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        }
+    };
+});
+
+var appSettings = builder.Configuration.GetSection("App").Get<AppSettings>() ?? new AppSettings();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Client", policy => policy
+        .WithOrigins(appSettings.ClientUrl.TrimEnd('/'))
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials());
 });
 
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -171,8 +197,10 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseCors("Client");
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<PresenceHub>("/hubs/presence");
 app.Run();
