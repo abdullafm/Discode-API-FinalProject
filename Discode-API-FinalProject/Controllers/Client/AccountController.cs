@@ -1,6 +1,8 @@
+using Discode_API_FinalProject.Hubs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.SignalR;
 using Service.Helpers.DTOs.Accounts;
 using Service.Services.Interfaces;
 using System.Security.Claims;
@@ -12,10 +14,12 @@ namespace Discode_API_FinalProject.Controllers.Client
     public class AccountController : ControllerBase
     {
         private readonly IAccountService _accountService;
+        private readonly IHubContext<PresenceHub> _hubContext;
 
-        public AccountController(IAccountService accountService)
+        public AccountController(IAccountService accountService, IHubContext<PresenceHub> hubContext)
         {
             _accountService = accountService;
+            _hubContext = hubContext;
         }
 
         private string UserId
@@ -119,6 +123,8 @@ namespace Discode_API_FinalProject.Controllers.Client
                 return BadRequest(result);
             }
 
+            await _hubContext.Clients.Group(PresenceHub.ProfileGroup(UserId)).SendAsync("ProfileChanged", new { userId = UserId });
+            await _hubContext.Clients.All.SendAsync("PostsChanged");
             return Ok(result);
         }
 

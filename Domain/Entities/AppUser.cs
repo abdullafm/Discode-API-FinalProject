@@ -27,5 +27,6 @@ namespace Domain.Entities
         public ICollection<FriendRequest> ReceivedRequests { get; set; } = new List<FriendRequest>();
         public ICollection<UserBlock> BlockedUsers { get; set; } = new List<UserBlock>();
         public ICollection<UserBlock> BlockedByUsers { get; set; } = new List<UserBlock>();
+        public ICollection<Post> Posts { get; set; } = new List<Post>();
     }
 }

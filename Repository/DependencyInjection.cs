@@ -11,6 +11,7 @@ namespace Repository
             services.AddScoped<IAccountRepository, AccountRepository>();
             services.AddScoped<IFriendRequestRepository, FriendRequestRepository>();
             services.AddScoped<IUserBlockRepository, UserBlockRepository>();
+            services.AddScoped<IPostRepository, PostRepository>();
             services.AddScoped<IPresenceRepository, PresenceRepository>();
             services.AddSingleton<IPresenceTrackerRepository, PresenceTrackerRepository>();
             services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));

@@ -12,5 +12,6 @@ namespace Service.Helpers.DTOs.Accounts
         public DateTime MemberSince { get; set; }
         public bool IsPrivate { get; set; }
         public string Relation { get; set; } = "none";
+        public int? RequestId { get; set; }
     }
 }

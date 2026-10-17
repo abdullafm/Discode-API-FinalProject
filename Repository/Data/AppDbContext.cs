@@ -13,6 +13,7 @@ namespace Repository.Data
 
         public DbSet<FriendRequest> FriendRequests { get; set; }
         public DbSet<UserBlock> UserBlocks { get; set; }
+        public DbSet<Post> Posts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

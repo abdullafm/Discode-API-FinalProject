@@ -51,6 +51,21 @@ namespace Discode_API_FinalProject.Hubs
             await base.OnDisconnectedAsync(exception);
         }
 
+        public static string ProfileGroup(string userId)
+        {
+            return "profile-" + userId;
+        }
+
+        public Task WatchProfile(string userId)
+        {
+            return Groups.AddToGroupAsync(Context.ConnectionId, ProfileGroup(userId));
+        }
+
+        public Task UnwatchProfile(string userId)
+        {
+            return Groups.RemoveFromGroupAsync(Context.ConnectionId, ProfileGroup(userId));
+        }
+
         public async Task SetStatus(string status)
         {
             try

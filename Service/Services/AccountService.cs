@@ -464,6 +464,7 @@ namespace Service.Services
             var (user, request) = result.Value;
             var profile = _mapper.Map<UserProfileDto>(user);
             profile.Relation = GetRelation(viewerId, user.Id, request);
+            profile.RequestId = profile.Relation == "pending-received" ? request!.Id : null;
             profile.IsPrivate = !user.IsPublic && profile.Relation != "self" && profile.Relation != "friend";
 
             if (profile.IsPrivate)

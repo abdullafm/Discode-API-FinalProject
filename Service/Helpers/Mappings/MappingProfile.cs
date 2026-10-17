@@ -2,6 +2,7 @@ using AutoMapper;
 using Domain.Entities;
 using Service.Helpers.DTOs.Accounts;
 using Service.Helpers.DTOs.Friends;
+using Service.Helpers.DTOs.Posts;
 using Service.Helpers.DTOs.Presence;
 using Service.Helpers.Responses;
 using System;
@@ -29,12 +30,20 @@ namespace Service.Helpers.Mappings
 
             CreateMap<AppUser, ProfileDto>();
 
+            CreateMap<Post, PostDto>()
+                .ForMember(d => d.AuthorUserName, o => o.MapFrom(s => s.Author.UserName ?? string.Empty))
+                .ForMember(d => d.AuthorDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Author.DisplayName)
+                    ? s.Author.UserName ?? string.Empty
+                    : s.Author.DisplayName))
+                .ForMember(d => d.AuthorAvatarUrl, o => o.MapFrom(s => s.Author.AvatarUrl ?? string.Empty));
+
             CreateMap<AppUser, UserProfileDto>()
                 .ForMember(d => d.UserId, o => o.MapFrom(s => s.Id))
                 .ForMember(d => d.UserName, o => o.MapFrom(s => s.UserName ?? string.Empty))
                 .ForMember(d => d.MemberSince, o => o.MapFrom(s => s.CreatedAt))
                 .ForMember(d => d.IsPrivate, o => o.Ignore())
-                .ForMember(d => d.Relation, o => o.Ignore());
+                .ForMember(d => d.Relation, o => o.Ignore())
+                .ForMember(d => d.RequestId, o => o.Ignore());
 
             CreateMap<AppUser, UserSearchDto>()
                 .ForMember(d => d.Id, o => o.MapFrom(s => s.Id))

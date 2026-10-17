@@ -172,6 +172,41 @@ namespace Repository.Migrations
                     b.ToTable("FriendRequests");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Post", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AuthorId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.ToTable("Posts");
+                });
+
             modelBuilder.Entity("Domain.Entities.UserBlock", b =>
                 {
                     b.Property<int>("Id")
@@ -355,6 +390,17 @@ namespace Repository.Migrations
                     b.Navigation("Sender");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Post", b =>
+                {
+                    b.HasOne("Domain.Entities.AppUser", "Author")
+                        .WithMany("Posts")
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+                });
+
             modelBuilder.Entity("Domain.Entities.UserBlock", b =>
                 {
                     b.HasOne("Domain.Entities.AppUser", "Blocked")
@@ -430,6 +476,8 @@ namespace Repository.Migrations
                     b.Navigation("BlockedByUsers");
 
                     b.Navigation("BlockedUsers");
+
+                    b.Navigation("Posts");
 
                     b.Navigation("ReceivedRequests");
 

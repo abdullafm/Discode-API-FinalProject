@@ -118,7 +118,7 @@ namespace Service.Services
             return friends;
         }
 
-        public async Task CancelAsync(string userId, int requestId)
+        public async Task<string> CancelAsync(string userId, int requestId)
         {
             var request = await _friendRequests.GetByIdAsync(requestId);
             if (request is null || request.SenderId != userId || request.Status != FriendRequestStatus.Pending)
@@ -127,9 +127,10 @@ namespace Service.Services
             }
 
             await _friendRequests.DeleteAsync(request);
+            return GetOtherUserId(request, userId);
         }
 
-        public async Task AcceptAsync(string userId, int requestId)
+        public async Task<string> AcceptAsync(string userId, int requestId)
         {
             var request = await _friendRequests.GetByIdAsync(requestId);
             if (request is null || request.ReceiverId != userId || request.Status != FriendRequestStatus.Pending)
@@ -139,9 +140,10 @@ namespace Service.Services
 
             request.Status = FriendRequestStatus.Accepted;
             await _friendRequests.UpdateAsync(request);
+            return GetOtherUserId(request, userId);
         }
 
-        public async Task DeclineAsync(string userId, int requestId)
+        public async Task<string> DeclineAsync(string userId, int requestId)
         {
             var request = await _friendRequests.GetByIdAsync(requestId);
             if (request is null || request.ReceiverId != userId || request.Status != FriendRequestStatus.Pending)
@@ -150,9 +152,10 @@ namespace Service.Services
             }
 
             await _friendRequests.DeleteAsync(request);
+            return GetOtherUserId(request, userId);
         }
 
-        public async Task RemoveAsync(string userId, int requestId)
+        public async Task<string> RemoveAsync(string userId, int requestId)
         {
             var request = await _friendRequests.GetByIdAsync(requestId);
             if (request is null ||
@@ -163,6 +166,12 @@ namespace Service.Services
             }
 
             await _friendRequests.DeleteAsync(request);
+            return GetOtherUserId(request, userId);
+        }
+
+        private static string GetOtherUserId(FriendRequest request, string userId)
+        {
+            return request.SenderId == userId ? request.ReceiverId : request.SenderId;
         }
 
         private FriendRequestDto MapFriend(int id, AppUser user)

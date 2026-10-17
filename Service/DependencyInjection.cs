@@ -14,6 +14,7 @@ namespace Service
             services.AddAutoMapper(typeof(MappingProfile));
             services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<IFriendService, FriendService>();
+            services.AddScoped<IPostService, PostService>();
             services.AddScoped<IBlockService, BlockService>();
             services.AddScoped<IPresenceService, PresenceService>();
             services.AddScoped<IPresenceTrackerService, PresenceTrackerService>();
