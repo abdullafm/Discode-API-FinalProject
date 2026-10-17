@@ -1,6 +1,7 @@
 using Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Repository.Data;
 using Repository.Repositories.Interfaces;
 
 namespace Repository.Repositories
@@ -8,10 +9,12 @@ namespace Repository.Repositories
     public class AccountRepository : IAccountRepository
     {
         private readonly UserManager<AppUser> _userManager;
+        private readonly AppDbContext _dbContext;
 
-        public AccountRepository(UserManager<AppUser> userManager)
+        public AccountRepository(UserManager<AppUser> userManager, AppDbContext dbContext)
         {
             _userManager = userManager;
+            _dbContext = dbContext;
         }
 
         public Task<IdentityResult> RegisterAsync(AppUser user, string password)
@@ -89,6 +92,30 @@ namespace Repository.Repositories
             var term = searchName.Trim();
             return await _userManager.Users
                 .Where(n => (n.UserName != null && n.UserName.Contains(term)) || n.DisplayName.Contains(term)).ToListAsync();
+        }
+
+        public async Task<(AppUser User, FriendRequest? Request)?> GetUserProfileAsync(string viewerId, string userName)
+        {
+            var user = await _userManager.FindByNameAsync(userName);
+            if (user is null)
+            {
+                return null;
+            }
+
+            var blockedViewer = await _dbContext.UserBlocks
+                .AnyAsync(x => x.BlockerId == user.Id && x.BlockedId == viewerId);
+            if (blockedViewer)
+            {
+                return null;
+            }
+
+            var request = await _dbContext.FriendRequests
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    (x.SenderId == viewerId && x.ReceiverId == user.Id) ||
+                    (x.SenderId == user.Id && x.ReceiverId == viewerId));
+
+            return (user, request);
         }
     }
 }

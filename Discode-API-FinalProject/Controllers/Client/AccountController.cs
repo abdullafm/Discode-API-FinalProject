@@ -150,6 +150,13 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [Authorize]
+        [HttpGet("users/{userName}")]
+        public async Task<IActionResult> UserProfile(string userName)
+        {
+            return Ok(await _accountService.GetUserProfileAsync(UserId, userName));
+        }
+
+        [Authorize]
         [HttpGet("search")]
         public async Task<IActionResult> SearchUser([FromQuery] string searchName)
         {

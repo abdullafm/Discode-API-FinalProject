@@ -1,6 +1,7 @@
 using AutoMapper;
 using Domain.Constants;
 using Domain.Entities;
+using Domain.Enums;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
@@ -452,6 +453,29 @@ namespace Service.Services
             return _mapper.Map<IEnumerable<UserSearchDto>>(users.Where(u => u.Id != currentUserId));
         }
 
+        public async Task<UserProfileDto> GetUserProfileAsync(string viewerId, string userName)
+        {
+            var result = await _accountRepository.GetUserProfileAsync(viewerId, userName.Trim());
+            if (result is null)
+            {
+                throw new NotFoundException("User not found.");
+            }
+
+            var (user, request) = result.Value;
+            var profile = _mapper.Map<UserProfileDto>(user);
+            profile.Relation = GetRelation(viewerId, user.Id, request);
+            profile.IsPrivate = !user.IsPublic && profile.Relation != "self" && profile.Relation != "friend";
+
+            if (profile.IsPrivate)
+            {
+                profile.Bio = string.Empty;
+                profile.Pronouns = string.Empty;
+                profile.CustomStatus = string.Empty;
+            }
+
+            return profile;
+        }
+
         private async Task<bool> SendVerificationCodeAsync(AppUser user)
         {
             var code = Random.Shared.Next(1000, 10000).ToString();
@@ -508,6 +532,26 @@ namespace Service.Services
 
             return Uri.TryCreate(_appSettings.ClientUrl, UriKind.Absolute, out var allowed)
                 && uri.Host.Equals(allowed.Host, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string GetRelation(string viewerId, string userId, FriendRequest? request)
+        {
+            if (viewerId == userId)
+            {
+                return "self";
+            }
+
+            if (request is null)
+            {
+                return "none";
+            }
+
+            if (request.Status == FriendRequestStatus.Accepted)
+            {
+                return "friend";
+            }
+
+            return request.SenderId == viewerId ? "pending-sent" : "pending-received";
         }
 
         private static string DescribeResetError(IdentityError error)

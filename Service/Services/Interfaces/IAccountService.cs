@@ -16,5 +16,6 @@ namespace Service.Services.Interfaces
         Task<UpdateProfileResponse> ChangeUsernameAsync(string userId, ChangeUsernameDto model);
         Task<UpdateProfileResponse> ChangePasswordAsync(string userId, ChangePasswordDto model);
         Task<IEnumerable<UserSearchDto>> SearchUserAsync(string searchName, string currentUserId);
+        Task<UserProfileDto> GetUserProfileAsync(string viewerId, string userName);
     }
 }

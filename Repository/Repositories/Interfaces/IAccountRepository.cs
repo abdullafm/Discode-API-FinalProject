@@ -20,5 +20,6 @@ namespace Repository.Repositories.Interfaces
         Task<string> GeneratePasswordResetTokenAsync(AppUser user);
         Task<IdentityResult> ResetPasswordAsync(AppUser user, string token, string newPassword);
         Task<IEnumerable<AppUser>> SearchUserAsync(string searchName);
+        Task<(AppUser User, FriendRequest? Request)?> GetUserProfileAsync(string viewerId, string userName);
     }
 }

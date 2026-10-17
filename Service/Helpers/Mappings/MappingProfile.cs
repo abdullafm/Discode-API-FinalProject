@@ -29,6 +29,13 @@ namespace Service.Helpers.Mappings
 
             CreateMap<AppUser, ProfileDto>();
 
+            CreateMap<AppUser, UserProfileDto>()
+                .ForMember(d => d.UserId, o => o.MapFrom(s => s.Id))
+                .ForMember(d => d.UserName, o => o.MapFrom(s => s.UserName ?? string.Empty))
+                .ForMember(d => d.MemberSince, o => o.MapFrom(s => s.CreatedAt))
+                .ForMember(d => d.IsPrivate, o => o.Ignore())
+                .ForMember(d => d.Relation, o => o.Ignore());
+
             CreateMap<AppUser, UserSearchDto>()
                 .ForMember(d => d.Id, o => o.MapFrom(s => s.Id))
                 .ForMember(d => d.UserName, o => o.MapFrom(s => s.UserName ?? string.Empty))

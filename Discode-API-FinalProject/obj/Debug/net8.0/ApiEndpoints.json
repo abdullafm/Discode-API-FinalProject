@@ -171,6 +171,22 @@
   },
   {
     "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
+    "Method": "UserProfile",
+    "RelativePath": "api/Account/users/{userName}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
     "Method": "VerifyEmail",
     "RelativePath": "api/Account/verify-email",
     "HttpMethod": "POST",
