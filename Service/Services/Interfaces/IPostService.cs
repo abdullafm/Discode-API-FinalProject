@@ -8,6 +8,7 @@ namespace Service.Services.Interfaces
         Task<IEnumerable<PostDto>> GetExploreAsync(string viewerId);
         Task<IEnumerable<PostDto>> GetFriendsAsync(string viewerId);
         Task<IEnumerable<PostDto>> GetByUserAsync(string viewerId, string userName);
+        Task<LikeDto> ToggleLikeAsync(string userId, int postId);
         Task DeleteAsync(string userId, int postId);
     }
 }

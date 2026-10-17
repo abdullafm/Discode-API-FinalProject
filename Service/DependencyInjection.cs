@@ -15,6 +15,7 @@ namespace Service
             services.AddScoped<IAccountService, AccountService>();
             services.AddScoped<IFriendService, FriendService>();
             services.AddScoped<IPostService, PostService>();
+            services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<IBlockService, BlockService>();
             services.AddScoped<IPresenceService, PresenceService>();
             services.AddScoped<IPresenceTrackerService, PresenceTrackerService>();

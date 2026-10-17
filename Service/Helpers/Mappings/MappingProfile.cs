@@ -15,6 +15,8 @@ namespace Service.Helpers.Mappings
 {
     public class MappingProfile : Profile
     {
+        public const string ViewerIdKey = "viewerId";
+
         public MappingProfile()
         {
             CreateMap<RegisterDto, AppUser>()
@@ -30,7 +32,21 @@ namespace Service.Helpers.Mappings
 
             CreateMap<AppUser, ProfileDto>();
 
+            CreateMap<Comment, CommentDto>()
+                .ForMember(d => d.AuthorUserName, o => o.MapFrom(s => s.Author.UserName ?? string.Empty))
+                .ForMember(d => d.AuthorDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Author.DisplayName)
+                    ? s.Author.UserName ?? string.Empty
+                    : s.Author.DisplayName))
+                .ForMember(d => d.AuthorAvatarUrl, o => o.MapFrom(s => s.Author.AvatarUrl ?? string.Empty))
+                .ForMember(d => d.LikeCount, o => o.MapFrom(s => s.Likes.Count))
+                .ForMember(d => d.LikedByMe, o => o.MapFrom((s, d, m, context) =>
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.Likes.Any(l => l.UserId == (string?)viewer)));
+
             CreateMap<Post, PostDto>()
+                .ForMember(d => d.LikeCount, o => o.MapFrom(s => s.Likes.Count))
+                .ForMember(d => d.LikedByMe, o => o.MapFrom((s, d, m, context) =>
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.Likes.Any(l => l.UserId == (string?)viewer)))
+                .ForMember(d => d.Comments, o => o.MapFrom(s => s.Comments.OrderBy(c => c.CreatedAt)))
                 .ForMember(d => d.AuthorUserName, o => o.MapFrom(s => s.Author.UserName ?? string.Empty))
                 .ForMember(d => d.AuthorDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Author.DisplayName)
                     ? s.Author.UserName ?? string.Empty

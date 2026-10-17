@@ -342,5 +342,73 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.PostController",
+    "Method": "Create",
+    "RelativePath": "api/Post",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Posts.CreatePostDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.PostController",
+    "Method": "Delete",
+    "RelativePath": "api/Post/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.PostController",
+    "Method": "Explore",
+    "RelativePath": "api/Post/explore",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.PostController",
+    "Method": "Friends",
+    "RelativePath": "api/Post/friends",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.PostController",
+    "Method": "ByUser",
+    "RelativePath": "api/Post/user/{userName}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   }
 ]

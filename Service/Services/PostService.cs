@@ -4,6 +4,7 @@ using FluentValidation;
 using Repository.Repositories.Interfaces;
 using Service.Helpers.DTOs.Posts;
 using Service.Helpers.Exceptions;
+using Service.Helpers.Mappings;
 using Service.Helpers.Validators;
 using Service.Services.Interfaces;
 
@@ -12,16 +13,19 @@ namespace Service.Services
     public class PostService : IPostService
     {
         private readonly IPostRepository _posts;
+        private readonly IPostLikeRepository _postLikes;
         private readonly IAccountRepository _accounts;
         private readonly IValidator<CreatePostDto> _validator;
         private readonly IMapper _mapper;
 
         public PostService(IPostRepository posts,
+                           IPostLikeRepository postLikes,
                            IAccountRepository accounts,
                            IValidator<CreatePostDto> validator,
                            IMapper mapper)
         {
             _posts = posts;
+            _postLikes = postLikes;
             _accounts = accounts;
             _validator = validator;
             _mapper = mapper;
@@ -46,19 +50,19 @@ namespace Service.Services
 
             await _posts.AddAsync(post);
             post.Author = author;
-            return _mapper.Map<PostDto>(post);
+            return _mapper.Map<PostDto>(post, ForViewer(userId));
         }
 
         public async Task<IEnumerable<PostDto>> GetExploreAsync(string viewerId)
         {
             var posts = await _posts.GetExploreAsync(viewerId);
-            return _mapper.Map<IEnumerable<PostDto>>(posts);
+            return _mapper.Map<IEnumerable<PostDto>>(posts, ForViewer(viewerId));
         }
 
         public async Task<IEnumerable<PostDto>> GetFriendsAsync(string viewerId)
         {
             var posts = await _posts.GetFriendsFeedAsync(viewerId);
-            return _mapper.Map<IEnumerable<PostDto>>(posts);
+            return _mapper.Map<IEnumerable<PostDto>>(posts, ForViewer(viewerId));
         }
 
         public async Task<IEnumerable<PostDto>> GetByUserAsync(string viewerId, string userName)
@@ -70,7 +74,31 @@ namespace Service.Services
             }
 
             var posts = await _posts.GetByUserAsync(viewerId, author.Id);
-            return _mapper.Map<IEnumerable<PostDto>>(posts);
+            return _mapper.Map<IEnumerable<PostDto>>(posts, ForViewer(viewerId));
+        }
+
+        public async Task<LikeDto> ToggleLikeAsync(string userId, int postId)
+        {
+            if (!await _posts.IsVisibleAsync(userId, postId))
+            {
+                throw new NotFoundException("Post not found.");
+            }
+
+            var like = await _postLikes.GetByUserAsync(postId, userId);
+            if (like is null)
+            {
+                await _postLikes.AddAsync(new PostLike { PostId = postId, UserId = userId });
+            }
+            else
+            {
+                await _postLikes.DeleteAsync(like);
+            }
+
+            return new LikeDto
+            {
+                Liked = like is null,
+                Count = await _postLikes.CountAsync(postId)
+            };
         }
 
         public async Task DeleteAsync(string userId, int postId)
@@ -82,6 +110,11 @@ namespace Service.Services
             }
 
             await _posts.DeleteAsync(post);
+        }
+
+        private static Action<IMappingOperationOptions> ForViewer(string viewerId)
+        {
+            return options => options.Items[MappingProfile.ViewerIdKey] = viewerId;
         }
     }
 }
