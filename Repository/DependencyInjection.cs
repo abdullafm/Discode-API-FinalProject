@@ -13,6 +13,7 @@ namespace Repository
             services.AddScoped<IUserBlockRepository, UserBlockRepository>();
             services.AddScoped<IPostRepository, PostRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();
+            services.AddScoped<IStoryRepository, StoryRepository>();
             services.AddScoped<IPostLikeRepository, PostLikeRepository>();
             services.AddScoped<ICommentLikeRepository, CommentLikeRepository>();
             services.AddScoped<IPresenceRepository, PresenceRepository>();

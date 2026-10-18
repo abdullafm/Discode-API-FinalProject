@@ -4,6 +4,7 @@ using Service.Helpers.DTOs.Accounts;
 using Service.Helpers.DTOs.Friends;
 using Service.Helpers.DTOs.Posts;
 using Service.Helpers.DTOs.Presence;
+using Service.Helpers.DTOs.Stories;
 using Service.Helpers.Responses;
 using System;
 using System.Collections.Generic;
@@ -31,6 +32,13 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.IsSuccess, o => o.MapFrom(_ => true));
 
             CreateMap<AppUser, ProfileDto>();
+
+            CreateMap<Story, StoryDto>()
+                .ForMember(d => d.AuthorUserName, o => o.MapFrom(s => s.Author.UserName ?? string.Empty))
+                .ForMember(d => d.AuthorDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Author.DisplayName)
+                    ? s.Author.UserName ?? string.Empty
+                    : s.Author.DisplayName))
+                .ForMember(d => d.AuthorAvatarUrl, o => o.MapFrom(s => s.Author.AvatarUrl ?? string.Empty));
 
             CreateMap<Comment, CommentDto>()
                 .ForMember(d => d.AuthorUserName, o => o.MapFrom(s => s.Author.UserName ?? string.Empty))

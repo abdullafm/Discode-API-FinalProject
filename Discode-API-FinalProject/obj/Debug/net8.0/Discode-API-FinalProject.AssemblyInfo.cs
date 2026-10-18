@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Discode-API-FinalProject")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2441fb038ed6dbea9ecee0f3b8c48160ef70ec80")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1337e54c09d7c0173fd9d75995ffc17c359f9644")]
 [assembly: System.Reflection.AssemblyProductAttribute("Discode-API-FinalProject")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Discode-API-FinalProject")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

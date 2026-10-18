@@ -1,0 +1,9 @@
+using Domain.Entities;
+
+namespace Repository.Repositories.Interfaces
+{
+    public interface IStoryRepository : IBaseRepository<Story>
+    {
+        Task<IEnumerable<Story>> GetVisibleAsync(string viewerId);
+    }
+}
