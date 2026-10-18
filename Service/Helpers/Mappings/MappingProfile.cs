@@ -2,6 +2,7 @@ using AutoMapper;
 using Domain.Entities;
 using Service.Helpers.DTOs.Accounts;
 using Service.Helpers.DTOs.Friends;
+using Service.Helpers.DTOs.Live;
 using Service.Helpers.DTOs.Posts;
 using Service.Helpers.DTOs.Presence;
 using Service.Helpers.DTOs.Stories;
@@ -33,12 +34,27 @@ namespace Service.Helpers.Mappings
 
             CreateMap<AppUser, ProfileDto>();
 
+            CreateMap<LiveStream, LiveStreamDto>()
+                .ForMember(d => d.HostUserName, o => o.MapFrom(s => s.Host.UserName ?? string.Empty))
+                .ForMember(d => d.HostDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Host.DisplayName)
+                    ? s.Host.UserName ?? string.Empty
+                    : s.Host.DisplayName))
+                .ForMember(d => d.HostAvatarUrl, o => o.MapFrom(s => s.Host.AvatarUrl ?? string.Empty))
+                .ForMember(d => d.StartedAt, o => o.MapFrom(s => s.CreatedAt))
+                .ForMember(d => d.ViewerCount, o => o.Ignore())
+                .ForMember(d => d.IsFriend, o => o.Ignore())
+                .ForMember(d => d.IsMine, o => o.MapFrom((s, d, m, context) =>
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.HostId == (string?)viewer));
+
             CreateMap<Story, StoryDto>()
                 .ForMember(d => d.AuthorUserName, o => o.MapFrom(s => s.Author.UserName ?? string.Empty))
                 .ForMember(d => d.AuthorDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Author.DisplayName)
                     ? s.Author.UserName ?? string.Empty
                     : s.Author.DisplayName))
-                .ForMember(d => d.AuthorAvatarUrl, o => o.MapFrom(s => s.Author.AvatarUrl ?? string.Empty));
+                .ForMember(d => d.AuthorAvatarUrl, o => o.MapFrom(s => s.Author.AvatarUrl ?? string.Empty))
+                .ForMember(d => d.LikeCount, o => o.MapFrom(s => s.Likes.Count))
+                .ForMember(d => d.LikedByMe, o => o.MapFrom((s, d, m, context) =>
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.Likes.Any(l => l.UserId == (string?)viewer)));
 
             CreateMap<Comment, CommentDto>()
                 .ForMember(d => d.AuthorUserName, o => o.MapFrom(s => s.Author.UserName ?? string.Empty))

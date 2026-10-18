@@ -8,15 +8,17 @@ using System.Security.Claims;
 namespace Discode_API_FinalProject.Hubs
 {
     [Authorize]
-    public class PresenceHub : Hub
+    public partial class PresenceHub : Hub
     {
         private readonly IPresenceService _presenceService;
         private readonly IPresenceTrackerService _trackerService;
+        private readonly ILiveService _liveService;
 
-        public PresenceHub(IPresenceService presenceService, IPresenceTrackerService trackerService)
+        public PresenceHub(IPresenceService presenceService, IPresenceTrackerService trackerService, ILiveService liveService)
         {
             _presenceService = presenceService;
             _trackerService = trackerService;
+            _liveService = liveService;
         }
 
         private string UserId
@@ -47,6 +49,8 @@ namespace Discode_API_FinalProject.Hubs
             {
                 await NotifyFriendsAsync(change);
             }
+
+            await ReleaseLiveAsync();
 
             await base.OnDisconnectedAsync(exception);
         }

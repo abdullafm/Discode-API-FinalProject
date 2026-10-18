@@ -234,6 +234,42 @@ namespace Repository.Migrations
                     b.ToTable("FriendRequests");
                 });
 
+            modelBuilder.Entity("Domain.Entities.LiveStream", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("HostId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(70)
+                        .HasColumnType("nvarchar(70)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HostId", "EndedAt");
+
+                    b.ToTable("LiveStreams");
+                });
+
             modelBuilder.Entity("Domain.Entities.Post", b =>
                 {
                     b.Property<int>("Id")
@@ -326,6 +362,35 @@ namespace Repository.Migrations
                     b.HasIndex("CreatedAt");
 
                     b.ToTable("Stories");
+                });
+
+            modelBuilder.Entity("Domain.Entities.StoryLike", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("StoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("StoryId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("StoryLikes");
                 });
 
             modelBuilder.Entity("Domain.Entities.UserBlock", b =>
@@ -549,6 +614,17 @@ namespace Repository.Migrations
                     b.Navigation("Sender");
                 });
 
+            modelBuilder.Entity("Domain.Entities.LiveStream", b =>
+                {
+                    b.HasOne("Domain.Entities.AppUser", "Host")
+                        .WithMany()
+                        .HasForeignKey("HostId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Host");
+                });
+
             modelBuilder.Entity("Domain.Entities.Post", b =>
                 {
                     b.HasOne("Domain.Entities.AppUser", "Author")
@@ -588,6 +664,25 @@ namespace Repository.Migrations
                         .IsRequired();
 
                     b.Navigation("Author");
+                });
+
+            modelBuilder.Entity("Domain.Entities.StoryLike", b =>
+                {
+                    b.HasOne("Domain.Entities.Story", "Story")
+                        .WithMany("Likes")
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Story");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.Entities.UserBlock", b =>
@@ -682,6 +777,11 @@ namespace Repository.Migrations
                 {
                     b.Navigation("Comments");
 
+                    b.Navigation("Likes");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Story", b =>
+                {
                     b.Navigation("Likes");
                 });
 #pragma warning restore 612, 618

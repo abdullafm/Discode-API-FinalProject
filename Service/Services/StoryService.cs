@@ -2,8 +2,10 @@ using AutoMapper;
 using Domain.Entities;
 using FluentValidation;
 using Repository.Repositories.Interfaces;
+using Service.Helpers.DTOs.Posts;
 using Service.Helpers.DTOs.Stories;
 using Service.Helpers.Exceptions;
+using Service.Helpers.Mappings;
 using Service.Helpers.Validators;
 using Service.Services.Interfaces;
 
@@ -12,16 +14,19 @@ namespace Service.Services
     public class StoryService : IStoryService
     {
         private readonly IStoryRepository _stories;
+        private readonly IStoryLikeRepository _storyLikes;
         private readonly IAccountRepository _accounts;
         private readonly IValidator<CreateStoryDto> _validator;
         private readonly IMapper _mapper;
 
         public StoryService(IStoryRepository stories,
+                            IStoryLikeRepository storyLikes,
                             IAccountRepository accounts,
                             IValidator<CreateStoryDto> validator,
                             IMapper mapper)
         {
             _stories = stories;
+            _storyLikes = storyLikes;
             _accounts = accounts;
             _validator = validator;
             _mapper = mapper;
@@ -45,13 +50,13 @@ namespace Service.Services
 
             await _stories.AddAsync(story);
             story.Author = author;
-            return _mapper.Map<StoryDto>(story);
+            return _mapper.Map<StoryDto>(story, ForViewer(userId));
         }
 
         public async Task<IEnumerable<StoryDto>> GetAsync(string viewerId)
         {
             var stories = await _stories.GetVisibleAsync(viewerId);
-            return _mapper.Map<IEnumerable<StoryDto>>(stories);
+            return _mapper.Map<IEnumerable<StoryDto>>(stories, ForViewer(viewerId));
         }
 
         public async Task DeleteAsync(string userId, int storyId)
@@ -63,6 +68,35 @@ namespace Service.Services
             }
 
             await _stories.DeleteAsync(story);
+        }
+
+        public async Task<LikeDto> ToggleLikeAsync(string userId, int storyId)
+        {
+            if (!await _stories.IsVisibleAsync(userId, storyId))
+            {
+                throw new NotFoundException("Story not found.");
+            }
+
+            var like = await _storyLikes.GetByUserAsync(storyId, userId);
+            if (like is null)
+            {
+                await _storyLikes.AddAsync(new StoryLike { StoryId = storyId, UserId = userId });
+            }
+            else
+            {
+                await _storyLikes.DeleteAsync(like);
+            }
+
+            return new LikeDto
+            {
+                Liked = like is null,
+                Count = await _storyLikes.CountAsync(storyId)
+            };
+        }
+
+        private static Action<IMappingOperationOptions> ForViewer(string viewerId)
+        {
+            return options => options.Items[MappingProfile.ViewerIdKey] = viewerId;
         }
     }
 }

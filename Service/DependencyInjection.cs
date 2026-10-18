@@ -17,6 +17,7 @@ namespace Service
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<IStoryService, StoryService>();
+            services.AddScoped<ILiveService, LiveService>();
             services.AddScoped<IBlockService, BlockService>();
             services.AddScoped<IPresenceService, PresenceService>();
             services.AddScoped<IPresenceTrackerService, PresenceTrackerService>();

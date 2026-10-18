@@ -7,5 +7,6 @@ namespace Domain.Entities
         public string AuthorId { get; set; } = string.Empty;
         public AppUser Author { get; set; } = null!;
         public string ImageUrl { get; set; } = string.Empty;
+        public ICollection<StoryLike> Likes { get; set; } = new List<StoryLike>();
     }
 }

@@ -16,19 +16,29 @@ namespace Repository.Repositories
 
         public async Task<IEnumerable<Story>> GetVisibleAsync(string viewerId)
         {
-            var since = DateTime.UtcNow - Lifetime;
-
-            return await _dbSet
+            return await VisibleTo(viewerId)
                 .AsNoTracking()
                 .Include(x => x.Author)
-                .Where(x => x.CreatedAt > since &&
-                            (x.AuthorId == viewerId ||
-                             _dbContext.FriendRequests.Any(f =>
-                                 f.Status == FriendRequestStatus.Accepted &&
-                                 ((f.SenderId == viewerId && f.ReceiverId == x.AuthorId) ||
-                                  (f.SenderId == x.AuthorId && f.ReceiverId == viewerId)))))
+                .Include(x => x.Likes)
                 .OrderBy(x => x.CreatedAt)
                 .ToListAsync();
+        }
+
+        public async Task<bool> IsVisibleAsync(string viewerId, int storyId)
+        {
+            return await VisibleTo(viewerId).AnyAsync(x => x.Id == storyId);
+        }
+
+        private IQueryable<Story> VisibleTo(string viewerId)
+        {
+            var since = DateTime.UtcNow - Lifetime;
+
+            return _dbSet.Where(x => x.CreatedAt > since &&
+                                     (x.AuthorId == viewerId ||
+                                      _dbContext.FriendRequests.Any(f =>
+                                          f.Status == FriendRequestStatus.Accepted &&
+                                          ((f.SenderId == viewerId && f.ReceiverId == x.AuthorId) ||
+                                           (f.SenderId == x.AuthorId && f.ReceiverId == viewerId)))));
         }
     }
 }

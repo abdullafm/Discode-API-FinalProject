@@ -44,6 +44,14 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(await _storyService.GetAsync(UserId));
         }
 
+        [HttpPost("{id:int}/like")]
+        public async Task<IActionResult> Like(int id)
+        {
+            var result = await _storyService.ToggleLikeAsync(UserId, id);
+            await _hubContext.Clients.All.SendAsync("StoriesChanged");
+            return Ok(result);
+        }
+
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
