@@ -2,10 +2,7 @@ using Domain.Entities;
 
 namespace Repository.Repositories.Interfaces
 {
-    public interface ICommentRepository
+    public interface ICommentRepository : IBaseRepository<Comment>
     {
-        Task<Comment> CreateAsync(Comment comment);
-        Task<Comment?> GetByIdAsync(int id);
-        Task DeleteAsync(Comment comment);
     }
 }

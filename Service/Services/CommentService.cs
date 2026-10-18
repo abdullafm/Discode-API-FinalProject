@@ -56,7 +56,7 @@ namespace Service.Services
                 Text = model.Text.Trim()
             };
 
-            await _comments.CreateAsync(comment);
+            await _comments.AddAsync(comment);
             comment.Author = author;
             return _mapper.Map<CommentDto>(comment, options => options.Items[MappingProfile.ViewerIdKey] = userId);
         }
