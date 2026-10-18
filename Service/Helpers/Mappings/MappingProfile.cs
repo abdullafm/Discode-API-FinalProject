@@ -41,6 +41,7 @@ namespace Service.Helpers.Mappings
                     : s.Host.DisplayName))
                 .ForMember(d => d.HostAvatarUrl, o => o.MapFrom(s => s.Host.AvatarUrl ?? string.Empty))
                 .ForMember(d => d.StartedAt, o => o.MapFrom(s => s.CreatedAt))
+                .ForMember(d => d.ThumbnailUrl, o => o.MapFrom(s => s.ThumbnailUrl ?? string.Empty))
                 .ForMember(d => d.ViewerCount, o => o.Ignore())
                 .ForMember(d => d.IsFriend, o => o.Ignore())
                 .ForMember(d => d.IsMine, o => o.MapFrom((s, d, m, context) =>

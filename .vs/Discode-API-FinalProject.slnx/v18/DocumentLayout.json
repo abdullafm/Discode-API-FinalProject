@@ -14,21 +14,8 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 0,
+          "SelectedChildIndex": 8,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "PostLikeConfiguration.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Domain\\Configurations\\PostLikeConfiguration.cs",
-              "RelativeDocumentMoniker": "Domain\\Configurations\\PostLikeConfiguration.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Domain\\Configurations\\PostLikeConfiguration.cs",
-              "RelativeToolTip": "Domain\\Configurations\\PostLikeConfiguration.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-18T18:38:22.097Z",
-              "EditorCaption": ""
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{004be353-6879-467c-9d1e-9ac23cdf6d49}"
@@ -60,6 +47,19 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "PostLikeConfiguration.cs",
+              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Domain\\Configurations\\PostLikeConfiguration.cs",
+              "RelativeDocumentMoniker": "Domain\\Configurations\\PostLikeConfiguration.cs",
+              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Domain\\Configurations\\PostLikeConfiguration.cs",
+              "RelativeToolTip": "Domain\\Configurations\\PostLikeConfiguration.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABAAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-18T18:38:22.097Z",
+              "EditorCaption": ""
             }
           ]
         }

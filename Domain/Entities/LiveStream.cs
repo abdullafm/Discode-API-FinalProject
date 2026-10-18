@@ -8,6 +8,7 @@ namespace Domain.Entities
         public AppUser Host { get; set; } = null!;
         public string Title { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
+        public string? ThumbnailUrl { get; set; }
         public DateTime? EndedAt { get; set; }
     }
 }

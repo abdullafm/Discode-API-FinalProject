@@ -344,6 +344,16 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.LiveController",
+    "Method": "GetActive",
+    "RelativePath": "api/Live",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Discode_API_FinalProject.Controllers.Client.PostController",
     "Method": "Create",
     "RelativePath": "api/Post",

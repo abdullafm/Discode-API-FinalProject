@@ -4,5 +4,6 @@ namespace Service.Helpers.DTOs.Live
     {
         public LiveStreamDto Stream { get; set; } = null!;
         public string HostConnectionId { get; set; } = string.Empty;
+        public LiveViewerDto Viewer { get; set; } = null!;
     }
 }

@@ -579,6 +579,18 @@
         }
       }
     },
+    "/api/Live": {
+      "get": {
+        "tags": [
+          "Live"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Post": {
       "post": {
         "tags": [

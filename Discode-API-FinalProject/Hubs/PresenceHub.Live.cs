@@ -31,6 +31,23 @@ namespace Discode_API_FinalProject.Hubs
             }
         }
 
+        public async Task UpdateLiveThumbnail(LiveThumbnailDto model)
+        {
+            try
+            {
+                await _liveService.SetThumbnailAsync(UserId, model);
+                await Clients.All.SendAsync("LiveChanged");
+            }
+            catch (BadRequestException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+            catch (NotFoundException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+        }
+
         public async Task StopLive()
         {
             await EndOwnStreamsAsync();
@@ -45,6 +62,7 @@ namespace Discode_API_FinalProject.Hubs
                 await Groups.AddToGroupAsync(Context.ConnectionId, LiveGroup(streamId));
                 await Clients.Client(join.HostConnectionId).SendAsync("ViewerJoined", streamId, Context.ConnectionId);
                 await Clients.All.SendAsync("LiveViewers", streamId, join.Stream.ViewerCount);
+                await Clients.Group(LiveGroup(streamId)).SendAsync("LiveJoined", join.Viewer);
                 return join;
             }
             catch (BadRequestException ex)

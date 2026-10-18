@@ -8,6 +8,7 @@ namespace Service.Helpers.DTOs.Live
         public string HostAvatarUrl { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
+        public string ThumbnailUrl { get; set; } = string.Empty;
         public DateTime StartedAt { get; set; }
         public int ViewerCount { get; set; }
         public bool IsFriend { get; set; }

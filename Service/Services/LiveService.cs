@@ -17,6 +17,7 @@ namespace Service.Services
         private readonly IFriendRequestRepository _friendRequests;
         private readonly IAccountRepository _accounts;
         private readonly IValidator<StartLiveDto> _startValidator;
+        private readonly IValidator<LiveThumbnailDto> _thumbnailValidator;
         private readonly IValidator<string> _messageValidator;
         private readonly IMapper _mapper;
 
@@ -25,6 +26,7 @@ namespace Service.Services
                            IFriendRequestRepository friendRequests,
                            IAccountRepository accounts,
                            IValidator<StartLiveDto> startValidator,
+                           IValidator<LiveThumbnailDto> thumbnailValidator,
                            IValidator<string> messageValidator,
                            IMapper mapper)
         {
@@ -33,6 +35,7 @@ namespace Service.Services
             _friendRequests = friendRequests;
             _accounts = accounts;
             _startValidator = startValidator;
+            _thumbnailValidator = thumbnailValidator;
             _messageValidator = messageValidator;
             _mapper = mapper;
         }
@@ -72,6 +75,20 @@ namespace Service.Services
             return active.Select(x => x.Id).ToList();
         }
 
+        public async Task SetThumbnailAsync(string userId, LiveThumbnailDto model)
+        {
+            await _thumbnailValidator.EnsureValidAsync(model);
+
+            var stream = (await _streams.GetActiveByHostAsync(userId)).FirstOrDefault();
+            if (stream is null)
+            {
+                throw new NotFoundException("You are not live.");
+            }
+
+            stream.ThumbnailUrl = model.ImageUrl;
+            await _streams.UpdateAsync(stream);
+        }
+
         public async Task<IEnumerable<LiveStreamDto>> GetActiveAsync(string viewerId)
         {
             var streams = await _streams.GetActiveVisibleAsync(viewerId);
@@ -105,13 +122,25 @@ namespace Service.Services
                 throw new BadRequestException("You are the host of this stream.");
             }
 
+            var viewer = await _accounts.GetByIdAsync(viewerId);
+            if (viewer is null)
+            {
+                throw new NotFoundException("User not found.");
+            }
+
             await _tracker.AddViewerAsync(streamId, connectionId);
             var friendIds = await GetFriendIdsAsync(viewerId);
 
             return new LiveJoinDto
             {
                 Stream = await ToDtoAsync(stream, viewerId, friendIds),
-                HostConnectionId = hostConnection
+                HostConnectionId = hostConnection,
+                Viewer = new LiveViewerDto
+                {
+                    StreamId = streamId,
+                    UserName = viewer.UserName ?? string.Empty,
+                    AvatarUrl = viewer.AvatarUrl ?? string.Empty
+                }
             };
         }
 

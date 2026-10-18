@@ -20,6 +20,9 @@ namespace Domain.Configurations
                 .IsRequired()
                 .HasMaxLength(40);
 
+            builder.Property(x => x.ThumbnailUrl)
+                .HasMaxLength(100);
+
             builder.HasOne(x => x.Host)
                 .WithMany()
                 .HasForeignKey(x => x.HostId)
