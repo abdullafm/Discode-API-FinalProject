@@ -185,6 +185,7 @@ using (var scope = app.Services.CreateScope())
 
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     await RoleSeeder.SeedAsync(roleManager);
+    await EmojiSeeder.SeedAsync(db);
 }
 
 if (app.Environment.IsDevelopment())

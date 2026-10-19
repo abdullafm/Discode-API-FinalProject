@@ -1,6 +1,7 @@
 using AutoMapper;
 using Domain.Entities;
 using Service.Helpers.DTOs.Accounts;
+using Service.Helpers.DTOs.Emojis;
 using Service.Helpers.DTOs.Friends;
 using Service.Helpers.DTOs.Live;
 using Service.Helpers.DTOs.Posts;
@@ -33,6 +34,9 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.IsSuccess, o => o.MapFrom(_ => true));
 
             CreateMap<AppUser, ProfileDto>();
+
+            CreateMap<Emoji, EmojiDto>();
+            CreateMap<EmojiCategory, EmojiCategoryDto>();
 
             CreateMap<LiveStream, LiveStreamDto>()
                 .ForMember(d => d.HostUserName, o => o.MapFrom(s => s.Host.UserName ?? string.Empty))

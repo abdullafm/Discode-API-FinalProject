@@ -200,6 +200,77 @@ namespace Repository.Migrations
                     b.ToTable("CommentLikes");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Emoji", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Character")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EmojiCategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Shortcodes")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmojiCategoryId", "SortOrder");
+
+                    b.ToTable("Emojis");
+                });
+
+            modelBuilder.Entity("Domain.Entities.EmojiCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Icon")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("EmojiCategories");
+                });
+
             modelBuilder.Entity("Domain.Entities.FriendRequest", b =>
                 {
                     b.Property<int>("Id")
@@ -628,6 +699,17 @@ namespace Repository.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Emoji", b =>
+                {
+                    b.HasOne("Domain.Entities.EmojiCategory", "EmojiCategory")
+                        .WithMany("Emojis")
+                        .HasForeignKey("EmojiCategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("EmojiCategory");
+                });
+
             modelBuilder.Entity("Domain.Entities.FriendRequest", b =>
                 {
                     b.HasOne("Domain.Entities.AppUser", "Receiver")
@@ -823,6 +905,11 @@ namespace Repository.Migrations
             modelBuilder.Entity("Domain.Entities.Comment", b =>
                 {
                     b.Navigation("Likes");
+                });
+
+            modelBuilder.Entity("Domain.Entities.EmojiCategory", b =>
+                {
+                    b.Navigation("Emojis");
                 });
 
             modelBuilder.Entity("Domain.Entities.Post", b =>

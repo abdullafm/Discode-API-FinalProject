@@ -21,6 +21,8 @@ namespace Repository.Data
         public DbSet<StoryLike> StoryLikes { get; set; }
         public DbSet<StoryView> StoryViews { get; set; }
         public DbSet<LiveStream> LiveStreams { get; set; }
+        public DbSet<EmojiCategory> EmojiCategories { get; set; }
+        public DbSet<Emoji> Emojis { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
