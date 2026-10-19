@@ -244,6 +244,85 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "GetConversations",
+    "RelativePath": "api/dm",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "GetChat",
+    "RelativePath": "api/dm/{userName}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "Send",
+    "RelativePath": "api/dm/{userName}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userName",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.DirectMessages.SendMessageDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "Close",
+    "RelativePath": "api/dm/{userName}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "Read",
+    "RelativePath": "api/dm/{userName}/read",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Discode_API_FinalProject.Controllers.Client.EmojiController",
     "Method": "GetAll",
     "RelativePath": "api/Emoji",

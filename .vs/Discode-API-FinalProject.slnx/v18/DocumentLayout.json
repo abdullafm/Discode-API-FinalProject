@@ -76,7 +76,7 @@
               "RelativeDocumentMoniker": "Service\\Services\\LiveService.cs",
               "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Services\\LiveService.cs",
               "RelativeToolTip": "Service\\Services\\LiveService.cs",
-              "ViewState": "AgIAAOcAAAAAAAAAAAAowAAAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAIgAAAAAAAAAAAAqwJ0AAAA1AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-10-19T08:45:58.925Z",
               "EditorCaption": ""
@@ -91,8 +91,7 @@
               "RelativeToolTip": "Repository\\Repositories\\LiveTrackerRepository.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAuAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-19T08:45:31.976Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-10-19T08:45:31.976Z"
             },
             {
               "$type": "Document",
@@ -104,8 +103,7 @@
               "RelativeToolTip": "Repository\\Repositories\\LiveStreamRepository.cs",
               "ViewState": "AgIAABcAAAAAAAAAAAA3wAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-19T08:45:22.747Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-10-19T08:45:22.747Z"
             },
             {
               "$type": "Document",
@@ -117,8 +115,7 @@
               "RelativeToolTip": "Repository\\Repositories\\Interfaces\\ILiveTrackerRepository.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-19T08:45:04.406Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-10-19T08:45:04.406Z"
             },
             {
               "$type": "Document",
@@ -130,8 +127,7 @@
               "RelativeToolTip": "Repository\\Repositories\\Interfaces\\ILiveStreamRepository.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAABNAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-19T08:45:00.234Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-10-19T08:45:00.234Z"
             },
             {
               "$type": "Document",
@@ -143,8 +139,7 @@
               "RelativeToolTip": "Domain\\Configurations\\PostLikeConfiguration.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAbAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-18T18:38:22.097Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-10-18T18:38:22.097Z"
             }
           ]
         }

@@ -19,6 +19,8 @@ namespace Repository
             services.AddScoped<ILiveStreamRepository, LiveStreamRepository>();
             services.AddScoped<IEmojiCategoryRepository, EmojiCategoryRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
+            services.AddScoped<IConversationRepository, ConversationRepository>();
+            services.AddScoped<IMessageRepository, MessageRepository>();
             services.AddSingleton<ILiveTrackerRepository, LiveTrackerRepository>();
             services.AddScoped<IPostLikeRepository, PostLikeRepository>();
             services.AddScoped<ICommentLikeRepository, CommentLikeRepository>();

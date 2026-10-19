@@ -20,6 +20,7 @@ namespace Service
             services.AddScoped<ILiveService, LiveService>();
             services.AddScoped<IEmojiService, EmojiService>();
             services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<IDirectMessageService, DirectMessageService>();
             services.AddScoped<IBlockService, BlockService>();
             services.AddScoped<IPresenceService, PresenceService>();
             services.AddScoped<IPresenceTrackerService, PresenceTrackerService>();

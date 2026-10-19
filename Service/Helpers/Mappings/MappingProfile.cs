@@ -1,6 +1,7 @@
 using AutoMapper;
 using Domain.Entities;
 using Service.Helpers.DTOs.Accounts;
+using Service.Helpers.DTOs.DirectMessages;
 using Service.Helpers.DTOs.Emojis;
 using Service.Helpers.DTOs.Friends;
 using Service.Helpers.DTOs.Notifications;
@@ -21,6 +22,12 @@ namespace Service.Helpers.Mappings
     {
         public const string ViewerIdKey = "viewerId";
 
+        private static AppUser OtherParticipant(Conversation conversation, ResolutionContext context)
+        {
+            var viewer = context.Items.TryGetValue(ViewerIdKey, out var value) ? (string?)value : null;
+            return conversation.UserAId == viewer ? conversation.UserB : conversation.UserA;
+        }
+
         public MappingProfile()
         {
             CreateMap<RegisterDto, AppUser>()
@@ -35,6 +42,31 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.IsSuccess, o => o.MapFrom(_ => true));
 
             CreateMap<AppUser, ProfileDto>();
+
+            CreateMap<Message, MessageDto>()
+                .ForMember(d => d.SenderUserName, o => o.MapFrom(s => s.Sender.UserName ?? string.Empty))
+                .ForMember(d => d.SenderDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Sender.DisplayName)
+                    ? s.Sender.UserName ?? string.Empty
+                    : s.Sender.DisplayName))
+                .ForMember(d => d.SenderAvatarUrl, o => o.MapFrom(s => s.Sender.AvatarUrl ?? string.Empty))
+                .ForMember(d => d.Mine, o => o.MapFrom((s, d, m, context) =>
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.SenderId == (string?)viewer));
+
+            CreateMap<Conversation, ConversationDto>()
+                .ForMember(d => d.ConversationId, o => o.MapFrom(s => s.Id))
+                .ForMember(d => d.UserId, o => o.MapFrom((s, d, m, context) => OtherParticipant(s, context).Id))
+                .ForMember(d => d.UserName, o => o.MapFrom((s, d, m, context) => OtherParticipant(s, context).UserName ?? string.Empty))
+                .ForMember(d => d.DisplayName, o => o.MapFrom((s, d, m, context) =>
+                    string.IsNullOrWhiteSpace(OtherParticipant(s, context).DisplayName)
+                        ? OtherParticipant(s, context).UserName ?? string.Empty
+                        : OtherParticipant(s, context).DisplayName))
+                .ForMember(d => d.AvatarUrl, o => o.MapFrom((s, d, m, context) => OtherParticipant(s, context).AvatarUrl ?? string.Empty))
+                .ForMember(d => d.Status, o => o.Ignore())
+                .ForMember(d => d.LastMessage, o => o.MapFrom(s => s.LastMessageText))
+                .ForMember(d => d.LastMessageMine, o => o.MapFrom((s, d, m, context) =>
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.LastSenderId == (string?)viewer))
+                .ForMember(d => d.UnreadCount, o => o.MapFrom((s, d, m, context) =>
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.UserAId == (string?)viewer ? s.UserAUnread : s.UserBUnread));
 
             CreateMap<Notification, NotificationDto>()
                 .ForMember(d => d.Type, o => o.MapFrom(s => s.Type.ToString()))

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Discode-API-FinalProject")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+31c1151032b6908dc507bd1e5a465e18f909a32c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+83c284903e200c2dafde8efce399fc85aac6cf0e")]
 [assembly: System.Reflection.AssemblyProductAttribute("Discode-API-FinalProject")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Discode-API-FinalProject")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

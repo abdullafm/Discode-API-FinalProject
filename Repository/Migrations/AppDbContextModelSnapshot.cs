@@ -200,6 +200,62 @@ namespace Repository.Migrations
                     b.ToTable("CommentLikes");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Conversation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("LastMessageAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("LastMessageText")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("LastSenderId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("UserAHidden")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserAId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("UserAUnread")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("UserBHidden")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserBId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("UserBUnread")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserBId");
+
+                    b.HasIndex("UserAId", "UserBId")
+                        .IsUnique();
+
+                    b.ToTable("Conversations");
+                });
+
             modelBuilder.Entity("Domain.Entities.Emoji", b =>
                 {
                     b.Property<int>("Id")
@@ -343,6 +399,39 @@ namespace Repository.Migrations
                     b.HasIndex("HostId", "EndedAt");
 
                     b.ToTable("LiveStreams");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Message", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ConversationId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("SenderId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SenderId");
+
+                    b.HasIndex("ConversationId", "CreatedAt");
+
+                    b.ToTable("Messages");
                 });
 
             modelBuilder.Entity("Domain.Entities.Notification", b =>
@@ -752,6 +841,25 @@ namespace Repository.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Conversation", b =>
+                {
+                    b.HasOne("Domain.Entities.AppUser", "UserA")
+                        .WithMany()
+                        .HasForeignKey("UserAId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.AppUser", "UserB")
+                        .WithMany()
+                        .HasForeignKey("UserBId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("UserA");
+
+                    b.Navigation("UserB");
+                });
+
             modelBuilder.Entity("Domain.Entities.Emoji", b =>
                 {
                     b.HasOne("Domain.Entities.EmojiCategory", "EmojiCategory")
@@ -791,6 +899,25 @@ namespace Repository.Migrations
                         .IsRequired();
 
                     b.Navigation("Host");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Message", b =>
+                {
+                    b.HasOne("Domain.Entities.Conversation", "Conversation")
+                        .WithMany("Messages")
+                        .HasForeignKey("ConversationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.AppUser", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Conversation");
+
+                    b.Navigation("Sender");
                 });
 
             modelBuilder.Entity("Domain.Entities.Notification", b =>
@@ -991,6 +1118,11 @@ namespace Repository.Migrations
             modelBuilder.Entity("Domain.Entities.Comment", b =>
                 {
                     b.Navigation("Likes");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Conversation", b =>
+                {
+                    b.Navigation("Messages");
                 });
 
             modelBuilder.Entity("Domain.Entities.EmojiCategory", b =>

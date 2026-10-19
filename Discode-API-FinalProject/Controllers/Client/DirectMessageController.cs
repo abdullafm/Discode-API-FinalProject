@@ -1,0 +1,78 @@
+using Discode_API_FinalProject.Hubs;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Service.Helpers.DTOs.DirectMessages;
+using Service.Services.Interfaces;
+using System.Security.Claims;
+
+namespace Discode_API_FinalProject.Controllers.Client
+{
+    [Route("api/dm")]
+    [ApiController]
+    [Authorize]
+    public class DirectMessageController : ControllerBase
+    {
+        private readonly IDirectMessageService _directMessages;
+        private readonly IHubContext<PresenceHub> _hubContext;
+
+        public DirectMessageController(IDirectMessageService directMessages, IHubContext<PresenceHub> hubContext)
+        {
+            _directMessages = directMessages;
+            _hubContext = hubContext;
+        }
+
+        private string UserId
+        {
+            get
+            {
+                return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetConversations()
+        {
+            return Ok(await _directMessages.GetConversationsAsync(UserId));
+        }
+
+        [HttpGet("{userName}")]
+        public async Task<IActionResult> GetChat(string userName)
+        {
+            return Ok(await _directMessages.GetChatAsync(UserId, userName));
+        }
+
+        [HttpPost("{userName}")]
+        public async Task<IActionResult> Send(string userName, [FromBody] SendMessageDto model)
+        {
+            var sent = await _directMessages.SendAsync(UserId, userName, model);
+
+            await _hubContext.Clients.User(sent.SenderId).SendAsync("DirectMessage", new
+            {
+                message = sent.MessageForSender,
+                conversation = sent.ConversationForSender
+            });
+            await _hubContext.Clients.User(sent.RecipientId).SendAsync("DirectMessage", new
+            {
+                message = sent.MessageForRecipient,
+                conversation = sent.ConversationForRecipient
+            });
+
+            return Ok(sent.MessageForSender);
+        }
+
+        [HttpPost("{userName}/read")]
+        public async Task<IActionResult> Read(string userName)
+        {
+            await _directMessages.MarkReadAsync(UserId, userName);
+            return Ok();
+        }
+
+        [HttpDelete("{userName}")]
+        public async Task<IActionResult> Close(string userName)
+        {
+            await _directMessages.CloseAsync(UserId, userName);
+            return Ok();
+        }
+    }
+}

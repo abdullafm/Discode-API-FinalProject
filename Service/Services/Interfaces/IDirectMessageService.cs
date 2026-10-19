@@ -1,0 +1,13 @@
+using Service.Helpers.DTOs.DirectMessages;
+
+namespace Service.Services.Interfaces
+{
+    public interface IDirectMessageService
+    {
+        Task<IEnumerable<ConversationDto>> GetConversationsAsync(string userId);
+        Task<ChatDto> GetChatAsync(string userId, string userName);
+        Task<SentMessageDto> SendAsync(string senderId, string userName, SendMessageDto model);
+        Task MarkReadAsync(string userId, string userName);
+        Task CloseAsync(string userId, string userName);
+    }
+}
