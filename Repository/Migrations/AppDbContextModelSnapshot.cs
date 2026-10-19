@@ -397,6 +397,35 @@ namespace Repository.Migrations
                     b.ToTable("StoryLikes");
                 });
 
+            modelBuilder.Entity("Domain.Entities.StoryView", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("StoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("StoryId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("StoryViews");
+                });
+
             modelBuilder.Entity("Domain.Entities.UserBlock", b =>
                 {
                     b.Property<int>("Id")
@@ -689,6 +718,25 @@ namespace Repository.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Domain.Entities.StoryView", b =>
+                {
+                    b.HasOne("Domain.Entities.Story", "Story")
+                        .WithMany("Views")
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Story");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Domain.Entities.UserBlock", b =>
                 {
                     b.HasOne("Domain.Entities.AppUser", "Blocked")
@@ -787,6 +835,8 @@ namespace Repository.Migrations
             modelBuilder.Entity("Domain.Entities.Story", b =>
                 {
                     b.Navigation("Likes");
+
+                    b.Navigation("Views");
                 });
 #pragma warning restore 612, 618
         }

@@ -19,6 +19,7 @@ namespace Repository.Data
         public DbSet<CommentLike> CommentLikes { get; set; }
         public DbSet<Story> Stories { get; set; }
         public DbSet<StoryLike> StoryLikes { get; set; }
+        public DbSet<StoryView> StoryViews { get; set; }
         public DbSet<LiveStream> LiveStreams { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)

@@ -6,5 +6,6 @@ namespace Repository.Repositories.Interfaces
     {
         Task<StoryLike?> GetByUserAsync(int storyId, string userId);
         Task<int> CountAsync(int storyId);
+        Task<IEnumerable<StoryLike>> GetByStoryAsync(int storyId);
     }
 }

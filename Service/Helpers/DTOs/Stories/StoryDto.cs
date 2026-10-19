@@ -10,5 +10,6 @@ namespace Service.Helpers.DTOs.Stories
         public DateTime CreatedAt { get; set; }
         public int LikeCount { get; set; }
         public bool LikedByMe { get; set; }
+        public int ViewCount { get; set; }
     }
 }

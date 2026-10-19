@@ -52,6 +52,24 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(result);
         }
 
+        [HttpPost("{id:int}/view")]
+        public async Task<IActionResult> View(int id)
+        {
+            var authorId = await _storyService.RecordViewAsync(UserId, id);
+            if (authorId is not null)
+            {
+                await _hubContext.Clients.User(authorId).SendAsync("StoryViewsChanged", id);
+            }
+
+            return Ok();
+        }
+
+        [HttpGet("{id:int}/viewers")]
+        public async Task<IActionResult> Viewers(int id)
+        {
+            return Ok(await _storyService.GetViewersAsync(UserId, id));
+        }
+
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {

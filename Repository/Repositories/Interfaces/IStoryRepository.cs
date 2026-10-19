@@ -6,5 +6,6 @@ namespace Repository.Repositories.Interfaces
     {
         Task<IEnumerable<Story>> GetVisibleAsync(string viewerId);
         Task<bool> IsVisibleAsync(string viewerId, int storyId);
+        Task<int> DeleteExpiredAsync(DateTime cutoff);
     }
 }

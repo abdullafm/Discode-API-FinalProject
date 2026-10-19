@@ -16,6 +16,11 @@ namespace Repository.Repositories
             return await _dbSet.FirstOrDefaultAsync(x => x.StoryId == storyId && x.UserId == userId);
         }
 
+        public async Task<IEnumerable<StoryLike>> GetByStoryAsync(int storyId)
+        {
+            return await _dbSet.AsNoTracking().Where(x => x.StoryId == storyId).ToListAsync();
+        }
+
         public async Task<int> CountAsync(int storyId)
         {
             return await _dbSet.CountAsync(x => x.StoryId == storyId);

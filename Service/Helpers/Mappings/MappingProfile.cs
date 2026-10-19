@@ -55,7 +55,18 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.AuthorAvatarUrl, o => o.MapFrom(s => s.Author.AvatarUrl ?? string.Empty))
                 .ForMember(d => d.LikeCount, o => o.MapFrom(s => s.Likes.Count))
                 .ForMember(d => d.LikedByMe, o => o.MapFrom((s, d, m, context) =>
-                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.Likes.Any(l => l.UserId == (string?)viewer)));
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.Likes.Any(l => l.UserId == (string?)viewer)))
+                .ForMember(d => d.ViewCount, o => o.MapFrom((s, d, m, context) =>
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.AuthorId == (string?)viewer ? s.Views.Count : 0));
+
+            CreateMap<StoryView, StoryViewerDto>()
+                .ForMember(d => d.UserName, o => o.MapFrom(s => s.User.UserName ?? string.Empty))
+                .ForMember(d => d.DisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.User.DisplayName)
+                    ? s.User.UserName ?? string.Empty
+                    : s.User.DisplayName))
+                .ForMember(d => d.AvatarUrl, o => o.MapFrom(s => s.User.AvatarUrl ?? string.Empty))
+                .ForMember(d => d.ViewedAt, o => o.MapFrom(s => s.CreatedAt))
+                .ForMember(d => d.Liked, o => o.Ignore());
 
             CreateMap<Comment, CommentDto>()
                 .ForMember(d => d.AuthorUserName, o => o.MapFrom(s => s.Author.UserName ?? string.Empty))

@@ -178,3 +178,4 @@ C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-F
 C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ec619b8-a8eb-4bea-afd2-9c276ba7c886\scratchpad\api\Discode-API-FinalProject.runtimeconfig.json
 C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ec619b8-a8eb-4bea-afd2-9c276ba7c886\scratchpad\api\Discode-API-FinalProject.dll
 C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ec619b8-a8eb-4bea-afd2-9c276ba7c886\scratchpad\api\Discode-API-FinalProject.pdb
+C:\Users\User\source\repos\Discode-API-FinalProject\Discode-API-FinalProject\obj\Debug\net8.0\staticwebassets.upToDateCheck.txt

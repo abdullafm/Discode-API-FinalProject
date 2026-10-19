@@ -1,4 +1,5 @@
 using AutoMapper;
+using Domain.Constants;
 using Domain.Entities;
 using FluentValidation;
 using Repository.Repositories.Interfaces;
@@ -15,18 +16,21 @@ namespace Service.Services
     {
         private readonly IStoryRepository _stories;
         private readonly IStoryLikeRepository _storyLikes;
+        private readonly IStoryViewRepository _storyViews;
         private readonly IAccountRepository _accounts;
         private readonly IValidator<CreateStoryDto> _validator;
         private readonly IMapper _mapper;
 
         public StoryService(IStoryRepository stories,
                             IStoryLikeRepository storyLikes,
+                            IStoryViewRepository storyViews,
                             IAccountRepository accounts,
                             IValidator<CreateStoryDto> validator,
                             IMapper mapper)
         {
             _stories = stories;
             _storyLikes = storyLikes;
+            _storyViews = storyViews;
             _accounts = accounts;
             _validator = validator;
             _mapper = mapper;
@@ -55,6 +59,7 @@ namespace Service.Services
 
         public async Task<IEnumerable<StoryDto>> GetAsync(string viewerId)
         {
+            await _stories.DeleteExpiredAsync(DateTime.UtcNow - StoryRules.Lifetime);
             var stories = await _stories.GetVisibleAsync(viewerId);
             return _mapper.Map<IEnumerable<StoryDto>>(stories, ForViewer(viewerId));
         }
@@ -92,6 +97,43 @@ namespace Service.Services
                 Liked = like is null,
                 Count = await _storyLikes.CountAsync(storyId)
             };
+        }
+
+        public async Task<string?> RecordViewAsync(string userId, int storyId)
+        {
+            if (!await _stories.IsVisibleAsync(userId, storyId))
+            {
+                throw new NotFoundException("Story not found.");
+            }
+
+            var story = await _stories.GetByIdAsync(storyId);
+            if (story is null || story.AuthorId == userId || await _storyViews.GetByUserAsync(storyId, userId) is not null)
+            {
+                return null;
+            }
+
+            await _storyViews.AddAsync(new StoryView { StoryId = storyId, UserId = userId });
+            return story.AuthorId;
+        }
+
+        public async Task<IEnumerable<StoryViewerDto>> GetViewersAsync(string userId, int storyId)
+        {
+            var story = await _stories.GetByIdAsync(storyId);
+            if (story is null || story.AuthorId != userId)
+            {
+                throw new NotFoundException("Story not found.");
+            }
+
+            var views = await _storyViews.GetByStoryAsync(storyId);
+            var likedBy = (await _storyLikes.GetByStoryAsync(storyId)).Select(x => x.UserId).ToHashSet();
+
+            var viewers = _mapper.Map<List<StoryViewerDto>>(views);
+            foreach (var pair in views.Zip(viewers))
+            {
+                pair.Second.Liked = likedBy.Contains(pair.First.UserId);
+            }
+
+            return viewers;
         }
 
         private static Action<IMappingOperationOptions> ForViewer(string viewerId)

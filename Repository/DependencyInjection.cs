@@ -15,6 +15,7 @@ namespace Repository
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<IStoryRepository, StoryRepository>();
             services.AddScoped<IStoryLikeRepository, StoryLikeRepository>();
+            services.AddScoped<IStoryViewRepository, StoryViewRepository>();
             services.AddScoped<ILiveStreamRepository, LiveStreamRepository>();
             services.AddSingleton<ILiveTrackerRepository, LiveTrackerRepository>();
             services.AddScoped<IPostLikeRepository, PostLikeRepository>();

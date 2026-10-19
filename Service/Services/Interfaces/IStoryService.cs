@@ -9,5 +9,7 @@ namespace Service.Services.Interfaces
         Task<IEnumerable<StoryDto>> GetAsync(string viewerId);
         Task DeleteAsync(string userId, int storyId);
         Task<LikeDto> ToggleLikeAsync(string userId, int storyId);
+        Task<string?> RecordViewAsync(string userId, int storyId);
+        Task<IEnumerable<StoryViewerDto>> GetViewersAsync(string userId, int storyId);
     }
 }
