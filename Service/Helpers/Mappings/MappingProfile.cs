@@ -3,6 +3,7 @@ using Domain.Entities;
 using Service.Helpers.DTOs.Accounts;
 using Service.Helpers.DTOs.Emojis;
 using Service.Helpers.DTOs.Friends;
+using Service.Helpers.DTOs.Notifications;
 using Service.Helpers.DTOs.Live;
 using Service.Helpers.DTOs.Posts;
 using Service.Helpers.DTOs.Presence;
@@ -34,6 +35,15 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.IsSuccess, o => o.MapFrom(_ => true));
 
             CreateMap<AppUser, ProfileDto>();
+
+            CreateMap<Notification, NotificationDto>()
+                .ForMember(d => d.Type, o => o.MapFrom(s => s.Type.ToString()))
+                .ForMember(d => d.ActorUserName, o => o.MapFrom(s => s.Actor.UserName ?? string.Empty))
+                .ForMember(d => d.ActorDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Actor.DisplayName)
+                    ? s.Actor.UserName ?? string.Empty
+                    : s.Actor.DisplayName))
+                .ForMember(d => d.ActorAvatarUrl, o => o.MapFrom(s => s.Actor.AvatarUrl ?? string.Empty))
+                .ForMember(d => d.Snippet, o => o.MapFrom(s => s.Snippet ?? string.Empty));
 
             CreateMap<Emoji, EmojiDto>();
             CreateMap<EmojiCategory, EmojiCategoryDto>();

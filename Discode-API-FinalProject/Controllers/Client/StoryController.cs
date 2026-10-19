@@ -49,6 +49,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         {
             var result = await _storyService.ToggleLikeAsync(UserId, id);
             await _hubContext.Clients.All.SendAsync("StoriesChanged");
+            await _hubContext.Clients.All.SendAsync("NotificationsChanged");
             return Ok(result);
         }
 

@@ -32,9 +32,10 @@ namespace Discode_API_FinalProject.Controllers.Client
             }
         }
 
-        private Task NotifyAsync()
+        private async Task NotifyAsync()
         {
-            return _hubContext.Clients.All.SendAsync("PostsChanged");
+            await _hubContext.Clients.All.SendAsync("PostsChanged");
+            await _hubContext.Clients.All.SendAsync("NotificationsChanged");
         }
 
         [HttpPost]

@@ -1,6 +1,7 @@
 using AutoMapper;
 using Domain.Constants;
 using Domain.Entities;
+using Domain.Enums;
 using FluentValidation;
 using Repository.Repositories.Interfaces;
 using Service.Helpers.DTOs.Posts;
@@ -17,6 +18,7 @@ namespace Service.Services
         private readonly IStoryRepository _stories;
         private readonly IStoryLikeRepository _storyLikes;
         private readonly IStoryViewRepository _storyViews;
+        private readonly INotificationService _notifications;
         private readonly IAccountRepository _accounts;
         private readonly IValidator<CreateStoryDto> _validator;
         private readonly IMapper _mapper;
@@ -24,6 +26,7 @@ namespace Service.Services
         public StoryService(IStoryRepository stories,
                             IStoryLikeRepository storyLikes,
                             IStoryViewRepository storyViews,
+                            INotificationService notifications,
                             IAccountRepository accounts,
                             IValidator<CreateStoryDto> validator,
                             IMapper mapper)
@@ -31,6 +34,7 @@ namespace Service.Services
             _stories = stories;
             _storyLikes = storyLikes;
             _storyViews = storyViews;
+            _notifications = notifications;
             _accounts = accounts;
             _validator = validator;
             _mapper = mapper;
@@ -82,14 +86,23 @@ namespace Service.Services
                 throw new NotFoundException("Story not found.");
             }
 
+            var story = await _stories.GetByIdAsync(storyId);
             var like = await _storyLikes.GetByUserAsync(storyId, userId);
             if (like is null)
             {
                 await _storyLikes.AddAsync(new StoryLike { StoryId = storyId, UserId = userId });
+                if (story is not null)
+                {
+                    await _notifications.AddAsync(NotificationType.StoryLike, userId, story.AuthorId, storyId: storyId);
+                }
             }
             else
             {
                 await _storyLikes.DeleteAsync(like);
+                if (story is not null)
+                {
+                    await _notifications.RemoveAsync(NotificationType.StoryLike, userId, story.AuthorId, storyId: storyId);
+                }
             }
 
             return new LikeDto

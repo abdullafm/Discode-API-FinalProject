@@ -1,5 +1,6 @@
 using AutoMapper;
 using Domain.Entities;
+using Domain.Enums;
 using FluentValidation;
 using Repository.Repositories.Interfaces;
 using Service.Helpers.DTOs.Posts;
@@ -15,6 +16,7 @@ namespace Service.Services
         private readonly ICommentRepository _comments;
         private readonly ICommentLikeRepository _commentLikes;
         private readonly IPostRepository _posts;
+        private readonly INotificationService _notifications;
         private readonly IAccountRepository _accounts;
         private readonly IValidator<CreateCommentDto> _validator;
         private readonly IMapper _mapper;
@@ -22,6 +24,7 @@ namespace Service.Services
         public CommentService(ICommentRepository comments,
                               ICommentLikeRepository commentLikes,
                               IPostRepository posts,
+                              INotificationService notifications,
                               IAccountRepository accounts,
                               IValidator<CreateCommentDto> validator,
                               IMapper mapper)
@@ -29,6 +32,7 @@ namespace Service.Services
             _comments = comments;
             _commentLikes = commentLikes;
             _posts = posts;
+            _notifications = notifications;
             _accounts = accounts;
             _validator = validator;
             _mapper = mapper;
@@ -58,6 +62,13 @@ namespace Service.Services
 
             await _comments.AddAsync(comment);
             comment.Author = author;
+
+            var post = await _posts.GetByIdAsync(postId);
+            if (post is not null)
+            {
+                await _notifications.AddAsync(NotificationType.PostComment, userId, post.AuthorId, postId: postId, commentId: comment.Id, snippet: comment.Text);
+            }
+
             return _mapper.Map<CommentDto>(comment, options => options.Items[MappingProfile.ViewerIdKey] = userId);
         }
 
@@ -71,6 +82,7 @@ namespace Service.Services
             }
 
             await _comments.DeleteAsync(comment);
+            await _notifications.RemoveForCommentAsync(commentId);
         }
 
         public async Task<LikeDto> ToggleLikeAsync(string userId, int commentId)
@@ -85,10 +97,12 @@ namespace Service.Services
             if (like is null)
             {
                 await _commentLikes.AddAsync(new CommentLike { CommentId = commentId, UserId = userId });
+                await _notifications.AddAsync(NotificationType.CommentLike, userId, comment.AuthorId, postId: comment.PostId, commentId: commentId, snippet: comment.Text);
             }
             else
             {
                 await _commentLikes.DeleteAsync(like);
+                await _notifications.RemoveAsync(NotificationType.CommentLike, userId, comment.AuthorId, postId: comment.PostId, commentId: commentId);
             }
 
             return new LikeDto

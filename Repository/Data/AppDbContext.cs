@@ -23,6 +23,7 @@ namespace Repository.Data
         public DbSet<LiveStream> LiveStreams { get; set; }
         public DbSet<EmojiCategory> EmojiCategories { get; set; }
         public DbSet<Emoji> Emojis { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
