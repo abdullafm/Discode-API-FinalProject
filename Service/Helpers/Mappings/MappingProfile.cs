@@ -141,7 +141,8 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.MemberSince, o => o.MapFrom(s => s.CreatedAt))
                 .ForMember(d => d.IsPrivate, o => o.Ignore())
                 .ForMember(d => d.Relation, o => o.Ignore())
-                .ForMember(d => d.RequestId, o => o.Ignore());
+                .ForMember(d => d.RequestId, o => o.Ignore())
+                .ForMember(d => d.Status, o => o.Ignore());
 
             CreateMap<AppUser, UserSearchDto>()
                 .ForMember(d => d.Id, o => o.MapFrom(s => s.Id))

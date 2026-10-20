@@ -9,6 +9,7 @@ namespace Service.Helpers.DTOs.Accounts
         public string Bio { get; set; } = string.Empty;
         public string Pronouns { get; set; } = string.Empty;
         public string CustomStatus { get; set; } = string.Empty;
+        public string Status { get; set; } = "offline";
         public DateTime MemberSince { get; set; }
         public bool IsPrivate { get; set; }
         public string Relation { get; set; } = "none";

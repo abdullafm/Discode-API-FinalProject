@@ -53,6 +53,11 @@ namespace Service.Services
                 return Offline;
             }
 
+            if (user.PreferredStatus == PresenceStatus.Online && await _trackerRepository.IsAwayAsync(user.Id))
+            {
+                return PresenceStatusMap.ToWire(PresenceStatus.Idle);
+            }
+
             return PresenceStatusMap.ToWire(user.PreferredStatus);
         }
 

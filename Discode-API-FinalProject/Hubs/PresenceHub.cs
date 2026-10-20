@@ -70,6 +70,12 @@ namespace Discode_API_FinalProject.Hubs
             return Groups.RemoveFromGroupAsync(Context.ConnectionId, ProfileGroup(userId));
         }
 
+        public async Task SetAway(bool away)
+        {
+            var change = await _trackerService.SetAwayAsync(UserId, Context.ConnectionId, away);
+            await NotifyFriendsAsync(change);
+        }
+
         public async Task SetStatus(string status)
         {
             try

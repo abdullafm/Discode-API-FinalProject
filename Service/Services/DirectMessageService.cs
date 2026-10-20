@@ -66,13 +66,30 @@ namespace Service.Services
                 DisplayName = string.IsNullOrWhiteSpace(other.DisplayName) ? other.UserName ?? string.Empty : other.DisplayName,
                 AvatarUrl = other.AvatarUrl ?? string.Empty,
                 Status = await _presence.ResolveAsync(other),
-                MemberSince = other.CreatedAt
+                MemberSince = other.CreatedAt,
+                IsFriend = (await _friendRequests.GetBetweenAsync(userId, other.Id))?.Status == FriendRequestStatus.Accepted
             };
 
             var conversation = await _conversations.GetBetweenAsync(userId, other.Id);
             if (conversation is null)
             {
-                return chat;
+                if (!chat.IsFriend)
+                {
+                    return chat;
+                }
+
+                try
+                {
+                    conversation = await CreateEmptyConversationAsync(userId, other.Id);
+                }
+                catch (Exception)
+                {
+                    return chat;
+                }
+            }
+            else if (ShowFor(conversation, userId))
+            {
+                await _conversations.UpdateAsync(conversation);
             }
 
             var messages = await _messages.GetLatestAsync(conversation.Id, HistoryLimit);
@@ -196,6 +213,39 @@ namespace Service.Services
             }
 
             return other;
+        }
+
+        private async Task<Conversation> CreateEmptyConversationAsync(string userId, string otherId)
+        {
+            var viewerFirst = string.CompareOrdinal(userId, otherId) < 0;
+            var conversation = new Conversation
+            {
+                UserAId = viewerFirst ? userId : otherId,
+                UserBId = viewerFirst ? otherId : userId,
+                LastSenderId = userId,
+                LastMessageText = string.Empty,
+                UserAHidden = !viewerFirst,
+                UserBHidden = viewerFirst
+            };
+            await _conversations.AddAsync(conversation);
+            return conversation;
+        }
+
+        private static bool ShowFor(Conversation conversation, string userId)
+        {
+            if (conversation.UserAId == userId && conversation.UserAHidden)
+            {
+                conversation.UserAHidden = false;
+                return true;
+            }
+
+            if (conversation.UserBId == userId && conversation.UserBHidden)
+            {
+                conversation.UserBHidden = false;
+                return true;
+            }
+
+            return false;
         }
 
         private async Task ResetUnreadAsync(Conversation conversation, string userId)

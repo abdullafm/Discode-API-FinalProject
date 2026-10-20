@@ -26,6 +26,7 @@ namespace Service.Services
         private readonly IValidator<ResetPasswordDto> _resetPasswordValidator;
         private readonly ITokenService _tokenService;
         private readonly IEmailService _emailService;
+        private readonly IPresenceService _presence;
         private readonly IMapper _mapper;
         private readonly AppSettings _appSettings;
 
@@ -41,6 +42,7 @@ namespace Service.Services
                               IValidator<ResetPasswordDto> resetPasswordValidator,
                               ITokenService tokenService,
                               IEmailService emailService,
+                              IPresenceService presence,
                               IMapper mapper,
                               IOptions<AppSettings> appSettings)
         {
@@ -54,6 +56,7 @@ namespace Service.Services
             _resetPasswordValidator = resetPasswordValidator;
             _tokenService = tokenService;
             _emailService = emailService;
+            _presence = presence;
             _mapper = mapper;
             _appSettings = appSettings.Value;
         }
@@ -472,6 +475,10 @@ namespace Service.Services
                 profile.Bio = string.Empty;
                 profile.Pronouns = string.Empty;
                 profile.CustomStatus = string.Empty;
+            }
+            else
+            {
+                profile.Status = await _presence.ResolveAsync(user);
             }
 
             return profile;

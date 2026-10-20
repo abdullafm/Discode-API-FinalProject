@@ -8,6 +8,7 @@ namespace Service.Helpers.DTOs.DirectMessages
         public string AvatarUrl { get; set; } = string.Empty;
         public string Status { get; set; } = "offline";
         public DateTime MemberSince { get; set; }
+        public bool IsFriend { get; set; }
         public List<MessageDto> Messages { get; set; } = new();
     }
 }
