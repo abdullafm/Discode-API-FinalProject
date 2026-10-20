@@ -13,12 +13,12 @@ namespace Discode_API_FinalProject.Controllers.Client
     [Authorize]
     public class FriendController : ControllerBase
     {
-        private readonly IFriendService _friendService;
+        private readonly IFriendRequestService _friendRequestService;
         private readonly IHubContext<PresenceHub> _hubContext;
 
-        public FriendController(IFriendService friendService, IHubContext<PresenceHub> hubContext)
+        public FriendController(IFriendRequestService friendRequestService, IHubContext<PresenceHub> hubContext)
         {
-            _friendService = friendService;
+            _friendRequestService = friendRequestService;
             _hubContext = hubContext;
         }
 
@@ -38,7 +38,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         [HttpPost("request")]
         public async Task<IActionResult> Send([FromBody] SendFriendRequestDto model)
         {
-            var result = await _friendService.SendAsync(UserId, model);
+            var result = await _friendRequestService.SendAsync(UserId, model);
             await NotifyAsync(result.UserId);
             return Ok(result);
         }
@@ -46,19 +46,19 @@ namespace Discode_API_FinalProject.Controllers.Client
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            return Ok(await _friendService.GetAllAsync(UserId));
+            return Ok(await _friendRequestService.GetAllAsync(UserId));
         }
 
         [HttpGet("pending")]
         public async Task<IActionResult> Pending()
         {
-            return Ok(await _friendService.GetPendingAsync(UserId));
+            return Ok(await _friendRequestService.GetPendingAsync(UserId));
         }
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Remove(int id)
         {
-            var otherUserId = await _friendService.RemoveAsync(UserId, id);
+            var otherUserId = await _friendRequestService.RemoveAsync(UserId, id);
             await NotifyAsync(otherUserId);
             return Ok();
         }
@@ -66,7 +66,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         [HttpDelete("request/{id:int}")]
         public async Task<IActionResult> Cancel(int id)
         {
-            var otherUserId = await _friendService.CancelAsync(UserId, id);
+            var otherUserId = await _friendRequestService.CancelAsync(UserId, id);
             await NotifyAsync(otherUserId);
             return Ok();
         }
@@ -74,7 +74,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         [HttpPost("request/{id:int}/accept")]
         public async Task<IActionResult> Accept(int id)
         {
-            var otherUserId = await _friendService.AcceptAsync(UserId, id);
+            var otherUserId = await _friendRequestService.AcceptAsync(UserId, id);
             await NotifyAsync(otherUserId);
             return Ok();
         }
@@ -82,7 +82,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         [HttpPost("request/{id:int}/decline")]
         public async Task<IActionResult> Decline(int id)
         {
-            var otherUserId = await _friendService.DeclineAsync(UserId, id);
+            var otherUserId = await _friendRequestService.DeclineAsync(UserId, id);
             await NotifyAsync(otherUserId);
             return Ok();
         }

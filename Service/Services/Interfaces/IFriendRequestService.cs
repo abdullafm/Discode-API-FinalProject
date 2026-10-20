@@ -2,7 +2,7 @@ using Service.Helpers.DTOs.Friends;
 
 namespace Service.Services.Interfaces
 {
-    public interface IFriendService
+    public interface IFriendRequestService
     {
         Task<FriendRequestDto> SendAsync(string senderId, SendFriendRequestDto model);
         Task<FriendPendingDto> GetPendingAsync(string userId);

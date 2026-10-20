@@ -9,17 +9,17 @@ namespace Discode_API_FinalProject.Controllers.Client
     [Authorize]
     public class EmojiController : ControllerBase
     {
-        private readonly IEmojiService _emojiService;
+        private readonly IEmojiCategoryService _emojiCategoryService;
 
-        public EmojiController(IEmojiService emojiService)
+        public EmojiController(IEmojiCategoryService emojiCategoryService)
         {
-            _emojiService = emojiService;
+            _emojiCategoryService = emojiCategoryService;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            return Ok(await _emojiService.GetAllAsync());
+            return Ok(await _emojiCategoryService.GetAllAsync());
         }
     }
 }

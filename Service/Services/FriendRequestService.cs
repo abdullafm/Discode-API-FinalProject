@@ -10,7 +10,7 @@ using Service.Services.Interfaces;
 
 namespace Service.Services
 {
-    public class FriendService : IFriendService
+    public class FriendRequestService : IFriendRequestService
     {
         private readonly IFriendRequestRepository _friendRequests;
         private readonly IUserBlockRepository _blocks;
@@ -19,7 +19,7 @@ namespace Service.Services
         private readonly IValidator<SendFriendRequestDto> _validator;
         private readonly IMapper _mapper;
 
-        public FriendService(IFriendRequestRepository friendRequests,
+        public FriendRequestService(IFriendRequestRepository friendRequests,
                              IUserBlockRepository blocks,
                              IAccountRepository accounts,
                              IPresenceService presence,

@@ -25,5 +25,13 @@ namespace Repository.Repositories
             latest.Reverse();
             return latest;
         }
+
+        public async Task<Message?> GetWithDetailsAsync(int id)
+        {
+            return await _dbSet
+                .Include(x => x.Sender)
+                .Include(x => x.Conversation)
+                .FirstOrDefaultAsync(x => x.Id == id);
+        }
     }
 }

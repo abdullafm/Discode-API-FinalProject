@@ -16,16 +16,16 @@ namespace Service.Services
     public class StoryService : IStoryService
     {
         private readonly IStoryRepository _stories;
-        private readonly IStoryLikeRepository _storyLikes;
-        private readonly IStoryViewRepository _storyViews;
+        private readonly IStoryLikeService _storyLikes;
+        private readonly IStoryViewService _storyViews;
         private readonly INotificationService _notifications;
         private readonly IAccountRepository _accounts;
         private readonly IValidator<CreateStoryDto> _validator;
         private readonly IMapper _mapper;
 
         public StoryService(IStoryRepository stories,
-                            IStoryLikeRepository storyLikes,
-                            IStoryViewRepository storyViews,
+                            IStoryLikeService storyLikes,
+                            IStoryViewService storyViews,
                             INotificationService notifications,
                             IAccountRepository accounts,
                             IValidator<CreateStoryDto> validator,
@@ -87,29 +87,20 @@ namespace Service.Services
             }
 
             var story = await _stories.GetByIdAsync(storyId);
-            var like = await _storyLikes.GetByUserAsync(storyId, userId);
-            if (like is null)
+            var like = await _storyLikes.ToggleAsync(storyId, userId);
+            if (story is not null)
             {
-                await _storyLikes.AddAsync(new StoryLike { StoryId = storyId, UserId = userId });
-                if (story is not null)
+                if (like.Liked)
                 {
                     await _notifications.AddAsync(NotificationType.StoryLike, userId, story.AuthorId, storyId: storyId);
                 }
-            }
-            else
-            {
-                await _storyLikes.DeleteAsync(like);
-                if (story is not null)
+                else
                 {
                     await _notifications.RemoveAsync(NotificationType.StoryLike, userId, story.AuthorId, storyId: storyId);
                 }
             }
 
-            return new LikeDto
-            {
-                Liked = like is null,
-                Count = await _storyLikes.CountAsync(storyId)
-            };
+            return like;
         }
 
         public async Task<string?> RecordViewAsync(string userId, int storyId)
@@ -120,12 +111,12 @@ namespace Service.Services
             }
 
             var story = await _stories.GetByIdAsync(storyId);
-            if (story is null || story.AuthorId == userId || await _storyViews.GetByUserAsync(storyId, userId) is not null)
+            if (story is null || story.AuthorId == userId || await _storyViews.HasViewedAsync(storyId, userId))
             {
                 return null;
             }
 
-            await _storyViews.AddAsync(new StoryView { StoryId = storyId, UserId = userId });
+            await _storyViews.AddAsync(storyId, userId);
             return story.AuthorId;
         }
 
@@ -137,16 +128,8 @@ namespace Service.Services
                 throw new NotFoundException("Story not found.");
             }
 
-            var views = await _storyViews.GetByStoryAsync(storyId);
-            var likedBy = (await _storyLikes.GetByStoryAsync(storyId)).Select(x => x.UserId).ToHashSet();
-
-            var viewers = _mapper.Map<List<StoryViewerDto>>(views);
-            foreach (var pair in views.Zip(viewers))
-            {
-                pair.Second.Liked = likedBy.Contains(pair.First.UserId);
-            }
-
-            return viewers;
+            var likedBy = await _storyLikes.GetLikedUserIdsAsync(storyId);
+            return await _storyViews.GetViewersAsync(storyId, likedBy);
         }
 
         private static Action<IMappingOperationOptions> ForViewer(string viewerId)

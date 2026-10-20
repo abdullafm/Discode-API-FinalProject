@@ -10,10 +10,10 @@ using Service.Services.Interfaces;
 
 namespace Service.Services
 {
-    public class LiveService : ILiveService
+    public class LiveStreamService : ILiveStreamService
     {
         private readonly ILiveStreamRepository _streams;
-        private readonly ILiveTrackerRepository _tracker;
+        private readonly ILiveTrackerService _tracker;
         private readonly IFriendRequestRepository _friendRequests;
         private readonly IAccountRepository _accounts;
         private readonly IValidator<StartLiveDto> _startValidator;
@@ -21,8 +21,8 @@ namespace Service.Services
         private readonly IValidator<string> _messageValidator;
         private readonly IMapper _mapper;
 
-        public LiveService(ILiveStreamRepository streams,
-                           ILiveTrackerRepository tracker,
+        public LiveStreamService(ILiveStreamRepository streams,
+                           ILiveTrackerService tracker,
                            IFriendRequestRepository friendRequests,
                            IAccountRepository accounts,
                            IValidator<StartLiveDto> startValidator,

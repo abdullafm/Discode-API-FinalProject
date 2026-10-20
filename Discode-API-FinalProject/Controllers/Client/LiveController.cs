@@ -10,11 +10,11 @@ namespace Discode_API_FinalProject.Controllers.Client
     [Authorize]
     public class LiveController : ControllerBase
     {
-        private readonly ILiveService _liveService;
+        private readonly ILiveStreamService _liveStreamService;
 
-        public LiveController(ILiveService liveService)
+        public LiveController(ILiveStreamService liveStreamService)
         {
-            _liveService = liveService;
+            _liveStreamService = liveStreamService;
         }
 
         private string UserId
@@ -28,7 +28,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         [HttpGet]
         public async Task<IActionResult> GetActive()
         {
-            return Ok(await _liveService.GetActiveAsync(UserId));
+            return Ok(await _liveStreamService.GetActiveAsync(UserId));
         }
     }
 }

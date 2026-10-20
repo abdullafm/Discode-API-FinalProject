@@ -7,6 +7,7 @@ namespace Service.Services.Interfaces
         Task<IEnumerable<ConversationDto>> GetConversationsAsync(string userId);
         Task<ChatDto> GetChatAsync(string userId, string userName);
         Task<SentMessageDto> SendAsync(string senderId, string userName, SendMessageDto model);
+        Task<EditedMessageDto> EditAsync(string userId, int messageId, SendMessageDto model);
         Task MarkReadAsync(string userId, string userName);
         Task CloseAsync(string userId, string userName);
     }

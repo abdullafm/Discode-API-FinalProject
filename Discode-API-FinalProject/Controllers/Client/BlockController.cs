@@ -13,12 +13,12 @@ namespace Discode_API_FinalProject.Controllers.Client
     [Authorize]
     public class BlockController : ControllerBase
     {
-        private readonly IBlockService _blockService;
+        private readonly IUserBlockService _userBlockService;
         private readonly IHubContext<PresenceHub> _hubContext;
 
-        public BlockController(IBlockService blockService, IHubContext<PresenceHub> hubContext)
+        public BlockController(IUserBlockService userBlockService, IHubContext<PresenceHub> hubContext)
         {
-            _blockService = blockService;
+            _userBlockService = userBlockService;
             _hubContext = hubContext;
         }
 
@@ -33,7 +33,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         [HttpPost]
         public async Task<IActionResult> Block([FromBody] BlockUserDto model)
         {
-            var result = await _blockService.BlockAsync(UserId, model);
+            var result = await _userBlockService.BlockAsync(UserId, model);
             await _hubContext.Clients.Users(UserId, result.UserId).SendAsync("FriendsChanged");
             return Ok(result);
         }
@@ -41,13 +41,13 @@ namespace Discode_API_FinalProject.Controllers.Client
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            return Ok(await _blockService.GetAllAsync(UserId));
+            return Ok(await _userBlockService.GetAllAsync(UserId));
         }
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Unblock(int id)
         {
-            await _blockService.UnblockAsync(UserId, id);
+            await _userBlockService.UnblockAsync(UserId, id);
             return Ok();
         }
     }

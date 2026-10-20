@@ -14,14 +14,14 @@ namespace Service.Services
     public class PostService : IPostService
     {
         private readonly IPostRepository _posts;
-        private readonly IPostLikeRepository _postLikes;
+        private readonly IPostLikeService _postLikes;
         private readonly INotificationService _notifications;
         private readonly IAccountRepository _accounts;
         private readonly IValidator<CreatePostDto> _validator;
         private readonly IMapper _mapper;
 
         public PostService(IPostRepository posts,
-                           IPostLikeRepository postLikes,
+                           IPostLikeService postLikes,
                            INotificationService notifications,
                            IAccountRepository accounts,
                            IValidator<CreatePostDto> validator,
@@ -89,29 +89,20 @@ namespace Service.Services
             }
 
             var post = await _posts.GetByIdAsync(postId);
-            var like = await _postLikes.GetByUserAsync(postId, userId);
-            if (like is null)
+            var like = await _postLikes.ToggleAsync(postId, userId);
+            if (post is not null)
             {
-                await _postLikes.AddAsync(new PostLike { PostId = postId, UserId = userId });
-                if (post is not null)
+                if (like.Liked)
                 {
                     await _notifications.AddAsync(NotificationType.PostLike, userId, post.AuthorId, postId: postId);
                 }
-            }
-            else
-            {
-                await _postLikes.DeleteAsync(like);
-                if (post is not null)
+                else
                 {
                     await _notifications.RemoveAsync(NotificationType.PostLike, userId, post.AuthorId, postId: postId);
                 }
             }
 
-            return new LikeDto
-            {
-                Liked = like is null,
-                Count = await _postLikes.CountAsync(postId)
-            };
+            return like;
         }
 
         public async Task DeleteAsync(string userId, int postId)

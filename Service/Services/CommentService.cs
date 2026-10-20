@@ -14,7 +14,7 @@ namespace Service.Services
     public class CommentService : ICommentService
     {
         private readonly ICommentRepository _comments;
-        private readonly ICommentLikeRepository _commentLikes;
+        private readonly ICommentLikeService _commentLikes;
         private readonly IPostRepository _posts;
         private readonly INotificationService _notifications;
         private readonly IAccountRepository _accounts;
@@ -22,7 +22,7 @@ namespace Service.Services
         private readonly IMapper _mapper;
 
         public CommentService(ICommentRepository comments,
-                              ICommentLikeRepository commentLikes,
+                              ICommentLikeService commentLikes,
                               IPostRepository posts,
                               INotificationService notifications,
                               IAccountRepository accounts,
@@ -93,23 +93,17 @@ namespace Service.Services
                 throw new NotFoundException("Comment not found.");
             }
 
-            var like = await _commentLikes.GetByUserAsync(commentId, userId);
-            if (like is null)
+            var like = await _commentLikes.ToggleAsync(commentId, userId);
+            if (like.Liked)
             {
-                await _commentLikes.AddAsync(new CommentLike { CommentId = commentId, UserId = userId });
                 await _notifications.AddAsync(NotificationType.CommentLike, userId, comment.AuthorId, postId: comment.PostId, commentId: commentId, snippet: comment.Text);
             }
             else
             {
-                await _commentLikes.DeleteAsync(like);
                 await _notifications.RemoveAsync(NotificationType.CommentLike, userId, comment.AuthorId, postId: comment.PostId, commentId: commentId);
             }
 
-            return new LikeDto
-            {
-                Liked = like is null,
-                Count = await _commentLikes.CountAsync(commentId)
-            };
+            return like;
         }
     }
 }

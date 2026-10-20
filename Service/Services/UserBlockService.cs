@@ -9,7 +9,7 @@ using Service.Services.Interfaces;
 
 namespace Service.Services
 {
-    public class BlockService : IBlockService
+    public class UserBlockService : IUserBlockService
     {
         private readonly IUserBlockRepository _blocks;
         private readonly IFriendRequestRepository _friendRequests;
@@ -17,7 +17,7 @@ namespace Service.Services
         private readonly IValidator<BlockUserDto> _validator;
         private readonly IMapper _mapper;
 
-        public BlockService(IUserBlockRepository blocks,
+        public UserBlockService(IUserBlockRepository blocks,
                             IFriendRequestRepository friendRequests,
                             IAccountRepository accounts,
                             IValidator<BlockUserDto> validator,

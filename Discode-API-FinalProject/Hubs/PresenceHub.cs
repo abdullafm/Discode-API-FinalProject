@@ -12,13 +12,13 @@ namespace Discode_API_FinalProject.Hubs
     {
         private readonly IPresenceService _presenceService;
         private readonly IPresenceTrackerService _trackerService;
-        private readonly ILiveService _liveService;
+        private readonly ILiveStreamService _liveStreamService;
 
-        public PresenceHub(IPresenceService presenceService, IPresenceTrackerService trackerService, ILiveService liveService)
+        public PresenceHub(IPresenceService presenceService, IPresenceTrackerService trackerService, ILiveStreamService liveStreamService)
         {
             _presenceService = presenceService;
             _trackerService = trackerService;
-            _liveService = liveService;
+            _liveStreamService = liveStreamService;
         }
 
         private string UserId

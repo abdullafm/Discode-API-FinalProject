@@ -2,7 +2,7 @@ using Service.Helpers.DTOs.Live;
 
 namespace Service.Services.Interfaces
 {
-    public interface ILiveService
+    public interface ILiveStreamService
     {
         Task<LiveStreamDto> StartAsync(string userId, string connectionId, StartLiveDto model);
         Task<IEnumerable<int>> StopAsync(string userId);

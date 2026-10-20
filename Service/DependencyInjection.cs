@@ -13,15 +13,22 @@ namespace Service
         {
             services.AddAutoMapper(typeof(MappingProfile));
             services.AddScoped<IAccountService, AccountService>();
-            services.AddScoped<IFriendService, FriendService>();
+            services.AddScoped<IFriendRequestService, FriendRequestService>();
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<IStoryService, StoryService>();
-            services.AddScoped<ILiveService, LiveService>();
-            services.AddScoped<IEmojiService, EmojiService>();
+            services.AddScoped<ILiveStreamService, LiveStreamService>();
+            services.AddScoped<IEmojiCategoryService, EmojiCategoryService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IDirectMessageService, DirectMessageService>();
-            services.AddScoped<IBlockService, BlockService>();
+            services.AddScoped<IConversationService, ConversationService>();
+            services.AddScoped<IMessageService, MessageService>();
+            services.AddScoped<IPostLikeService, PostLikeService>();
+            services.AddScoped<ICommentLikeService, CommentLikeService>();
+            services.AddScoped<IStoryLikeService, StoryLikeService>();
+            services.AddScoped<IStoryViewService, StoryViewService>();
+            services.AddScoped<ILiveTrackerService, LiveTrackerService>();
+            services.AddScoped<IUserBlockService, UserBlockService>();
             services.AddScoped<IPresenceService, PresenceService>();
             services.AddScoped<IPresenceTrackerService, PresenceTrackerService>();
             services.AddScoped<IEmailService, EmailService>();

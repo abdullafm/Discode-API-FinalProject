@@ -17,3 +17,4 @@ C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-F
 C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ec619b8-a8eb-4bea-afd2-9c276ba7c886\scratchpad\api\Domain.deps.json
 C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ec619b8-a8eb-4bea-afd2-9c276ba7c886\scratchpad\api\Domain.dll
 C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ec619b8-a8eb-4bea-afd2-9c276ba7c886\scratchpad\api\Domain.pdb
+C:\Users\User\source\repos\Discode-API-FinalProject\Domain\obj\Debug\net8.0\Domain.csproj.Up2Date

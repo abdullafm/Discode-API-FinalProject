@@ -16,7 +16,7 @@ namespace Discode_API_FinalProject.Hubs
             try
             {
                 await EndOwnStreamsAsync();
-                var stream = await _liveService.StartAsync(UserId, Context.ConnectionId, model);
+                var stream = await _liveStreamService.StartAsync(UserId, Context.ConnectionId, model);
                 await Groups.AddToGroupAsync(Context.ConnectionId, LiveGroup(stream.Id));
                 await Clients.All.SendAsync("LiveChanged");
                 return stream;
@@ -35,7 +35,7 @@ namespace Discode_API_FinalProject.Hubs
         {
             try
             {
-                await _liveService.SetThumbnailAsync(UserId, model);
+                await _liveStreamService.SetThumbnailAsync(UserId, model);
                 await Clients.All.SendAsync("LiveChanged");
             }
             catch (BadRequestException ex)
@@ -58,7 +58,7 @@ namespace Discode_API_FinalProject.Hubs
         {
             try
             {
-                var join = await _liveService.JoinAsync(UserId, Context.ConnectionId, streamId);
+                var join = await _liveStreamService.JoinAsync(UserId, Context.ConnectionId, streamId);
                 await Groups.AddToGroupAsync(Context.ConnectionId, LiveGroup(streamId));
                 await Clients.Client(join.HostConnectionId).SendAsync("ViewerJoined", streamId, Context.ConnectionId);
                 await Clients.All.SendAsync("LiveViewers", streamId, join.Stream.ViewerCount);
@@ -77,7 +77,7 @@ namespace Discode_API_FinalProject.Hubs
 
         public async Task LeaveLive(int streamId)
         {
-            var count = await _liveService.LeaveAsync(Context.ConnectionId, streamId);
+            var count = await _liveStreamService.LeaveAsync(Context.ConnectionId, streamId);
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, LiveGroup(streamId));
             await Clients.Group(LiveGroup(streamId)).SendAsync("ViewerLeft", streamId, Context.ConnectionId);
             await Clients.All.SendAsync("LiveViewers", streamId, count);
@@ -85,7 +85,7 @@ namespace Discode_API_FinalProject.Hubs
 
         public async Task SendSignal(int streamId, string targetConnectionId, string payload)
         {
-            if (!await _liveService.CanSignalAsync(Context.ConnectionId, streamId, targetConnectionId))
+            if (!await _liveStreamService.CanSignalAsync(Context.ConnectionId, streamId, targetConnectionId))
             {
                 throw new HubException("This stream is not live.");
             }
@@ -97,7 +97,7 @@ namespace Discode_API_FinalProject.Hubs
         {
             try
             {
-                var message = await _liveService.CreateMessageAsync(UserId, Context.ConnectionId, streamId, text);
+                var message = await _liveStreamService.CreateMessageAsync(UserId, Context.ConnectionId, streamId, text);
                 await Clients.Group(LiveGroup(streamId)).SendAsync("LiveMessage", message);
             }
             catch (BadRequestException ex)
@@ -112,7 +112,7 @@ namespace Discode_API_FinalProject.Hubs
 
         public async Task SendLiveHeart(int streamId)
         {
-            if (!await _liveService.CanSignalAsync(Context.ConnectionId, streamId, Context.ConnectionId))
+            if (!await _liveStreamService.CanSignalAsync(Context.ConnectionId, streamId, Context.ConnectionId))
             {
                 return;
             }
@@ -122,7 +122,7 @@ namespace Discode_API_FinalProject.Hubs
 
         private async Task EndOwnStreamsAsync()
         {
-            var ended = await _liveService.StopAsync(UserId);
+            var ended = await _liveStreamService.StopAsync(UserId);
             foreach (var id in ended)
             {
                 await Clients.Group(LiveGroup(id)).SendAsync("LiveEnded", id);
@@ -131,7 +131,7 @@ namespace Discode_API_FinalProject.Hubs
 
         private async Task ReleaseLiveAsync()
         {
-            var result = await _liveService.DisconnectAsync(Context.ConnectionId);
+            var result = await _liveStreamService.DisconnectAsync(Context.ConnectionId);
 
             foreach (var id in result.EndedStreamIds)
             {

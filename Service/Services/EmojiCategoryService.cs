@@ -5,12 +5,12 @@ using Service.Services.Interfaces;
 
 namespace Service.Services
 {
-    public class EmojiService : IEmojiService
+    public class EmojiCategoryService : IEmojiCategoryService
     {
         private readonly IEmojiCategoryRepository _categories;
         private readonly IMapper _mapper;
 
-        public EmojiService(IEmojiCategoryRepository categories, IMapper mapper)
+        public EmojiCategoryService(IEmojiCategoryRepository categories, IMapper mapper)
         {
             _categories = categories;
             _mapper = mapper;

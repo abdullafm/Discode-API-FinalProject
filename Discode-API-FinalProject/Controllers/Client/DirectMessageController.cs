@@ -61,6 +61,17 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(sent.MessageForSender);
         }
 
+        [HttpPut("messages/{id:int}")]
+        public async Task<IActionResult> Edit(int id, [FromBody] SendMessageDto model)
+        {
+            var edited = await _directMessages.EditAsync(UserId, id, model);
+
+            await _hubContext.Clients.User(edited.SenderId).SendAsync("DirectMessageEdited", new { message = edited.MessageForSender });
+            await _hubContext.Clients.User(edited.RecipientId).SendAsync("DirectMessageEdited", new { message = edited.MessageForRecipient });
+
+            return Ok(edited.MessageForSender);
+        }
+
         [HttpPost("{userName}/read")]
         public async Task<IActionResult> Read(string userName)
         {

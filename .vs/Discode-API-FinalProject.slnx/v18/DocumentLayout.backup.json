@@ -3,6 +3,14 @@
   "WorkspaceRootPath": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\repository\\repositories\\interfaces\\imessagerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|solutionrelative:repository\\repositories\\interfaces\\imessagerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\repository\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|solutionrelative:repository\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{02B79BC5-153E-2FD9-CAE3-8149E0D9044F}|Service\\Service.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\service\\services\\liveservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{02B79BC5-153E-2FD9-CAE3-8149E0D9044F}|Service\\Service.csproj|solutionrelative:service\\services\\liveservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -71,19 +79,45 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
+              "Title": "IMessageRepository.cs",
+              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\Interfaces\\IMessageRepository.cs",
+              "RelativeDocumentMoniker": "Repository\\Repositories\\Interfaces\\IMessageRepository.cs",
+              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\Interfaces\\IMessageRepository.cs",
+              "RelativeToolTip": "Repository\\Repositories\\Interfaces\\IMessageRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-20T08:55:09.527Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "AppDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Data\\AppDbContext.cs",
+              "RelativeDocumentMoniker": "Repository\\Data\\AppDbContext.cs",
+              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Data\\AppDbContext.cs",
+              "RelativeToolTip": "Repository\\Data\\AppDbContext.cs",
+              "ViewState": "AgIAABMAAAAAAAAAAAAwwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-20T08:54:57.071Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
               "Title": "LiveService.cs",
               "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Services\\LiveService.cs",
               "RelativeDocumentMoniker": "Service\\Services\\LiveService.cs",
               "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Services\\LiveService.cs",
               "RelativeToolTip": "Service\\Services\\LiveService.cs",
-              "ViewState": "AgIAAIgAAAAAAAAAAAAqwJ8AAAAPAAAAAAAAAA==",
+              "ViewState": "AgIAAIgAAAAAAAAAAAAqwJ8AAAAlAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-10-19T08:45:58.925Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "LiveTrackerRepository.cs",
               "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\LiveTrackerRepository.cs",
               "RelativeDocumentMoniker": "Repository\\Repositories\\LiveTrackerRepository.cs",
@@ -95,7 +129,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "LiveStreamRepository.cs",
               "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\LiveStreamRepository.cs",
               "RelativeDocumentMoniker": "Repository\\Repositories\\LiveStreamRepository.cs",
@@ -107,7 +141,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 6,
               "Title": "ILiveTrackerRepository.cs",
               "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\Interfaces\\ILiveTrackerRepository.cs",
               "RelativeDocumentMoniker": "Repository\\Repositories\\Interfaces\\ILiveTrackerRepository.cs",
@@ -119,7 +153,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "ILiveStreamRepository.cs",
               "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\Interfaces\\ILiveStreamRepository.cs",
               "RelativeDocumentMoniker": "Repository\\Repositories\\Interfaces\\ILiveStreamRepository.cs",
@@ -131,7 +165,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 7,
               "Title": "PostLikeConfiguration.cs",
               "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Domain\\Configurations\\PostLikeConfiguration.cs",
               "RelativeDocumentMoniker": "Domain\\Configurations\\PostLikeConfiguration.cs",
