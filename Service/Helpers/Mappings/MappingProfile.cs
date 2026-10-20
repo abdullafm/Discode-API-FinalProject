@@ -51,6 +51,14 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.SenderAvatarUrl, o => o.MapFrom(s => s.Sender.AvatarUrl ?? string.Empty))
                 .ForMember(d => d.Mine, o => o.MapFrom((s, d, m, context) =>
                     context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.SenderId == (string?)viewer))
+                .ForMember(d => d.ReplyTo, o => o.MapFrom((s, d, m, context) => s.ReplyTo == null ? null : new ReplyDto
+                {
+                    MessageId = s.ReplyTo.Id,
+                    SenderUserName = s.ReplyTo.Sender == null ? string.Empty : s.ReplyTo.Sender.UserName ?? string.Empty,
+                    SenderDisplayName = s.ReplyTo.Sender == null ? string.Empty : (string.IsNullOrWhiteSpace(s.ReplyTo.Sender.DisplayName) ? s.ReplyTo.Sender.UserName ?? string.Empty : s.ReplyTo.Sender.DisplayName),
+                    SenderAvatarUrl = s.ReplyTo.Sender == null ? string.Empty : s.ReplyTo.Sender.AvatarUrl ?? string.Empty,
+                    Text = s.ReplyTo.Text.Length > 120 ? s.ReplyTo.Text.Substring(0, 120) : s.ReplyTo.Text
+                }))
                 .ForMember(d => d.Reactions, o => o.MapFrom((s, d, m, context) => s.Reactions
                     .OrderBy(r => r.CreatedAt)
                     .ThenBy(r => r.Id)

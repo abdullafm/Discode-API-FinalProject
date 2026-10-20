@@ -17,6 +17,8 @@ namespace Repository.Repositories
                 .AsNoTracking()
                 .Include(x => x.Sender)
                 .Include(x => x.Reactions)
+                .Include(x => x.ReplyTo)
+                    .ThenInclude(r => r!.Sender)
                 .Where(x => x.ConversationId == conversationId)
                 .OrderByDescending(x => x.CreatedAt)
                 .ThenByDescending(x => x.Id)
@@ -32,6 +34,8 @@ namespace Repository.Repositories
             return await _dbSet
                 .Include(x => x.Sender)
                 .Include(x => x.Reactions)
+                .Include(x => x.ReplyTo)
+                    .ThenInclude(r => r!.Sender)
                 .Include(x => x.Conversation)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }

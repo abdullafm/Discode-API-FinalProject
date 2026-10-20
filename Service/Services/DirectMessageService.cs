@@ -110,7 +110,7 @@ namespace Service.Services
             var conversation = await _conversations.GetBetweenAsync(senderId, recipient.Id)
                                ?? await _conversations.CreateAsync(senderId, recipient.Id, Preview(text), hiddenForOther: false);
 
-            var messageForSender = await _messages.CreateAsync(conversation.ConversationId, senderId, text);
+            var messageForSender = await _messages.CreateAsync(conversation.ConversationId, senderId, text, model.ReplyToMessageId);
             await _conversations.RecordMessageAsync(senderId, recipient.Id, Preview(text), messageForSender.CreatedAt);
 
             return new SentMessageDto

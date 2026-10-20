@@ -1,36 +1,7 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\",
-  "Documents": [
-    {
-      "AbsoluteMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\repository\\repositories\\interfaces\\imessagerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|solutionrelative:repository\\repositories\\interfaces\\imessagerepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\repository\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|solutionrelative:repository\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\repository\\repositories\\livetrackerrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|solutionrelative:repository\\repositories\\livetrackerrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\repository\\repositories\\livestreamrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|solutionrelative:repository\\repositories\\livestreamrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\repository\\repositories\\interfaces\\ilivestreamrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|solutionrelative:repository\\repositories\\interfaces\\ilivestreamrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\repository\\repositories\\interfaces\\ilivetrackerrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{CE8F3387-4CAB-64ED-80E3-18319C5DCD81}|Repository\\Repository.csproj|solutionrelative:repository\\repositories\\interfaces\\ilivetrackerrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{E528BBC3-1C26-8C35-F682-23718816ADCD}|Domain\\Domain.csproj|c:\\users\\user\\source\\repos\\discode-api-finalproject\\domain\\configurations\\postlikeconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{E528BBC3-1C26-8C35-F682-23718816ADCD}|Domain\\Domain.csproj|solutionrelative:domain\\configurations\\postlikeconfiguration.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    }
-  ],
+  "Documents": [],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -38,7 +9,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 8,
+          "SelectedChildIndex": -1,
           "Children": [
             {
               "$type": "Bookmark",
@@ -71,91 +42,6 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "IMessageRepository.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\Interfaces\\IMessageRepository.cs",
-              "RelativeDocumentMoniker": "Repository\\Repositories\\Interfaces\\IMessageRepository.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\Interfaces\\IMessageRepository.cs",
-              "RelativeToolTip": "Repository\\Repositories\\Interfaces\\IMessageRepository.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAATAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-20T08:55:09.527Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "AppDbContext.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Data\\AppDbContext.cs",
-              "RelativeDocumentMoniker": "Repository\\Data\\AppDbContext.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Data\\AppDbContext.cs",
-              "RelativeToolTip": "Repository\\Data\\AppDbContext.cs",
-              "ViewState": "AgIAABMAAAAAAAAAAAAwwAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-20T08:54:57.071Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "LiveTrackerRepository.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\LiveTrackerRepository.cs",
-              "RelativeDocumentMoniker": "Repository\\Repositories\\LiveTrackerRepository.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\LiveTrackerRepository.cs",
-              "RelativeToolTip": "Repository\\Repositories\\LiveTrackerRepository.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAuAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-19T08:45:31.976Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "LiveStreamRepository.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\LiveStreamRepository.cs",
-              "RelativeDocumentMoniker": "Repository\\Repositories\\LiveStreamRepository.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\LiveStreamRepository.cs",
-              "RelativeToolTip": "Repository\\Repositories\\LiveStreamRepository.cs",
-              "ViewState": "AgIAABcAAAAAAAAAAAA3wAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-19T08:45:22.747Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "ILiveTrackerRepository.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\Interfaces\\ILiveTrackerRepository.cs",
-              "RelativeDocumentMoniker": "Repository\\Repositories\\Interfaces\\ILiveTrackerRepository.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\Interfaces\\ILiveTrackerRepository.cs",
-              "RelativeToolTip": "Repository\\Repositories\\Interfaces\\ILiveTrackerRepository.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-19T08:45:04.406Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "ILiveStreamRepository.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\Interfaces\\ILiveStreamRepository.cs",
-              "RelativeDocumentMoniker": "Repository\\Repositories\\Interfaces\\ILiveStreamRepository.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Repository\\Repositories\\Interfaces\\ILiveStreamRepository.cs",
-              "RelativeToolTip": "Repository\\Repositories\\Interfaces\\ILiveStreamRepository.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAABNAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-19T08:45:00.234Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "PostLikeConfiguration.cs",
-              "DocumentMoniker": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Domain\\Configurations\\PostLikeConfiguration.cs",
-              "RelativeDocumentMoniker": "Domain\\Configurations\\PostLikeConfiguration.cs",
-              "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Domain\\Configurations\\PostLikeConfiguration.cs",
-              "RelativeToolTip": "Domain\\Configurations\\PostLikeConfiguration.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAbAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-18T18:38:22.097Z"
             }
           ]
         }

@@ -23,6 +23,8 @@ namespace Repository.Repositories
                 .AsNoTracking()
                 .Include(x => x.Sender)
                 .Include(x => x.Reactions)
+                .Include(x => x.ReplyTo)
+                    .ThenInclude(r => r!.Sender)
                 .Where(x => x.Conversation.UserAId == first && x.Conversation.UserBId == second)
                 .OrderByDescending(x => x.CreatedAt)
                 .ThenByDescending(x => x.Id)

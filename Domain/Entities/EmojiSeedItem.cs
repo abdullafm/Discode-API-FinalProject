@@ -6,10 +6,8 @@ namespace Domain.Entities
     {
         [JsonPropertyName("c")]
         public string Character { get; set; } = string.Empty;
-
         [JsonPropertyName("n")]
         public string Name { get; set; } = string.Empty;
-
         [JsonPropertyName("s")]
         public string Shortcodes { get; set; } = string.Empty;
     }

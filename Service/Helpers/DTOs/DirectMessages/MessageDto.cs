@@ -12,5 +12,6 @@ namespace Service.Helpers.DTOs.DirectMessages
         public DateTime? EditedAt { get; set; }
         public bool Mine { get; set; }
         public List<ReactionDto> Reactions { get; set; } = new();
+        public ReplyDto? ReplyTo { get; set; }
     }
 }

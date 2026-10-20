@@ -26,6 +26,11 @@ namespace Domain.Configurations
                 .HasForeignKey(x => x.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.HasOne(x => x.ReplyTo)
+                .WithMany()
+                .HasForeignKey(x => x.ReplyToId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             builder.HasIndex(x => new { x.ConversationId, x.CreatedAt });
         }
     }
