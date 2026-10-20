@@ -29,6 +29,24 @@ namespace Repository.Repositories
             return latest;
         }
 
+        public async Task<IEnumerable<Message>> GetPinnedAsync(int conversationId)
+        {
+            return await _dbSet
+                .AsNoTracking()
+                .Include(x => x.Sender)
+                .Include(x => x.Reactions)
+                .Include(x => x.ReplyTo)
+                    .ThenInclude(r => r!.Sender)
+                .Where(x => x.ConversationId == conversationId && x.PinnedAt != null)
+                .OrderByDescending(x => x.PinnedAt)
+                .ToListAsync();
+        }
+
+        public async Task<int> CountPinnedAsync(int conversationId)
+        {
+            return await _dbSet.CountAsync(x => x.ConversationId == conversationId && x.PinnedAt != null);
+        }
+
         public async Task<Message?> GetWithDetailsAsync(int id)
         {
             return await _dbSet

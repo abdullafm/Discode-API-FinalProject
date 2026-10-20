@@ -418,6 +418,9 @@ namespace Repository.Migrations
                     b.Property<DateTime?>("EditedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("PinnedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int?>("ReplyToId")
                         .HasColumnType("int");
 

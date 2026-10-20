@@ -308,6 +308,22 @@
   },
   {
     "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "GetPins",
+    "RelativePath": "api/dm/{userName}/pins",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
     "Method": "Read",
     "RelativePath": "api/dm/{userName}/read",
     "HttpMethod": "POST",
@@ -338,6 +354,27 @@
       {
         "Name": "model",
         "Type": "Service.Helpers.DTOs.DirectMessages.SendMessageDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "Pin",
+    "RelativePath": "api/dm/messages/{id}/pin",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.DirectMessages.PinMessageDto",
         "IsRequired": true
       }
     ],

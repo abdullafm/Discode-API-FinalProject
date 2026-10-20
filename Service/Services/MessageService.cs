@@ -69,6 +69,29 @@ namespace Service.Services
             return latest?.Id;
         }
 
+        public async Task<IEnumerable<MessageDto>> GetPinnedAsync(int conversationId, string viewerId)
+        {
+            var messages = await _messages.GetPinnedAsync(conversationId);
+            return _mapper.Map<List<MessageDto>>(messages, ForViewer(viewerId));
+        }
+
+        public async Task<int> CountPinnedAsync(int conversationId)
+        {
+            return await _messages.CountPinnedAsync(conversationId);
+        }
+
+        public async Task SetPinnedAsync(int messageId, bool pinned)
+        {
+            var message = await _messages.GetWithDetailsAsync(messageId);
+            if (message is null)
+            {
+                return;
+            }
+
+            message.PinnedAt = pinned ? DateTime.UtcNow : null;
+            await _messages.UpdateAsync(message);
+        }
+
         private static Action<IMappingOperationOptions> ForViewer(string viewerId)
         {
             return options => options.Items[MappingProfile.ViewerIdKey] = viewerId;

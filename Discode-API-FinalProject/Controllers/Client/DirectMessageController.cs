@@ -83,6 +83,23 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(updated.ForUser);
         }
 
+        [HttpGet("{userName}/pins")]
+        public async Task<IActionResult> GetPins(string userName)
+        {
+            return Ok(await _directMessages.GetPinsAsync(UserId, userName));
+        }
+
+        [HttpPut("messages/{id:int}/pin")]
+        public async Task<IActionResult> Pin(int id, [FromBody] PinMessageDto model)
+        {
+            var updated = await _directMessages.PinAsync(UserId, id, model);
+
+            await _hubContext.Clients.User(updated.UserId).SendAsync("DirectMessagePinned", new { messageId = id, pinnedAt = updated.ForUser.PinnedAt });
+            await _hubContext.Clients.User(updated.RecipientId).SendAsync("DirectMessagePinned", new { messageId = id, pinnedAt = updated.ForRecipient.PinnedAt });
+
+            return Ok(updated.ForUser);
+        }
+
         [HttpPost("{userName}/read")]
         public async Task<IActionResult> Read(string userName)
         {

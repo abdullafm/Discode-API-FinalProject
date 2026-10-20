@@ -8,5 +8,8 @@ namespace Service.Services.Interfaces
         Task<MessageDto> CreateAsync(int conversationId, string senderId, string text, int? replyToMessageId);
         Task<MessageDto?> EditAsync(int messageId, string text, string viewerId);
         Task<int?> GetLatestIdAsync(int conversationId);
+        Task<IEnumerable<MessageDto>> GetPinnedAsync(int conversationId, string viewerId);
+        Task<int> CountPinnedAsync(int conversationId);
+        Task SetPinnedAsync(int messageId, bool pinned);
     }
 }

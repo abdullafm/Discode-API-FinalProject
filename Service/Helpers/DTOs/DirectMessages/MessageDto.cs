@@ -13,5 +13,6 @@ namespace Service.Helpers.DTOs.DirectMessages
         public bool Mine { get; set; }
         public List<ReactionDto> Reactions { get; set; } = new();
         public ReplyDto? ReplyTo { get; set; }
+        public DateTime? PinnedAt { get; set; }
     }
 }
