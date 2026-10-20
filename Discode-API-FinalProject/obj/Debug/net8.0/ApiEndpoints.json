@@ -344,6 +344,27 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "React",
+    "RelativePath": "api/dm/messages/{id}/reactions",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.DirectMessages.ToggleReactionDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "Discode_API_FinalProject.Controllers.Client.EmojiController",
     "Method": "GetAll",
     "RelativePath": "api/Emoji",

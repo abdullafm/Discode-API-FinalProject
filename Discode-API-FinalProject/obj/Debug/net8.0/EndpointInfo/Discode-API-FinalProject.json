@@ -567,6 +567,48 @@
         }
       }
     },
+    "/api/dm/messages/{id}/reactions": {
+      "put": {
+        "tags": [
+          "DirectMessage"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToggleReactionDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToggleReactionDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToggleReactionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/dm/{userName}/read": {
       "post": {
         "tags": [
@@ -1361,6 +1403,16 @@
         "type": "object",
         "properties": {
           "text": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ToggleReactionDto": {
+        "type": "object",
+        "properties": {
+          "emoji": {
             "type": "string",
             "nullable": true
           }
