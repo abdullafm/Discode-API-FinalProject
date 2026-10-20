@@ -72,6 +72,17 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(edited.MessageForSender);
         }
 
+        [HttpPut("messages/{id:int}/reactions")]
+        public async Task<IActionResult> React(int id, [FromBody] ToggleReactionDto model)
+        {
+            var updated = await _directMessages.ReactAsync(UserId, id, model);
+
+            await _hubContext.Clients.User(updated.UserId).SendAsync("DirectMessageReaction", updated.ForUser);
+            await _hubContext.Clients.User(updated.RecipientId).SendAsync("DirectMessageReaction", updated.ForRecipient);
+
+            return Ok(updated.ForUser);
+        }
+
         [HttpPost("{userName}/read")]
         public async Task<IActionResult> Read(string userName)
         {

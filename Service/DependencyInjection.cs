@@ -23,6 +23,7 @@ namespace Service
             services.AddScoped<IDirectMessageService, DirectMessageService>();
             services.AddScoped<IConversationService, ConversationService>();
             services.AddScoped<IMessageService, MessageService>();
+            services.AddScoped<IMessageReactionService, MessageReactionService>();
             services.AddScoped<IPostLikeService, PostLikeService>();
             services.AddScoped<ICommentLikeService, CommentLikeService>();
             services.AddScoped<IStoryLikeService, StoryLikeService>();

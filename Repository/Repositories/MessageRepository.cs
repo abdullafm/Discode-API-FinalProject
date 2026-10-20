@@ -16,6 +16,7 @@ namespace Repository.Repositories
             var latest = await _dbSet
                 .AsNoTracking()
                 .Include(x => x.Sender)
+                .Include(x => x.Reactions)
                 .Where(x => x.ConversationId == conversationId)
                 .OrderByDescending(x => x.CreatedAt)
                 .ThenByDescending(x => x.Id)
@@ -30,6 +31,7 @@ namespace Repository.Repositories
         {
             return await _dbSet
                 .Include(x => x.Sender)
+                .Include(x => x.Reactions)
                 .Include(x => x.Conversation)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }

@@ -50,7 +50,18 @@ namespace Service.Helpers.Mappings
                     : s.Sender.DisplayName))
                 .ForMember(d => d.SenderAvatarUrl, o => o.MapFrom(s => s.Sender.AvatarUrl ?? string.Empty))
                 .ForMember(d => d.Mine, o => o.MapFrom((s, d, m, context) =>
-                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.SenderId == (string?)viewer));
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.SenderId == (string?)viewer))
+                .ForMember(d => d.Reactions, o => o.MapFrom((s, d, m, context) => s.Reactions
+                    .OrderBy(r => r.CreatedAt)
+                    .ThenBy(r => r.Id)
+                    .GroupBy(r => r.Emoji)
+                    .Select(g => new ReactionDto
+                    {
+                        Emoji = g.Key,
+                        Count = g.Count(),
+                        Reacted = context.Items.TryGetValue(ViewerIdKey, out var viewer) && g.Any(r => r.UserId == (string?)viewer)
+                    })
+                    .ToList()));
 
             CreateMap<Conversation, ConversationDto>()
                 .ForMember(d => d.ConversationId, o => o.MapFrom(s => s.Id))

@@ -48,6 +48,11 @@ namespace Service.Services
                 return null;
             }
 
+            if (conversation.UserAId != viewerId && conversation.UserBId != viewerId)
+            {
+                return null;
+            }
+
             var otherId = conversation.UserAId == viewerId ? conversation.UserBId : conversation.UserAId;
             return await GetBetweenAsync(viewerId, otherId);
         }

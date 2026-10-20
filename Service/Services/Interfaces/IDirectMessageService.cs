@@ -8,6 +8,7 @@ namespace Service.Services.Interfaces
         Task<ChatDto> GetChatAsync(string userId, string userName);
         Task<SentMessageDto> SendAsync(string senderId, string userName, SendMessageDto model);
         Task<EditedMessageDto> EditAsync(string userId, int messageId, SendMessageDto model);
+        Task<ReactionUpdatedDto> ReactAsync(string userId, int messageId, ToggleReactionDto model);
         Task MarkReadAsync(string userId, string userName);
         Task CloseAsync(string userId, string userName);
     }

@@ -10,5 +10,6 @@ namespace Domain.Entities
         public AppUser Sender { get; set; } = null!;
         public string Text { get; set; } = string.Empty;
         public DateTime? EditedAt { get; set; }
+        public ICollection<MessageReaction> Reactions { get; set; } = new List<MessageReaction>();
     }
 }

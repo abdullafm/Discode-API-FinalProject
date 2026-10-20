@@ -19,31 +19,37 @@ namespace Service.Services
         private readonly IConversationService _conversations;
         private readonly IMessageService _messages;
         private readonly IDirectMessageRepository _directMessages;
+        private readonly IMessageReactionService _reactions;
         private readonly IAccountRepository _accounts;
         private readonly IFriendRequestRepository _friendRequests;
         private readonly IUserBlockRepository _blocks;
         private readonly IPresenceService _presence;
         private readonly IValidator<SendMessageDto> _validator;
+        private readonly IValidator<ToggleReactionDto> _reactionValidator;
         private readonly IMapper _mapper;
 
         public DirectMessageService(IConversationService conversations,
                                     IMessageService messages,
                                     IDirectMessageRepository directMessages,
+                                    IMessageReactionService reactions,
                                     IAccountRepository accounts,
                                     IFriendRequestRepository friendRequests,
                                     IUserBlockRepository blocks,
                                     IPresenceService presence,
                                     IValidator<SendMessageDto> validator,
+                                    IValidator<ToggleReactionDto> reactionValidator,
                                     IMapper mapper)
         {
             _conversations = conversations;
             _messages = messages;
             _directMessages = directMessages;
+            _reactions = reactions;
             _accounts = accounts;
             _friendRequests = friendRequests;
             _blocks = blocks;
             _presence = presence;
             _validator = validator;
+            _reactionValidator = reactionValidator;
             _mapper = mapper;
         }
 
@@ -152,6 +158,36 @@ namespace Service.Services
                 RecipientId = conversation.UserId,
                 MessageForSender = messageForSender,
                 MessageForRecipient = (await _messages.GetAsync(messageId, conversation.UserId))!
+            };
+        }
+
+        public async Task<ReactionUpdatedDto> ReactAsync(string userId, int messageId, ToggleReactionDto model)
+        {
+            await _reactionValidator.EnsureValidAsync(model);
+
+            var message = await _messages.GetAsync(messageId, userId);
+            if (message is null)
+            {
+                throw new NotFoundException("Message not found.");
+            }
+
+            var conversation = await _conversations.GetByIdAsync(message.ConversationId, userId);
+            if (conversation is null || await _blocks.IsBlockedEitherWayAsync(userId, conversation.UserId))
+            {
+                throw new NotFoundException("Message not found.");
+            }
+
+            await _reactions.ToggleAsync(messageId, userId, model.Emoji.Trim());
+
+            var forUser = await _messages.GetAsync(messageId, userId);
+            var forRecipient = await _messages.GetAsync(messageId, conversation.UserId);
+
+            return new ReactionUpdatedDto
+            {
+                UserId = userId,
+                RecipientId = conversation.UserId,
+                ForUser = new MessageReactionsDto { MessageId = messageId, Reactions = forUser!.Reactions },
+                ForRecipient = new MessageReactionsDto { MessageId = messageId, Reactions = forRecipient!.Reactions }
             };
         }
 

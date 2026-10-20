@@ -22,6 +22,7 @@ namespace Repository.Repositories
             var latest = await _dbContext.Set<Message>()
                 .AsNoTracking()
                 .Include(x => x.Sender)
+                .Include(x => x.Reactions)
                 .Where(x => x.Conversation.UserAId == first && x.Conversation.UserBId == second)
                 .OrderByDescending(x => x.CreatedAt)
                 .ThenByDescending(x => x.Id)
