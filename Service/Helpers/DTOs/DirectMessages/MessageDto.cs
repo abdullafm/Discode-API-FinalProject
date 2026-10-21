@@ -15,5 +15,6 @@ namespace Service.Helpers.DTOs.DirectMessages
         public ReplyDto? ReplyTo { get; set; }
         public DateTime? PinnedAt { get; set; }
         public bool Forwarded { get; set; }
+        public bool Undelivered { get; set; }
     }
 }

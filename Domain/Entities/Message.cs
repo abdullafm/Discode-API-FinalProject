@@ -14,6 +14,7 @@ namespace Domain.Entities
         public int? ReplyToId { get; set; }
         public Message? ReplyTo { get; set; }
         public MessageForward? Forward { get; set; }
+        public bool Undelivered { get; set; }
         public ICollection<MessageReaction> Reactions { get; set; } = new List<MessageReaction>();
     }
 }
