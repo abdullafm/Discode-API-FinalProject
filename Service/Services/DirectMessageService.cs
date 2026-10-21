@@ -67,6 +67,7 @@ namespace Service.Services
             var other = await GetChatPartnerAsync(userId, userName, requireFriendship: false);
             var friendship = await _friendRequests.GetBetweenAsync(userId, other.Id);
             var myBlock = await _blocks.GetBlockAsync(userId, other.Id);
+            var blockedEitherWay = await _blocks.IsBlockedEitherWayAsync(userId, other.Id);
             var isFriend = friendship?.Status == FriendRequestStatus.Accepted;
             var showDetails = other.IsPublic || isFriend;
             var presence = await _presence.ResolveAsync(other);
@@ -84,7 +85,8 @@ namespace Service.Services
                 IsFriend = isFriend,
                 FriendRequestId = friendship?.Id,
                 Relation = myBlock is null ? DescribeRelation(friendship, userId) : "blocked",
-                BlockId = myBlock?.Id
+                BlockId = myBlock?.Id,
+                CanMessage = blockedEitherWay || isFriend || other.IsPublic
             };
 
             var conversation = await _conversations.GetBetweenAsync(userId, other.Id);
@@ -120,11 +122,13 @@ namespace Service.Services
             var other = await GetChatPartnerAsync(userId, userName, requireFriendship: false);
             var friendship = await _friendRequests.GetBetweenAsync(userId, other.Id);
             var myBlock = await _blocks.GetBlockAsync(userId, other.Id);
+            var blockedEitherWay = await _blocks.IsBlockedEitherWayAsync(userId, other.Id);
             return new RelationDto
             {
                 Relation = myBlock is null ? DescribeRelation(friendship, userId) : "blocked",
                 FriendRequestId = friendship?.Id,
-                BlockId = myBlock?.Id
+                BlockId = myBlock?.Id,
+                CanMessage = blockedEitherWay || friendship?.Status == FriendRequestStatus.Accepted || other.IsPublic
             };
         }
 
@@ -136,7 +140,7 @@ namespace Service.Services
             var blocked = await _blocks.IsBlockedEitherWayAsync(senderId, recipient.Id);
             if (!blocked)
             {
-                await EnsureFriendsAsync(senderId, recipient.Id);
+                await EnsureCanMessageAsync(senderId, recipient);
             }
 
             var text = model.Text.Trim();
@@ -223,7 +227,13 @@ namespace Service.Services
             var recipients = new List<AppUser>();
             foreach (var userName in userNames)
             {
-                recipients.Add(await GetChatPartnerAsync(userId, userName, requireFriendship: true));
+                var recipient = await GetChatPartnerAsync(userId, userName, requireFriendship: true);
+                if (await _blocks.IsBlockedEitherWayAsync(userId, recipient.Id))
+                {
+                    throw new NotFoundException("User not found.");
+                }
+
+                recipients.Add(recipient);
             }
 
             var originalSenderId = message.Mine ? userId : conversation.UserId;
@@ -376,18 +386,23 @@ namespace Service.Services
 
             if (requireFriendship)
             {
-                await EnsureFriendsAsync(userId, other.Id);
+                await EnsureCanMessageAsync(userId, other);
             }
 
             return other;
         }
 
-        private async Task EnsureFriendsAsync(string userId, string otherId)
+        private async Task EnsureCanMessageAsync(string userId, AppUser other)
         {
-            var request = await _friendRequests.GetBetweenAsync(userId, otherId);
+            if (other.IsPublic)
+            {
+                return;
+            }
+
+            var request = await _friendRequests.GetBetweenAsync(userId, other.Id);
             if (request is null || request.Status != FriendRequestStatus.Accepted)
             {
-                throw new BadRequestException("You can only message your friends.");
+                throw new BadRequestException("This profile is private. You can message them once you are friends.");
             }
         }
 

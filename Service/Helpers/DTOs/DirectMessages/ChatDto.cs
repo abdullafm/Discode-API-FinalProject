@@ -15,6 +15,7 @@ namespace Service.Helpers.DTOs.DirectMessages
         public int? FriendRequestId { get; set; }
         public string Relation { get; set; } = "none";
         public int? BlockId { get; set; }
+        public bool CanMessage { get; set; } = true;
         public List<MessageDto> Messages { get; set; } = new();
     }
 }
