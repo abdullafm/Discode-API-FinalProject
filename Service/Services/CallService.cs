@@ -145,6 +145,24 @@ namespace Service.Services
             }
         }
 
+        public string? GetPeerId(string userId, string callId)
+        {
+            lock (Gate)
+            {
+                if (!Calls.TryGetValue(callId, out var state) || !state.Active)
+                {
+                    return null;
+                }
+
+                if (state.CallerId == userId)
+                {
+                    return state.CalleeId;
+                }
+
+                return state.CalleeId == userId ? state.CallerId : null;
+            }
+        }
+
         private static void Purge()
         {
             var expired = Calls.Values

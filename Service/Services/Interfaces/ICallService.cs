@@ -9,5 +9,6 @@ namespace Service.Services.Interfaces
         CallEndedDto? End(string userId, string callId, bool timedOut);
         IEnumerable<CallEndedDto> EndAllFor(string userId);
         CallDto? GetFor(string userId);
+        string? GetPeerId(string userId, string callId);
     }
 }

@@ -8,6 +8,7 @@ namespace Discode_API_FinalProject.Hubs
 {
     public partial class PresenceHub
     {
+        private const int MaxCallSignalLength = 16000;
         private static readonly TimeSpan CallReconnectGrace = TimeSpan.FromSeconds(8);
 
         public async Task<CallDto> StartCall(string userName, bool video)
@@ -53,6 +54,20 @@ namespace Discode_API_FinalProject.Hubs
             if (ended is not null)
             {
                 await Clients.Users(ended.CallerId, ended.CalleeId).SendAsync("CallEnded", ended);
+            }
+        }
+
+        public async Task SendCallSignal(string callId, string payload)
+        {
+            if (string.IsNullOrEmpty(payload) || payload.Length > MaxCallSignalLength)
+            {
+                return;
+            }
+
+            var peerId = _callService.GetPeerId(UserId, callId);
+            if (peerId is not null)
+            {
+                await Clients.User(peerId).SendAsync("CallSignal", new { callId, payload });
             }
         }
 
