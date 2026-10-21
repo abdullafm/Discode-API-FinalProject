@@ -13,6 +13,7 @@ namespace Service.Helpers.DTOs.DirectMessages
         public DateTime MemberSince { get; set; }
         public bool IsFriend { get; set; }
         public int? FriendRequestId { get; set; }
+        public string Relation { get; set; } = "none";
         public List<MessageDto> Messages { get; set; } = new();
     }
 }

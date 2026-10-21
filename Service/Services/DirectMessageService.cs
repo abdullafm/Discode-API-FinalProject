@@ -81,7 +81,10 @@ namespace Service.Services
                 Status = presence,
                 MemberSince = other.CreatedAt,
                 IsFriend = isFriend,
-                FriendRequestId = isFriend ? friendship!.Id : null
+                FriendRequestId = friendship?.Id,
+                Relation = friendship is null
+                    ? "none"
+                    : isFriend ? "friend" : friendship.SenderId == userId ? "pending-sent" : "pending-received"
             };
 
             var conversation = await _conversations.GetBetweenAsync(userId, other.Id);
