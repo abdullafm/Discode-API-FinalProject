@@ -256,7 +256,7 @@ namespace Service.Services
             peerIn = false;
             lock (Gate)
             {
-                if (!Calls.TryGetValue(callId, out var state) || !state.Active || !IsIn(state, userId))
+                if (!Calls.TryGetValue(callId, out var state) || !IsIn(state, userId))
                 {
                     return null;
                 }
@@ -271,7 +271,7 @@ namespace Service.Services
                 }
 
                 peerId = PeerOf(state, userId);
-                peerIn = IsIn(state, peerId);
+                peerIn = state.Active && IsIn(state, peerId);
                 return ToDto(state, peerId);
             }
         }
@@ -405,7 +405,7 @@ namespace Service.Services
                 Video = state.Video,
                 PeerPresent = !state.Active || (isCaller ? state.CalleeIn : state.CallerIn),
                 Joined = !state.Active || IsIn(state, viewerId),
-                PeerScreen = state.Active && (isCaller ? state.CalleeScreen && state.CalleeIn : state.CallerScreen && state.CallerIn),
+                PeerScreen = isCaller ? state.CalleeScreen && state.CalleeIn : state.CallerScreen && state.CallerIn,
                 Other = isCaller ? state.Callee : state.Caller
             };
         }
