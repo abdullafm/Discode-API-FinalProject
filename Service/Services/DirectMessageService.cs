@@ -67,7 +67,6 @@ namespace Service.Services
             var other = await GetChatPartnerAsync(userId, userName, requireFriendship: false);
             var friendship = await _friendRequests.GetBetweenAsync(userId, other.Id);
             var myBlock = await _blocks.GetBlockAsync(userId, other.Id);
-            var blockedEitherWay = await _blocks.IsBlockedEitherWayAsync(userId, other.Id);
             var isFriend = friendship?.Status == FriendRequestStatus.Accepted;
             var showDetails = other.IsPublic || isFriend;
             var presence = await _presence.ResolveAsync(other);
@@ -85,8 +84,7 @@ namespace Service.Services
                 IsFriend = isFriend,
                 FriendRequestId = friendship?.Id,
                 Relation = myBlock is null ? DescribeRelation(friendship, userId) : "blocked",
-                BlockId = myBlock?.Id,
-                CanMessage = blockedEitherWay || isFriend || other.IsPublic
+                BlockId = myBlock?.Id
             };
 
             var conversation = await _conversations.GetBetweenAsync(userId, other.Id);
@@ -122,13 +120,11 @@ namespace Service.Services
             var other = await GetChatPartnerAsync(userId, userName, requireFriendship: false);
             var friendship = await _friendRequests.GetBetweenAsync(userId, other.Id);
             var myBlock = await _blocks.GetBlockAsync(userId, other.Id);
-            var blockedEitherWay = await _blocks.IsBlockedEitherWayAsync(userId, other.Id);
             return new RelationDto
             {
                 Relation = myBlock is null ? DescribeRelation(friendship, userId) : "blocked",
                 FriendRequestId = friendship?.Id,
-                BlockId = myBlock?.Id,
-                CanMessage = blockedEitherWay || friendship?.Status == FriendRequestStatus.Accepted || other.IsPublic
+                BlockId = myBlock?.Id
             };
         }
 
@@ -137,19 +133,15 @@ namespace Service.Services
             await _validator.EnsureValidAsync(model);
 
             var recipient = await GetChatPartnerAsync(senderId, userName, requireFriendship: false);
-            var blocked = await _blocks.IsBlockedEitherWayAsync(senderId, recipient.Id);
-            if (!blocked)
-            {
-                await EnsureCanMessageAsync(senderId, recipient);
-            }
+            var undelivered = await _blocks.IsBlockedEitherWayAsync(senderId, recipient.Id) || !await CanMessageAsync(senderId, recipient);
 
             var text = model.Text.Trim();
 
             var conversation = await _conversations.GetBetweenAsync(senderId, recipient.Id)
-                               ?? await _conversations.CreateAsync(senderId, recipient.Id, blocked ? string.Empty : Preview(text), hiddenForOther: blocked);
+                               ?? await _conversations.CreateAsync(senderId, recipient.Id, undelivered ? string.Empty : Preview(text), hiddenForOther: undelivered);
 
-            var messageForSender = await _messages.CreateAsync(conversation.ConversationId, senderId, text, model.ReplyToMessageId, blocked);
-            if (!blocked)
+            var messageForSender = await _messages.CreateAsync(conversation.ConversationId, senderId, text, model.ReplyToMessageId, undelivered);
+            if (!undelivered)
             {
                 await _conversations.RecordMessageAsync(senderId, recipient.Id, Preview(text), messageForSender.CreatedAt);
             }
@@ -392,15 +384,20 @@ namespace Service.Services
             return other;
         }
 
-        private async Task EnsureCanMessageAsync(string userId, AppUser other)
+        private async Task<bool> CanMessageAsync(string userId, AppUser other)
         {
             if (other.IsPublic)
             {
-                return;
+                return true;
             }
 
             var request = await _friendRequests.GetBetweenAsync(userId, other.Id);
-            if (request is null || request.Status != FriendRequestStatus.Accepted)
+            return request is not null && request.Status == FriendRequestStatus.Accepted;
+        }
+
+        private async Task EnsureCanMessageAsync(string userId, AppUser other)
+        {
+            if (!await CanMessageAsync(userId, other))
             {
                 throw new BadRequestException("This profile is private. You can message them once you are friends.");
             }
