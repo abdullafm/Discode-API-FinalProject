@@ -409,6 +409,12 @@ namespace Repository.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<bool>("CallMissed")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("CallSeconds")
+                        .HasColumnType("int");
+
                     b.Property<int>("ConversationId")
                         .HasColumnType("int");
 
@@ -417,6 +423,9 @@ namespace Repository.Migrations
 
                     b.Property<DateTime?>("EditedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("PinnedAt")
                         .HasColumnType("datetime2");

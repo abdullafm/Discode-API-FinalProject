@@ -16,5 +16,8 @@ namespace Service.Helpers.DTOs.DirectMessages
         public DateTime? PinnedAt { get; set; }
         public bool Forwarded { get; set; }
         public bool Undelivered { get; set; }
+        public bool IsCall { get; set; }
+        public int? CallSeconds { get; set; }
+        public bool CallMissed { get; set; }
     }
 }

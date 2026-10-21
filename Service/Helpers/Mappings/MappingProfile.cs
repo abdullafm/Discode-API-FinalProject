@@ -52,6 +52,7 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.Mine, o => o.MapFrom((s, d, m, context) =>
                     context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.SenderId == (string?)viewer))
                 .ForMember(d => d.Forwarded, o => o.MapFrom(s => s.Forward != null))
+                .ForMember(d => d.IsCall, o => o.MapFrom(s => s.Kind == Domain.Enums.MessageKind.Call))
                 .ForMember(d => d.ReplyTo, o => o.MapFrom((s, d, m, context) => s.ReplyTo == null ? null : new ReplyDto
                 {
                     MessageId = s.ReplyTo.Id,
