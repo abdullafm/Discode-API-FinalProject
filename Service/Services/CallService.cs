@@ -250,6 +250,32 @@ namespace Service.Services
             }
         }
 
+        public CallDto? SetScreen(string userId, string callId, bool on, out string peerId, out bool peerIn)
+        {
+            peerId = string.Empty;
+            peerIn = false;
+            lock (Gate)
+            {
+                if (!Calls.TryGetValue(callId, out var state) || !state.Active || !IsIn(state, userId))
+                {
+                    return null;
+                }
+
+                if (state.CallerId == userId)
+                {
+                    state.CallerScreen = on;
+                }
+                else
+                {
+                    state.CalleeScreen = on;
+                }
+
+                peerId = PeerOf(state, userId);
+                peerIn = IsIn(state, peerId);
+                return ToDto(state, peerId);
+            }
+        }
+
         public int? GetOngoingMessageId(string userId, string otherUserId)
         {
             lock (Gate)
@@ -312,6 +338,18 @@ namespace Service.Services
                 state.CalleeIn = value;
             }
 
+            if (!value)
+            {
+                if (state.CallerId == userId)
+                {
+                    state.CallerScreen = false;
+                }
+                else if (state.CalleeId == userId)
+                {
+                    state.CalleeScreen = false;
+                }
+            }
+
             SetJoinable(state, userId, !value);
         }
 
@@ -367,6 +405,7 @@ namespace Service.Services
                 Video = state.Video,
                 PeerPresent = !state.Active || (isCaller ? state.CalleeIn : state.CallerIn),
                 Joined = !state.Active || IsIn(state, viewerId),
+                PeerScreen = state.Active && (isCaller ? state.CalleeScreen && state.CalleeIn : state.CallerScreen && state.CallerIn),
                 Other = isCaller ? state.Callee : state.Caller
             };
         }
@@ -405,6 +444,8 @@ namespace Service.Services
             public bool CalleeIn { get; set; } = true;
             public bool CallerJoinable { get; set; }
             public bool CalleeJoinable { get; set; }
+            public bool CallerScreen { get; set; }
+            public bool CalleeScreen { get; set; }
             public int MessageId { get; set; }
             public DateTime? AnsweredAt { get; set; }
             public DateTime StartedAt { get; set; }

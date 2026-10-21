@@ -117,6 +117,15 @@ namespace Discode_API_FinalProject.Hubs
             }
         }
 
+        public async Task SetCallScreen(string callId, bool on)
+        {
+            var peerView = _callService.SetScreen(UserId, callId, on, out var peerId, out var peerIn);
+            if (peerView is not null && !peerIn)
+            {
+                await Clients.User(peerId).SendAsync("CallUpdated", peerView);
+            }
+        }
+
         public Task<CallDto?> GetMyCall()
         {
             return Task.FromResult(_callService.GetFor(UserId));
