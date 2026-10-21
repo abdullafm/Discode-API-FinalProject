@@ -84,7 +84,8 @@ namespace Service.Services
                 IsFriend = isFriend,
                 FriendRequestId = friendship?.Id,
                 Relation = myBlock is null ? DescribeRelation(friendship, userId) : "blocked",
-                BlockId = myBlock?.Id
+                BlockId = myBlock?.Id,
+                IsPrivate = !showDetails
             };
 
             var conversation = await _conversations.GetBetweenAsync(userId, other.Id);
