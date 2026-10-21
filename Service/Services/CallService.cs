@@ -54,6 +54,7 @@ namespace Service.Services
                 if (ongoing is not null && !IsIn(ongoing, callerId) && IsIn(ongoing, callee.Id))
                 {
                     SetIn(ongoing, callerId, true);
+                    ongoing.AnsweredAt ??= DateTime.UtcNow;
                     var rejoin = ToPair(ongoing);
                     rejoin.Rejoined = true;
                     return rejoin;
@@ -139,6 +140,7 @@ namespace Service.Services
         {
             CallState state;
             string reason;
+            CallState? declinedState = null;
             lock (Gate)
             {
                 if (!Calls.TryGetValue(callId, out var found) || (found.CallerId != userId && found.CalleeId != userId))
@@ -158,10 +160,30 @@ namespace Service.Services
                     return ToLeft(state, userId);
                 }
 
-                Calls.Remove(callId);
-                reason = state.Active
-                    ? "ended"
-                    : state.CalleeId == userId ? "declined" : timedOut ? "missed" : "cancelled";
+                if (!state.Active && (state.CalleeId == userId || (state.CallerId == userId && timedOut)))
+                {
+                    state.Active = true;
+                    state.CalleeIn = false;
+                    reason = state.CalleeId == userId ? "declined" : "missed";
+                    declinedState = state;
+                }
+                else
+                {
+                    Calls.Remove(callId);
+                    reason = state.Active ? "ended" : "cancelled";
+                }
+            }
+
+            if (declinedState is not null)
+            {
+                var declined = ToLeft(declinedState, declinedState.CalleeId);
+                declined.Reason = reason;
+                if (declinedState.MessageId > 0)
+                {
+                    declined.Message = await _directMessages.FinishCallMessageAsync(declinedState.CallerId, declinedState.CalleeId, declinedState.MessageId, null, true);
+                }
+
+                return declined;
             }
 
             return await FinishAsync(state, reason);

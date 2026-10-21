@@ -73,11 +73,17 @@ namespace Discode_API_FinalProject.Hubs
 
         private static async Task AnnounceCallEndAsync(IHubClients<IClientProxy> clients, CallEndedDto ended)
         {
-            if (ended.Reason == "left" && ended.LeftUserId is not null)
+            if (ended.LeftUserId is not null)
             {
                 var peerId = ended.LeftUserId == ended.CallerId ? ended.CalleeId : ended.CallerId;
-                await clients.User(ended.LeftUserId).SendAsync("CallEnded", new { callId = ended.CallId, reason = "left" });
-                await clients.User(peerId).SendAsync("CallPeerLeft", new { callId = ended.CallId });
+                await clients.User(ended.LeftUserId).SendAsync("CallEnded", new { callId = ended.CallId, reason = ended.Reason });
+                await clients.User(peerId).SendAsync("CallPeerLeft", new { callId = ended.CallId, reason = ended.Reason });
+                if (ended.Message is not null)
+                {
+                    await clients.User(ended.CallerId).SendAsync("DirectMessageCallUpdated", new { message = ended.Message.MessageForSender });
+                    await clients.User(ended.CalleeId).SendAsync("DirectMessageCallUpdated", new { message = ended.Message.MessageForRecipient });
+                }
+
                 return;
             }
 
