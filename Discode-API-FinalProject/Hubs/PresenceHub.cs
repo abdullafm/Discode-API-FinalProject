@@ -13,12 +13,23 @@ namespace Discode_API_FinalProject.Hubs
         private readonly IPresenceService _presenceService;
         private readonly IPresenceTrackerService _trackerService;
         private readonly ILiveStreamService _liveStreamService;
+        private readonly ICallService _callService;
+        private readonly IServiceScopeFactory _scopes;
+        private readonly IHubContext<PresenceHub> _hubContext;
 
-        public PresenceHub(IPresenceService presenceService, IPresenceTrackerService trackerService, ILiveStreamService liveStreamService)
+        public PresenceHub(IPresenceService presenceService,
+                           IPresenceTrackerService trackerService,
+                           ILiveStreamService liveStreamService,
+                           ICallService callService,
+                           IServiceScopeFactory scopes,
+                           IHubContext<PresenceHub> hubContext)
         {
             _presenceService = presenceService;
             _trackerService = trackerService;
             _liveStreamService = liveStreamService;
+            _callService = callService;
+            _scopes = scopes;
+            _hubContext = hubContext;
         }
 
         private string UserId
@@ -48,6 +59,7 @@ namespace Discode_API_FinalProject.Hubs
             if (change is not null)
             {
                 await NotifyFriendsAsync(change);
+                _ = EndCallsAfterGraceAsync(UserId, _scopes, _hubContext);
             }
 
             await ReleaseLiveAsync();
