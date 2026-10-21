@@ -1,0 +1,223 @@
+using Domain.Enums;
+using Repository.Repositories.Interfaces;
+using Service.Helpers.DTOs.Calls;
+using Service.Helpers.Exceptions;
+using Service.Services.Interfaces;
+
+namespace Service.Services
+{
+    public class CallService : ICallService
+    {
+        private static readonly object Gate = new();
+        private static readonly Dictionary<string, CallState> Calls = new();
+        private static readonly TimeSpan RingLimit = TimeSpan.FromSeconds(60);
+
+        private readonly IAccountRepository _accounts;
+        private readonly IUserBlockRepository _blocks;
+        private readonly IFriendRequestRepository _friendRequests;
+        private readonly IPresenceTrackerRepository _tracker;
+
+        public CallService(IAccountRepository accounts,
+                           IUserBlockRepository blocks,
+                           IFriendRequestRepository friendRequests,
+                           IPresenceTrackerRepository tracker)
+        {
+            _accounts = accounts;
+            _blocks = blocks;
+            _friendRequests = friendRequests;
+            _tracker = tracker;
+        }
+
+        public async Task<CallPairDto> StartAsync(string callerId, string userName, bool video)
+        {
+            var callee = await _accounts.GetByUserNameAsync(userName.Trim());
+            var caller = await _accounts.GetByIdAsync(callerId);
+            if (callee is null || caller is null || callee.Id == callerId)
+            {
+                throw new NotFoundException("User not found.");
+            }
+
+            var calleeName = string.IsNullOrWhiteSpace(callee.DisplayName) ? callee.UserName ?? string.Empty : callee.DisplayName;
+
+            if (await _blocks.IsBlockedEitherWayAsync(callerId, callee.Id))
+            {
+                throw new BadRequestException("You cannot call this user.");
+            }
+
+            if (!callee.IsPublic)
+            {
+                var friendship = await _friendRequests.GetBetweenAsync(callerId, callee.Id);
+                if (friendship is null || friendship.Status != FriendRequestStatus.Accepted)
+                {
+                    throw new BadRequestException("This profile is private. You can call them once you are friends.");
+                }
+            }
+
+            if (!await _tracker.IsOnlineAsync(callee.Id))
+            {
+                throw new BadRequestException(calleeName + " is not available right now.");
+            }
+
+            var state = new CallState
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                CallerId = callerId,
+                CalleeId = callee.Id,
+                Video = video,
+                StartedAt = DateTime.UtcNow,
+                Caller = ToParty(caller),
+                Callee = ToParty(callee)
+            };
+
+            lock (Gate)
+            {
+                Purge();
+                if (FindFor(callerId) is not null)
+                {
+                    throw new BadRequestException("You are already in a call.");
+                }
+
+                if (FindFor(callee.Id) is not null)
+                {
+                    throw new BadRequestException(calleeName + " is already in a call.");
+                }
+
+                Calls[state.Id] = state;
+            }
+
+            return ToPair(state);
+        }
+
+        public CallPairDto Accept(string userId, string callId)
+        {
+            lock (Gate)
+            {
+                if (!Calls.TryGetValue(callId, out var state) || state.CalleeId != userId || state.Active)
+                {
+                    throw new NotFoundException("This call is no longer available.");
+                }
+
+                state.Active = true;
+                return ToPair(state);
+            }
+        }
+
+        public CallEndedDto? End(string userId, string callId, bool timedOut)
+        {
+            lock (Gate)
+            {
+                if (!Calls.TryGetValue(callId, out var state) || (state.CallerId != userId && state.CalleeId != userId))
+                {
+                    return null;
+                }
+
+                Calls.Remove(callId);
+                var reason = state.Active
+                    ? "ended"
+                    : state.CalleeId == userId ? "declined" : timedOut ? "missed" : "cancelled";
+                return ToEnded(state, reason);
+            }
+        }
+
+        public IEnumerable<CallEndedDto> EndAllFor(string userId)
+        {
+            lock (Gate)
+            {
+                var ended = Calls.Values
+                    .Where(x => x.CallerId == userId || x.CalleeId == userId)
+                    .ToList();
+                foreach (var state in ended)
+                {
+                    Calls.Remove(state.Id);
+                }
+
+                return ended.Select(x => ToEnded(x, "ended")).ToList();
+            }
+        }
+
+        public CallDto? GetFor(string userId)
+        {
+            lock (Gate)
+            {
+                Purge();
+                var state = FindFor(userId);
+                return state is null ? null : ToDto(state, userId);
+            }
+        }
+
+        private static void Purge()
+        {
+            var expired = Calls.Values
+                .Where(x => !x.Active && DateTime.UtcNow - x.StartedAt > RingLimit)
+                .Select(x => x.Id)
+                .ToList();
+            foreach (var id in expired)
+            {
+                Calls.Remove(id);
+            }
+        }
+
+        private static CallState? FindFor(string userId)
+        {
+            return Calls.Values.FirstOrDefault(x => x.CallerId == userId || x.CalleeId == userId);
+        }
+
+        private static CallPartyDto ToParty(Domain.Entities.AppUser user)
+        {
+            return new CallPartyDto
+            {
+                UserId = user.Id,
+                UserName = user.UserName ?? string.Empty,
+                DisplayName = string.IsNullOrWhiteSpace(user.DisplayName) ? user.UserName ?? string.Empty : user.DisplayName,
+                AvatarUrl = user.AvatarUrl ?? string.Empty
+            };
+        }
+
+        private static CallDto ToDto(CallState state, string viewerId)
+        {
+            var isCaller = state.CallerId == viewerId;
+            return new CallDto
+            {
+                CallId = state.Id,
+                Status = state.Active ? "active" : "ringing",
+                Role = isCaller ? "caller" : "callee",
+                Video = state.Video,
+                Other = isCaller ? state.Callee : state.Caller
+            };
+        }
+
+        private static CallPairDto ToPair(CallState state)
+        {
+            return new CallPairDto
+            {
+                CallerId = state.CallerId,
+                CalleeId = state.CalleeId,
+                ForCaller = ToDto(state, state.CallerId),
+                ForCallee = ToDto(state, state.CalleeId)
+            };
+        }
+
+        private static CallEndedDto ToEnded(CallState state, string reason)
+        {
+            return new CallEndedDto
+            {
+                CallId = state.Id,
+                Reason = reason,
+                CallerId = state.CallerId,
+                CalleeId = state.CalleeId
+            };
+        }
+
+        private sealed class CallState
+        {
+            public string Id { get; set; } = string.Empty;
+            public string CallerId { get; set; } = string.Empty;
+            public string CalleeId { get; set; } = string.Empty;
+            public bool Video { get; set; }
+            public bool Active { get; set; }
+            public DateTime StartedAt { get; set; }
+            public CallPartyDto Caller { get; set; } = new();
+            public CallPartyDto Callee { get; set; } = new();
+        }
+    }
+}
