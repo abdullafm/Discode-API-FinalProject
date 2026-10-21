@@ -15,6 +15,7 @@ namespace Service.Services
     {
         private const int HistoryLimit = 100;
         private const int PreviewLength = 150;
+        private const int MaxPinnedMessages = 50;
 
         private readonly IConversationService _conversations;
         private readonly IMessageService _messages;
@@ -118,23 +119,10 @@ namespace Service.Services
             var conversation = await _conversations.GetBetweenAsync(senderId, recipient.Id)
                                ?? await _conversations.CreateAsync(senderId, recipient.Id, Preview(text), hiddenForOther: false);
 
-            var messageForSender = await _messages.CreateAsync(conversation.ConversationId, senderId, text);
+            var messageForSender = await _messages.CreateAsync(conversation.ConversationId, senderId, text, model.ReplyToMessageId);
             await _conversations.RecordMessageAsync(senderId, recipient.Id, Preview(text), messageForSender.CreatedAt);
 
             return await ToSentAsync(senderId, recipient.Id, messageForSender);
-        }
-
-        private static ForwardMessageDto ToForwarded(SentMessageDto sent)
-        {
-            return new ForwardMessageDto
-            {
-                SenderId = sent.SenderId,
-                RecipientId = sent.RecipientId,
-                MessageForSender = sent.MessageForSender,
-                MessageForRecipient = sent.MessageForRecipient,
-                ConversationForSender = sent.ConversationForSender,
-                ConversationForRecipient = sent.ConversationForRecipient
-            };
         }
 
         private async Task<SentMessageDto> ToSentAsync(string senderId, string recipientId, MessageDto messageForSender)
@@ -187,7 +175,7 @@ namespace Service.Services
             };
         }
 
-        public async Task<IEnumerable<ForwardMessageDto>> ForwardAsync(string userId, int messageId, ForwardMessageDto model)
+        public async Task<IEnumerable<SentMessageDto>> ForwardAsync(string userId, int messageId, ForwardMessageDto model)
         {
             await _forwardValidator.EnsureValidAsync(model);
 
@@ -212,7 +200,7 @@ namespace Service.Services
 
             var originalSenderId = message.Mine ? userId : conversation.UserId;
             var note = model.Note.Trim();
-            var sent = new List<ForwardMessageDto>();
+            var sent = new List<SentMessageDto>();
             foreach (var recipient in recipients)
             {
                 var target = await _conversations.GetBetweenAsync(userId, recipient.Id)
@@ -224,11 +212,11 @@ namespace Service.Services
                     Message = new Message { ConversationId = target.ConversationId, SenderId = userId, Text = message.Text }
                 });
                 await _conversations.RecordMessageAsync(userId, recipient.Id, Preview(message.Text), forwarded.Message.CreatedAt);
-                sent.Add(ToForwarded(await ToSentAsync(userId, recipient.Id, (await _messages.GetAsync(forwarded.MessageId, userId))!)));
+                sent.Add(await ToSentAsync(userId, recipient.Id, (await _messages.GetAsync(forwarded.MessageId, userId))!));
 
                 if (note.Length > 0)
                 {
-                    sent.Add(ToForwarded(await SendAsync(userId, recipient.UserName ?? string.Empty, new SendMessageDto { Text = note })));
+                    sent.Add(await SendAsync(userId, recipient.UserName ?? string.Empty, new SendMessageDto { Text = note }));
                 }
             }
 
@@ -294,6 +282,48 @@ namespace Service.Services
                 ForUser = new MessageReactionsDto { MessageId = messageId, Reactions = forUser!.Reactions },
                 ForRecipient = new MessageReactionsDto { MessageId = messageId, Reactions = forRecipient!.Reactions }
             };
+        }
+
+        public async Task<PinUpdatedDto> PinAsync(string userId, int messageId, PinMessageDto model)
+        {
+            var message = await _messages.GetAsync(messageId, userId);
+            if (message is null)
+            {
+                throw new NotFoundException("Message not found.");
+            }
+
+            var conversation = await _conversations.GetByIdAsync(message.ConversationId, userId);
+            if (conversation is null || await _blocks.IsBlockedEitherWayAsync(userId, conversation.UserId))
+            {
+                throw new NotFoundException("Message not found.");
+            }
+
+            if (model.Pinned && message.PinnedAt is null && await _messages.CountPinnedAsync(conversation.ConversationId) >= MaxPinnedMessages)
+            {
+                throw new BadRequestException("You can pin at most 50 messages in a chat.");
+            }
+
+            await _messages.SetPinnedAsync(messageId, model.Pinned);
+
+            return new PinUpdatedDto
+            {
+                UserId = userId,
+                RecipientId = conversation.UserId,
+                ForUser = (await _messages.GetAsync(messageId, userId))!,
+                ForRecipient = (await _messages.GetAsync(messageId, conversation.UserId))!
+            };
+        }
+
+        public async Task<IEnumerable<MessageDto>> GetPinsAsync(string userId, string userName)
+        {
+            var other = await GetChatPartnerAsync(userId, userName, requireFriendship: false);
+            var conversation = await _conversations.GetBetweenAsync(userId, other.Id);
+            if (conversation is null)
+            {
+                return new List<MessageDto>();
+            }
+
+            return await _messages.GetPinnedAsync(conversation.ConversationId, userId);
         }
 
         public async Task MarkReadAsync(string userId, string userName)

@@ -6,6 +6,6 @@ namespace Repository.Repositories.Interfaces
     {
         Task<UserBlock?> GetBlockAsync(string blockerId, string blockedId);
         Task<bool> IsBlockedEitherWayAsync(string userIdA, string userIdB);
-        Task<IEnumerable<UserBlock>> GetBlockedByUserAsync(string blockerId);
+        Task<IEnumerable<UserBlock>> GetBlockedByUserAsync(string blockerId); 
     }
 }

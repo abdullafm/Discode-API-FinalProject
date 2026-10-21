@@ -2,6 +2,7 @@ using AutoMapper;
 using Domain.Entities;
 using Repository.Repositories.Interfaces;
 using Service.Helpers.DTOs.DirectMessages;
+using Service.Helpers.Exceptions;
 using Service.Helpers.Mappings;
 using Service.Services.Interfaces;
 
@@ -24,10 +25,8 @@ namespace Service.Services
             return message is null ? null : _mapper.Map<MessageDto>(message, ForViewer(viewerId));
         }
 
-        public async Task<MessageDto> CreateAsync(int conversationId, string senderId, string text)
+        public async Task<MessageDto> CreateAsync(int conversationId, string senderId, string text, int? replyToMessageId)
         {
-<<<<<<< Updated upstream
-=======
             int? replyId = replyToMessageId is > 0 ? replyToMessageId : null;
             if (replyId.HasValue)
             {
@@ -38,17 +37,12 @@ namespace Service.Services
                 }
             }
 
->>>>>>> Stashed changes
             var message = new Message
             {
                 ConversationId = conversationId,
                 SenderId = senderId,
-<<<<<<< Updated upstream
-                Text = text
-=======
                 Text = text,
                 ReplyToId = replyId
->>>>>>> Stashed changes
             };
             await _messages.AddAsync(message);
 
@@ -86,6 +80,29 @@ namespace Service.Services
         {
             var latest = (await _messages.GetLatestAsync(conversationId, 1)).LastOrDefault();
             return latest?.Id;
+        }
+
+        public async Task<IEnumerable<MessageDto>> GetPinnedAsync(int conversationId, string viewerId)
+        {
+            var messages = await _messages.GetPinnedAsync(conversationId);
+            return _mapper.Map<List<MessageDto>>(messages, ForViewer(viewerId));
+        }
+
+        public async Task<int> CountPinnedAsync(int conversationId)
+        {
+            return await _messages.CountPinnedAsync(conversationId);
+        }
+
+        public async Task SetPinnedAsync(int messageId, bool pinned)
+        {
+            var message = await _messages.GetWithDetailsAsync(messageId);
+            if (message is null)
+            {
+                return;
+            }
+
+            message.PinnedAt = pinned ? DateTime.UtcNow : null;
+            await _messages.UpdateAsync(message);
         }
 
         private static Action<IMappingOperationOptions> ForViewer(string viewerId)

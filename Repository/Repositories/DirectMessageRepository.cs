@@ -23,12 +23,9 @@ namespace Repository.Repositories
                 .AsNoTracking()
                 .Include(x => x.Sender)
                 .Include(x => x.Reactions)
-<<<<<<< Updated upstream
-=======
                 .Include(x => x.Forward)
                 .Include(x => x.ReplyTo)
                     .ThenInclude(r => r!.Sender)
->>>>>>> Stashed changes
                 .Where(x => x.Conversation.UserAId == first && x.Conversation.UserBId == second)
                 .OrderByDescending(x => x.CreatedAt)
                 .ThenByDescending(x => x.Id)

@@ -51,8 +51,6 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.SenderAvatarUrl, o => o.MapFrom(s => s.Sender.AvatarUrl ?? string.Empty))
                 .ForMember(d => d.Mine, o => o.MapFrom((s, d, m, context) =>
                     context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.SenderId == (string?)viewer))
-<<<<<<< Updated upstream
-=======
                 .ForMember(d => d.Forwarded, o => o.MapFrom(s => s.Forward != null))
                 .ForMember(d => d.ReplyTo, o => o.MapFrom((s, d, m, context) => s.ReplyTo == null ? null : new ReplyDto
                 {
@@ -62,7 +60,6 @@ namespace Service.Helpers.Mappings
                     SenderAvatarUrl = s.ReplyTo.Sender == null ? string.Empty : s.ReplyTo.Sender.AvatarUrl ?? string.Empty,
                     Text = s.ReplyTo.Text.Length > 120 ? s.ReplyTo.Text.Substring(0, 120) : s.ReplyTo.Text
                 }))
->>>>>>> Stashed changes
                 .ForMember(d => d.Reactions, o => o.MapFrom((s, d, m, context) => s.Reactions
                     .OrderBy(r => r.CreatedAt)
                     .ThenBy(r => r.Id)

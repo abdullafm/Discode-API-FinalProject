@@ -418,6 +418,12 @@ namespace Repository.Migrations
                     b.Property<DateTime?>("EditedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("PinnedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ReplyToId")
+                        .HasColumnType("int");
+
                     b.Property<string>("SenderId")
                         .IsRequired()
                         .HasMaxLength(450)
@@ -429,6 +435,8 @@ namespace Repository.Migrations
                         .HasColumnType("nvarchar(2000)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ReplyToId");
 
                     b.HasIndex("SenderId");
 
@@ -976,6 +984,11 @@ namespace Repository.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Domain.Entities.Message", "ReplyTo")
+                        .WithMany()
+                        .HasForeignKey("ReplyToId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Domain.Entities.AppUser", "Sender")
                         .WithMany()
                         .HasForeignKey("SenderId")
@@ -983,6 +996,8 @@ namespace Repository.Migrations
                         .IsRequired();
 
                     b.Navigation("Conversation");
+
+                    b.Navigation("ReplyTo");
 
                     b.Navigation("Sender");
                 });

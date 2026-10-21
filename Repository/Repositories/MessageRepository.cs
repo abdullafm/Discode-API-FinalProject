@@ -22,12 +22,9 @@ namespace Repository.Repositories
                 .AsNoTracking()
                 .Include(x => x.Sender)
                 .Include(x => x.Reactions)
-<<<<<<< Updated upstream
-=======
                 .Include(x => x.Forward)
                 .Include(x => x.ReplyTo)
                     .ThenInclude(r => r!.Sender)
->>>>>>> Stashed changes
                 .Where(x => x.ConversationId == conversationId)
                 .OrderByDescending(x => x.CreatedAt)
                 .ThenByDescending(x => x.Id)
@@ -38,8 +35,6 @@ namespace Repository.Repositories
             return latest;
         }
 
-<<<<<<< Updated upstream
-=======
         public async Task<IEnumerable<Message>> GetPinnedAsync(int conversationId)
         {
             return await _dbSet
@@ -59,18 +54,14 @@ namespace Repository.Repositories
             return await _dbSet.CountAsync(x => x.ConversationId == conversationId && x.PinnedAt != null);
         }
 
->>>>>>> Stashed changes
         public async Task<Message?> GetWithDetailsAsync(int id)
         {
             return await _dbSet
                 .Include(x => x.Sender)
                 .Include(x => x.Reactions)
-<<<<<<< Updated upstream
-=======
                 .Include(x => x.Forward)
                 .Include(x => x.ReplyTo)
                     .ThenInclude(r => r!.Sender)
->>>>>>> Stashed changes
                 .Include(x => x.Conversation)
                 .FirstOrDefaultAsync(x => x.Id == id);
         }

@@ -7,10 +7,6 @@ namespace Repository.Data
 {
     public class AppDbContext : IdentityDbContext<AppUser>
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
-        {
-        }
-
         public DbSet<FriendRequest> FriendRequests { get; set; }
         public DbSet<UserBlock> UserBlocks { get; set; }
         public DbSet<Post> Posts { get; set; }
@@ -28,6 +24,10 @@ namespace Repository.Data
         public DbSet<Message> Messages { get; set; }
         public DbSet<MessageReaction> MessageReactions { get; set; }
         public DbSet<MessageForward> MessageForwards { get; set; }
+
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+        {
+        }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
