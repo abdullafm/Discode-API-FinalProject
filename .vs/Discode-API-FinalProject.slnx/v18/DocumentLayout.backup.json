@@ -90,8 +90,7 @@
               "RelativeToolTip": "Discode-API-FinalProject\\Controllers\\Client\\DirectMessageController.cs",
               "ViewState": "AgIAADwAAAAAAAAAAADwv0sAAABEAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-21T06:46:00.999Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-10-21T06:46:00.999Z"
             },
             {
               "$type": "Document",
@@ -101,7 +100,7 @@
               "RelativeDocumentMoniker": "Service\\Helpers\\DTOs\\DirectMessages\\MessageDto.cs",
               "ToolTip": "C:\\Users\\User\\source\\repos\\Discode-API-FinalProject\\Service\\Helpers\\DTOs\\DirectMessages\\MessageDto.cs",
               "RelativeToolTip": "Service\\Helpers\\DTOs\\DirectMessages\\MessageDto.cs",
-              "ViewState": "AgIAAAoAAAAAAAAAAAA/wA8AAAAvAAAAAAAAAA==",
+              "ViewState": "AgIAAAsAAAAAAAAAAAA9wBMAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-10-21T06:45:41.107Z",
               "EditorCaption": ""
@@ -116,8 +115,7 @@
               "RelativeToolTip": "Repository\\Repositories\\Interfaces\\IMessageRepository.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAATAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-10-20T08:55:09.527Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-10-20T08:55:09.527Z"
             },
             {
               "$type": "Document",

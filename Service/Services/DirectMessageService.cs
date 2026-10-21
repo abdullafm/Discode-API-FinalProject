@@ -67,16 +67,17 @@ namespace Service.Services
             var other = await GetChatPartnerAsync(userId, userName, requireFriendship: false);
             var isFriend = (await _friendRequests.GetBetweenAsync(userId, other.Id))?.Status == FriendRequestStatus.Accepted;
             var showDetails = other.IsPublic || isFriend;
+            var presence = await _presence.ResolveAsync(other);
             var chat = new ChatDto
             {
                 Bio = showDetails ? other.Bio ?? string.Empty : string.Empty,
                 Pronouns = showDetails ? other.Pronouns ?? string.Empty : string.Empty,
-                CustomStatus = showDetails ? other.CustomStatus ?? string.Empty : string.Empty,
+                CustomStatus = showDetails && presence != "offline" ? other.CustomStatus ?? string.Empty : string.Empty,
                 UserId = other.Id,
                 UserName = other.UserName ?? string.Empty,
                 DisplayName = string.IsNullOrWhiteSpace(other.DisplayName) ? other.UserName ?? string.Empty : other.DisplayName,
                 AvatarUrl = other.AvatarUrl ?? string.Empty,
-                Status = await _presence.ResolveAsync(other),
+                Status = presence,
                 MemberSince = other.CreatedAt,
                 IsFriend = isFriend
             };

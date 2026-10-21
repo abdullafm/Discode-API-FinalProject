@@ -479,6 +479,10 @@ namespace Service.Services
             else
             {
                 profile.Status = await _presence.ResolveAsync(user);
+                if (profile.Status == "offline" && profile.Relation != "self")
+                {
+                    profile.CustomStatus = string.Empty;
+                }
             }
 
             return profile;

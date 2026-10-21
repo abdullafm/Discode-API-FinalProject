@@ -46,6 +46,11 @@ namespace Service.Services
             return await MapChangeAsync(user, true);
         }
 
+        public async Task<IEnumerable<string>> GetFriendIdsAsync(string userId)
+        {
+            return await _presenceRepository.GetFriendIdsAsync(userId);
+        }
+
         public async Task<string> ResolveAsync(AppUser user)
         {
             if (user.PreferredStatus == PresenceStatus.Invisible || !await _trackerRepository.IsOnlineAsync(user.Id))

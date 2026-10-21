@@ -14,11 +14,13 @@ namespace Discode_API_FinalProject.Controllers.Client
     public class AccountController : ControllerBase
     {
         private readonly IAccountService _accountService;
+        private readonly IPresenceService _presenceService;
         private readonly IHubContext<PresenceHub> _hubContext;
 
-        public AccountController(IAccountService accountService, IHubContext<PresenceHub> hubContext)
+        public AccountController(IAccountService accountService, IPresenceService presenceService, IHubContext<PresenceHub> hubContext)
         {
             _accountService = accountService;
+            _presenceService = presenceService;
             _hubContext = hubContext;
         }
 
@@ -124,6 +126,7 @@ namespace Discode_API_FinalProject.Controllers.Client
             }
 
             await _hubContext.Clients.Group(PresenceHub.ProfileGroup(UserId)).SendAsync("ProfileChanged", new { userId = UserId });
+            await _hubContext.Clients.Users(await _presenceService.GetFriendIdsAsync(UserId)).SendAsync("ProfileChanged", new { userId = UserId });
             await _hubContext.Clients.All.SendAsync("PostsChanged");
             return Ok(result);
         }
