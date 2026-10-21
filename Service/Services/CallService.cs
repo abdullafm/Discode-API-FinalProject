@@ -164,6 +164,7 @@ namespace Service.Services
                 {
                     state.Active = true;
                     state.CalleeIn = false;
+                    state.CalleeJoinable = true;
                     reason = state.CalleeId == userId ? "declined" : "missed";
                     declinedState = state;
                 }
@@ -178,6 +179,7 @@ namespace Service.Services
             {
                 var declined = ToLeft(declinedState, declinedState.CalleeId);
                 declined.Reason = reason;
+                declined.LeftUserCall = ToDto(declinedState, declinedState.CalleeId);
                 if (declinedState.MessageId > 0)
                 {
                     declined.Message = await _directMessages.FinishCallMessageAsync(declinedState.CallerId, declinedState.CalleeId, declinedState.MessageId, null, true);
@@ -242,7 +244,8 @@ namespace Service.Services
             lock (Gate)
             {
                 Purge();
-                var state = FindFor(userId);
+                var state = FindFor(userId)
+                            ?? Calls.Values.FirstOrDefault(x => x.Active && x.CalleeId == userId && x.CalleeJoinable && x.CallerIn);
                 return state is null ? null : ToDto(state, userId);
             }
         }
@@ -297,6 +300,7 @@ namespace Service.Services
             else if (state.CalleeId == userId)
             {
                 state.CalleeIn = value;
+                state.CalleeJoinable = false;
             }
         }
 
@@ -333,6 +337,7 @@ namespace Service.Services
                 Role = isCaller ? "caller" : "callee",
                 Video = state.Video,
                 PeerPresent = !state.Active || (isCaller ? state.CalleeIn : state.CallerIn),
+                Joined = !state.Active || IsIn(state, viewerId),
                 Other = isCaller ? state.Callee : state.Caller
             };
         }
@@ -368,6 +373,7 @@ namespace Service.Services
             public bool Active { get; set; }
             public bool CallerIn { get; set; } = true;
             public bool CalleeIn { get; set; } = true;
+            public bool CalleeJoinable { get; set; }
             public int MessageId { get; set; }
             public DateTime? AnsweredAt { get; set; }
             public DateTime StartedAt { get; set; }

@@ -76,7 +76,15 @@ namespace Discode_API_FinalProject.Hubs
             if (ended.LeftUserId is not null)
             {
                 var peerId = ended.LeftUserId == ended.CallerId ? ended.CalleeId : ended.CallerId;
-                await clients.User(ended.LeftUserId).SendAsync("CallEnded", new { callId = ended.CallId, reason = ended.Reason });
+                if (ended.LeftUserCall is not null)
+                {
+                    await clients.User(ended.LeftUserId).SendAsync("CallUpdated", ended.LeftUserCall);
+                }
+                else
+                {
+                    await clients.User(ended.LeftUserId).SendAsync("CallEnded", new { callId = ended.CallId, reason = ended.Reason });
+                }
+
                 await clients.User(peerId).SendAsync("CallPeerLeft", new { callId = ended.CallId, reason = ended.Reason });
                 if (ended.Message is not null)
                 {
