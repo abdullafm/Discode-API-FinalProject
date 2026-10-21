@@ -6,6 +6,7 @@ namespace Service.Services.Interfaces
     {
         Task<IEnumerable<ConversationDto>> GetConversationsAsync(string userId);
         Task<ChatDto> GetChatAsync(string userId, string userName);
+        Task<RelationDto> GetRelationAsync(string userId, string userName);
         Task<SentMessageDto> SendAsync(string senderId, string userName, SendMessageDto model);
         Task<EditedMessageDto> EditAsync(string userId, int messageId, SendMessageDto model);
         Task<IEnumerable<SentMessageDto>> ForwardAsync(string userId, int messageId, ForwardMessageDto model);

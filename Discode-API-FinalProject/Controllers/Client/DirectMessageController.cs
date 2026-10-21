@@ -42,6 +42,12 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(await _directMessages.GetChatAsync(UserId, userName));
         }
 
+        [HttpGet("{userName}/relation")]
+        public async Task<IActionResult> GetRelation(string userName)
+        {
+            return Ok(await _directMessages.GetRelationAsync(UserId, userName));
+        }
+
         [HttpPost("{userName}")]
         public async Task<IActionResult> Send(string userName, [FromBody] SendMessageDto model)
         {

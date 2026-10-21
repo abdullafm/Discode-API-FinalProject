@@ -82,9 +82,7 @@ namespace Service.Services
                 MemberSince = other.CreatedAt,
                 IsFriend = isFriend,
                 FriendRequestId = friendship?.Id,
-                Relation = friendship is null
-                    ? "none"
-                    : isFriend ? "friend" : friendship.SenderId == userId ? "pending-sent" : "pending-received"
+                Relation = DescribeRelation(friendship, userId)
             };
 
             var conversation = await _conversations.GetBetweenAsync(userId, other.Id);
@@ -113,6 +111,17 @@ namespace Service.Services
             chat.Messages = _mapper.Map<List<MessageDto>>(messages, options => options.Items[MappingProfile.ViewerIdKey] = userId);
             await _conversations.ResetUnreadAsync(userId, other.Id);
             return chat;
+        }
+
+        public async Task<RelationDto> GetRelationAsync(string userId, string userName)
+        {
+            var other = await GetChatPartnerAsync(userId, userName, requireFriendship: false);
+            var friendship = await _friendRequests.GetBetweenAsync(userId, other.Id);
+            return new RelationDto
+            {
+                Relation = DescribeRelation(friendship, userId),
+                FriendRequestId = friendship?.Id
+            };
         }
 
         public async Task<SentMessageDto> SendAsync(string senderId, string userName, SendMessageDto model)
@@ -362,6 +371,21 @@ namespace Service.Services
             }
 
             return other;
+        }
+
+        private static string DescribeRelation(FriendRequest? friendship, string userId)
+        {
+            if (friendship is null)
+            {
+                return "none";
+            }
+
+            if (friendship.Status == FriendRequestStatus.Accepted)
+            {
+                return "friend";
+            }
+
+            return friendship.SenderId == userId ? "pending-sent" : "pending-received";
         }
 
         private static string Preview(string text)
