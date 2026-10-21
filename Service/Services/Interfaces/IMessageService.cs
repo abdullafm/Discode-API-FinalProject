@@ -5,7 +5,7 @@ namespace Service.Services.Interfaces
     public interface IMessageService
     {
         Task<MessageDto?> GetAsync(int messageId, string viewerId);
-        Task<MessageDto> CreateAsync(int conversationId, string senderId, string text, int? replyToMessageId);
+        Task<MessageDto> CreateAsync(int conversationId, string senderId, string text, int? replyToMessageId, bool undelivered);
         Task<MessageDto?> EditAsync(int messageId, string text, string viewerId);
         Task DeleteAsync(int messageId);
         Task<int?> GetLatestIdAsync(int conversationId);

@@ -86,7 +86,7 @@ namespace Service.Services
             return rows.Select(x => MapBlocked(x.Id, x.Blocked)).ToList();
         }
 
-        public async Task UnblockAsync(string userId, int blockId)
+        public async Task<FriendRequestDto> UnblockAsync(string userId, int blockId)
         {
             var block = await _blocks.GetByIdAsync(blockId);
             if (block is null || block.BlockerId != userId)
@@ -94,7 +94,9 @@ namespace Service.Services
                 throw new NotFoundException("Blocked user not found.");
             }
 
+            var user = await _accounts.GetByIdAsync(block.BlockedId);
             await _blocks.DeleteAsync(block);
+            return MapBlocked(block.Id, user!);
         }
 
         private FriendRequestDto MapBlocked(int id, AppUser user)

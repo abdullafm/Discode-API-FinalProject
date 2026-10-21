@@ -26,7 +26,7 @@ namespace Repository.Repositories
                 .Include(x => x.Forward)
                 .Include(x => x.ReplyTo)
                     .ThenInclude(r => r!.Sender)
-                .Where(x => x.Conversation.UserAId == first && x.Conversation.UserBId == second)
+                .Where(x => x.Conversation.UserAId == first && x.Conversation.UserBId == second && (!x.Undelivered || x.SenderId == userId))
                 .OrderByDescending(x => x.CreatedAt)
                 .ThenByDescending(x => x.Id)
                 .Take(count)

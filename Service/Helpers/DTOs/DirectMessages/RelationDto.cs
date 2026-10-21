@@ -4,5 +4,6 @@ namespace Service.Helpers.DTOs.DirectMessages
     {
         public string Relation { get; set; } = "none";
         public int? FriendRequestId { get; set; }
+        public int? BlockId { get; set; }
     }
 }

@@ -22,10 +22,15 @@ namespace Service.Services
         public async Task<MessageDto?> GetAsync(int messageId, string viewerId)
         {
             var message = await _messages.GetWithDetailsAsync(messageId);
-            return message is null ? null : _mapper.Map<MessageDto>(message, ForViewer(viewerId));
+            if (message is null || (message.Undelivered && message.SenderId != viewerId))
+            {
+                return null;
+            }
+
+            return _mapper.Map<MessageDto>(message, ForViewer(viewerId));
         }
 
-        public async Task<MessageDto> CreateAsync(int conversationId, string senderId, string text, int? replyToMessageId)
+        public async Task<MessageDto> CreateAsync(int conversationId, string senderId, string text, int? replyToMessageId, bool undelivered)
         {
             int? replyId = replyToMessageId is > 0 ? replyToMessageId : null;
             if (replyId.HasValue)
@@ -42,7 +47,8 @@ namespace Service.Services
                 ConversationId = conversationId,
                 SenderId = senderId,
                 Text = text,
-                ReplyToId = replyId
+                ReplyToId = replyId,
+                Undelivered = undelivered
             };
             await _messages.AddAsync(message);
 

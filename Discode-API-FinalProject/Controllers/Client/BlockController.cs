@@ -47,7 +47,8 @@ namespace Discode_API_FinalProject.Controllers.Client
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Unblock(int id)
         {
-            await _userBlockService.UnblockAsync(UserId, id);
+            var result = await _userBlockService.UnblockAsync(UserId, id);
+            await _hubContext.Clients.Users(UserId, result.UserId).SendAsync("FriendsChanged");
             return Ok();
         }
     }

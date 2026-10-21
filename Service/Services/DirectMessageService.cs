@@ -66,6 +66,7 @@ namespace Service.Services
         {
             var other = await GetChatPartnerAsync(userId, userName, requireFriendship: false);
             var friendship = await _friendRequests.GetBetweenAsync(userId, other.Id);
+            var myBlock = await _blocks.GetBlockAsync(userId, other.Id);
             var isFriend = friendship?.Status == FriendRequestStatus.Accepted;
             var showDetails = other.IsPublic || isFriend;
             var presence = await _presence.ResolveAsync(other);
@@ -82,7 +83,8 @@ namespace Service.Services
                 MemberSince = other.CreatedAt,
                 IsFriend = isFriend,
                 FriendRequestId = friendship?.Id,
-                Relation = DescribeRelation(friendship, userId)
+                Relation = myBlock is null ? DescribeRelation(friendship, userId) : "blocked",
+                BlockId = myBlock?.Id
             };
 
             var conversation = await _conversations.GetBetweenAsync(userId, other.Id);
@@ -117,10 +119,12 @@ namespace Service.Services
         {
             var other = await GetChatPartnerAsync(userId, userName, requireFriendship: false);
             var friendship = await _friendRequests.GetBetweenAsync(userId, other.Id);
+            var myBlock = await _blocks.GetBlockAsync(userId, other.Id);
             return new RelationDto
             {
-                Relation = DescribeRelation(friendship, userId),
-                FriendRequestId = friendship?.Id
+                Relation = myBlock is null ? DescribeRelation(friendship, userId) : "blocked",
+                FriendRequestId = friendship?.Id,
+                BlockId = myBlock?.Id
             };
         }
 
@@ -128,14 +132,23 @@ namespace Service.Services
         {
             await _validator.EnsureValidAsync(model);
 
-            var recipient = await GetChatPartnerAsync(senderId, userName, requireFriendship: true);
+            var recipient = await GetChatPartnerAsync(senderId, userName, requireFriendship: false);
+            var blocked = await _blocks.IsBlockedEitherWayAsync(senderId, recipient.Id);
+            if (!blocked)
+            {
+                await EnsureFriendsAsync(senderId, recipient.Id);
+            }
+
             var text = model.Text.Trim();
 
             var conversation = await _conversations.GetBetweenAsync(senderId, recipient.Id)
-                               ?? await _conversations.CreateAsync(senderId, recipient.Id, Preview(text), hiddenForOther: false);
+                               ?? await _conversations.CreateAsync(senderId, recipient.Id, blocked ? string.Empty : Preview(text), hiddenForOther: blocked);
 
-            var messageForSender = await _messages.CreateAsync(conversation.ConversationId, senderId, text, model.ReplyToMessageId);
-            await _conversations.RecordMessageAsync(senderId, recipient.Id, Preview(text), messageForSender.CreatedAt);
+            var messageForSender = await _messages.CreateAsync(conversation.ConversationId, senderId, text, model.ReplyToMessageId, blocked);
+            if (!blocked)
+            {
+                await _conversations.RecordMessageAsync(senderId, recipient.Id, Preview(text), messageForSender.CreatedAt);
+            }
 
             return await ToSentAsync(senderId, recipient.Id, messageForSender);
         }
@@ -247,7 +260,7 @@ namespace Service.Services
             }
 
             var conversation = await _conversations.GetByIdAsync(message.ConversationId, userId);
-            if (conversation is null || await _blocks.IsBlockedEitherWayAsync(userId, conversation.UserId))
+            if (conversation is null)
             {
                 throw new NotFoundException("Message not found.");
             }
@@ -356,21 +369,26 @@ namespace Service.Services
         private async Task<AppUser> GetChatPartnerAsync(string userId, string userName, bool requireFriendship)
         {
             var other = await _accounts.GetByUserNameAsync(userName.Trim());
-            if (other is null || other.Id == userId || await _blocks.IsBlockedEitherWayAsync(userId, other.Id))
+            if (other is null || other.Id == userId)
             {
                 throw new NotFoundException("User not found.");
             }
 
             if (requireFriendship)
             {
-                var request = await _friendRequests.GetBetweenAsync(userId, other.Id);
-                if (request is null || request.Status != FriendRequestStatus.Accepted)
-                {
-                    throw new BadRequestException("You can only message your friends.");
-                }
+                await EnsureFriendsAsync(userId, other.Id);
             }
 
             return other;
+        }
+
+        private async Task EnsureFriendsAsync(string userId, string otherId)
+        {
+            var request = await _friendRequests.GetBetweenAsync(userId, otherId);
+            if (request is null || request.Status != FriendRequestStatus.Accepted)
+            {
+                throw new BadRequestException("You can only message your friends.");
+            }
         }
 
         private static string DescribeRelation(FriendRequest? friendship, string userId)

@@ -28,10 +28,7 @@ namespace Repository.Repositories
                 .AsNoTracking()
                 .Include(x => x.UserA)
                 .Include(x => x.UserB)
-                .Where(x => ((x.UserAId == userId && !x.UserAHidden) || (x.UserBId == userId && !x.UserBHidden)) &&
-                            !_dbContext.UserBlocks.Any(b =>
-                                (b.BlockerId == userId && b.BlockedId == (x.UserAId == userId ? x.UserBId : x.UserAId)) ||
-                                (b.BlockedId == userId && b.BlockerId == (x.UserAId == userId ? x.UserBId : x.UserAId))))
+                .Where(x => (x.UserAId == userId && !x.UserAHidden) || (x.UserBId == userId && !x.UserBHidden))
                 .OrderByDescending(x => x.LastMessageAt)
                 .ToListAsync();
         }

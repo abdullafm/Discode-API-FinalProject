@@ -58,11 +58,14 @@ namespace Discode_API_FinalProject.Controllers.Client
                 message = sent.MessageForSender,
                 conversation = sent.ConversationForSender
             });
-            await _hubContext.Clients.User(sent.RecipientId).SendAsync("DirectMessage", new
+            if (!sent.MessageForSender.Undelivered)
             {
-                message = sent.MessageForRecipient,
-                conversation = sent.ConversationForRecipient
-            });
+                await _hubContext.Clients.User(sent.RecipientId).SendAsync("DirectMessage", new
+                {
+                    message = sent.MessageForRecipient,
+                    conversation = sent.ConversationForRecipient
+                });
+            }
 
             return Ok(sent.MessageForSender);
         }
