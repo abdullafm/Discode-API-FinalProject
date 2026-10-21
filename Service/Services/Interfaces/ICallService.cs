@@ -6,8 +6,8 @@ namespace Service.Services.Interfaces
     {
         Task<CallPairDto> StartAsync(string callerId, string userName, bool video);
         CallPairDto Accept(string userId, string callId);
-        CallEndedDto? End(string userId, string callId, bool timedOut);
-        IEnumerable<CallEndedDto> EndAllFor(string userId);
+        Task<CallEndedDto?> EndAsync(string userId, string callId, bool timedOut);
+        Task<IEnumerable<CallEndedDto>> EndAllForAsync(string userId);
         CallDto? GetFor(string userId);
         string? GetPeerId(string userId, string callId);
     }

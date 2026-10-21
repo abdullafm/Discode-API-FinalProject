@@ -15,6 +15,7 @@ namespace Service.Services
     {
         private const int HistoryLimit = 100;
         private const int PreviewLength = 150;
+        private const string CallPreview = "Started a call";
         private const int MaxPinnedMessages = 50;
 
         private readonly IConversationService _conversations;
@@ -168,7 +169,7 @@ namespace Service.Services
             await _validator.EnsureValidAsync(model);
 
             var original = await _messages.GetAsync(messageId, userId);
-            if (original is null || !original.Mine)
+            if (original is null || !original.Mine || original.IsCall)
             {
                 throw new NotFoundException("Message not found.");
             }
@@ -205,7 +206,7 @@ namespace Service.Services
             await _forwardValidator.EnsureValidAsync(model);
 
             var message = await _messages.GetAsync(messageId, userId);
-            if (message is null)
+            if (message is null || message.IsCall)
             {
                 throw new NotFoundException("Message not found.");
             }
@@ -254,10 +255,32 @@ namespace Service.Services
             return sent;
         }
 
+        public async Task<SentMessageDto> StartCallMessageAsync(string callerId, string calleeId)
+        {
+            var conversation = await _conversations.GetBetweenAsync(callerId, calleeId)
+                               ?? await _conversations.CreateAsync(callerId, calleeId, CallPreview, hiddenForOther: false);
+
+            var message = await _messages.CreateCallAsync(conversation.ConversationId, callerId);
+            await _conversations.RecordMessageAsync(callerId, calleeId, CallPreview, message.CreatedAt);
+            return await ToSentAsync(callerId, calleeId, message);
+        }
+
+        public async Task<EditedMessageDto> FinishCallMessageAsync(string callerId, string calleeId, int messageId, int? seconds, bool missed)
+        {
+            await _messages.FinishCallAsync(messageId, seconds, missed);
+            return new EditedMessageDto
+            {
+                SenderId = callerId,
+                RecipientId = calleeId,
+                MessageForSender = (await _messages.GetAsync(messageId, callerId))!,
+                MessageForRecipient = (await _messages.GetAsync(messageId, calleeId))!
+            };
+        }
+
         public async Task<DeletedMessageDto> DeleteAsync(string userId, int messageId)
         {
             var message = await _messages.GetAsync(messageId, userId);
-            if (message is null || !message.Mine)
+            if (message is null || !message.Mine || message.IsCall)
             {
                 throw new NotFoundException("Message not found.");
             }
@@ -290,7 +313,7 @@ namespace Service.Services
             await _reactionValidator.EnsureValidAsync(model);
 
             var message = await _messages.GetAsync(messageId, userId);
-            if (message is null)
+            if (message is null || message.IsCall)
             {
                 throw new NotFoundException("Message not found.");
             }
@@ -318,7 +341,7 @@ namespace Service.Services
         public async Task<PinUpdatedDto> PinAsync(string userId, int messageId, PinMessageDto model)
         {
             var message = await _messages.GetAsync(messageId, userId);
-            if (message is null)
+            if (message is null || message.IsCall)
             {
                 throw new NotFoundException("Message not found.");
             }

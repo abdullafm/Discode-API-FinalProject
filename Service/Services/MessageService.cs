@@ -1,5 +1,6 @@
 using AutoMapper;
 using Domain.Entities;
+using Domain.Enums;
 using Repository.Repositories.Interfaces;
 using Service.Helpers.DTOs.DirectMessages;
 using Service.Helpers.Exceptions;
@@ -36,7 +37,7 @@ namespace Service.Services
             if (replyId.HasValue)
             {
                 var target = await _messages.GetWithDetailsAsync(replyId.Value);
-                if (target is null || target.ConversationId != conversationId)
+                if (target is null || target.ConversationId != conversationId || target.Kind != MessageKind.Text)
                 {
                     throw new BadRequestException("You can only reply to a message in this chat.");
                 }
@@ -68,6 +69,34 @@ namespace Service.Services
             message.EditedAt = DateTime.UtcNow;
             await _messages.UpdateAsync(message);
             return _mapper.Map<MessageDto>(message, ForViewer(viewerId));
+        }
+
+        public async Task<MessageDto> CreateCallAsync(int conversationId, string senderId)
+        {
+            var message = new Message
+            {
+                ConversationId = conversationId,
+                SenderId = senderId,
+                Text = string.Empty,
+                Kind = MessageKind.Call
+            };
+            await _messages.AddAsync(message);
+
+            var saved = await _messages.GetWithDetailsAsync(message.Id);
+            return _mapper.Map<MessageDto>(saved, ForViewer(senderId));
+        }
+
+        public async Task FinishCallAsync(int messageId, int? seconds, bool missed)
+        {
+            var message = await _messages.GetWithDetailsAsync(messageId);
+            if (message is null || message.Kind != MessageKind.Call)
+            {
+                return;
+            }
+
+            message.CallSeconds = seconds;
+            message.CallMissed = missed;
+            await _messages.UpdateAsync(message);
         }
 
         public async Task DeleteAsync(int messageId)

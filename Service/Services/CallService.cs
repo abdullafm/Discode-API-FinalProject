@@ -16,12 +16,15 @@ namespace Service.Services
         private readonly IUserBlockRepository _blocks;
         private readonly IFriendRequestRepository _friendRequests;
         private readonly IPresenceTrackerRepository _tracker;
+        private readonly IDirectMessageService _directMessages;
 
         public CallService(IAccountRepository accounts,
                            IUserBlockRepository blocks,
                            IFriendRequestRepository friendRequests,
-                           IPresenceTrackerRepository tracker)
+                           IPresenceTrackerRepository tracker,
+                           IDirectMessageService directMessages)
         {
+            _directMessages = directMessages;
             _accounts = accounts;
             _blocks = blocks;
             _friendRequests = friendRequests;
@@ -85,7 +88,23 @@ namespace Service.Services
                 Calls[state.Id] = state;
             }
 
-            return ToPair(state);
+            try
+            {
+                var sent = await _directMessages.StartCallMessageAsync(callerId, callee.Id);
+                state.MessageId = sent.MessageForSender.Id;
+                var pair = ToPair(state);
+                pair.Message = sent;
+                return pair;
+            }
+            catch
+            {
+                lock (Gate)
+                {
+                    Calls.Remove(state.Id);
+                }
+
+                throw;
+            }
         }
 
         public CallPairDto Accept(string userId, string callId)
@@ -98,41 +117,65 @@ namespace Service.Services
                 }
 
                 state.Active = true;
+                state.AnsweredAt = DateTime.UtcNow;
                 return ToPair(state);
             }
         }
 
-        public CallEndedDto? End(string userId, string callId, bool timedOut)
+        public async Task<CallEndedDto?> EndAsync(string userId, string callId, bool timedOut)
         {
+            CallState state;
+            string reason;
             lock (Gate)
             {
-                if (!Calls.TryGetValue(callId, out var state) || (state.CallerId != userId && state.CalleeId != userId))
+                if (!Calls.TryGetValue(callId, out var found) || (found.CallerId != userId && found.CalleeId != userId))
                 {
                     return null;
                 }
 
+                state = found;
                 Calls.Remove(callId);
-                var reason = state.Active
+                reason = state.Active
                     ? "ended"
                     : state.CalleeId == userId ? "declined" : timedOut ? "missed" : "cancelled";
-                return ToEnded(state, reason);
             }
+
+            return await FinishAsync(state, reason);
         }
 
-        public IEnumerable<CallEndedDto> EndAllFor(string userId)
+        public async Task<IEnumerable<CallEndedDto>> EndAllForAsync(string userId)
         {
+            List<CallState> ended;
             lock (Gate)
             {
-                var ended = Calls.Values
+                ended = Calls.Values
                     .Where(x => x.CallerId == userId || x.CalleeId == userId)
                     .ToList();
                 foreach (var state in ended)
                 {
                     Calls.Remove(state.Id);
                 }
-
-                return ended.Select(x => ToEnded(x, "ended")).ToList();
             }
+
+            var results = new List<CallEndedDto>();
+            foreach (var state in ended)
+            {
+                results.Add(await FinishAsync(state, "ended"));
+            }
+
+            return results;
+        }
+
+        private async Task<CallEndedDto> FinishAsync(CallState state, string reason)
+        {
+            var ended = ToEnded(state, reason);
+            if (state.MessageId > 0)
+            {
+                int? seconds = state.AnsweredAt is null ? null : Math.Max(1, (int)(DateTime.UtcNow - state.AnsweredAt.Value).TotalSeconds);
+                ended.Message = await _directMessages.FinishCallMessageAsync(state.CallerId, state.CalleeId, state.MessageId, seconds, state.AnsweredAt is null);
+            }
+
+            return ended;
         }
 
         public CallDto? GetFor(string userId)
@@ -233,6 +276,8 @@ namespace Service.Services
             public string CalleeId { get; set; } = string.Empty;
             public bool Video { get; set; }
             public bool Active { get; set; }
+            public int MessageId { get; set; }
+            public DateTime? AnsweredAt { get; set; }
             public DateTime StartedAt { get; set; }
             public CallPartyDto Caller { get; set; } = new();
             public CallPartyDto Callee { get; set; } = new();

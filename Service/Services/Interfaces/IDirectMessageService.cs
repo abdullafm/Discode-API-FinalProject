@@ -10,6 +10,8 @@ namespace Service.Services.Interfaces
         Task<SentMessageDto> SendAsync(string senderId, string userName, SendMessageDto model);
         Task<EditedMessageDto> EditAsync(string userId, int messageId, SendMessageDto model);
         Task<IEnumerable<SentMessageDto>> ForwardAsync(string userId, int messageId, ForwardMessageDto model);
+        Task<SentMessageDto> StartCallMessageAsync(string callerId, string calleeId);
+        Task<EditedMessageDto> FinishCallMessageAsync(string callerId, string calleeId, int messageId, int? seconds, bool missed);
         Task<DeletedMessageDto> DeleteAsync(string userId, int messageId);
         Task<ReactionUpdatedDto> ReactAsync(string userId, int messageId, ToggleReactionDto model);
         Task<PinUpdatedDto> PinAsync(string userId, int messageId, PinMessageDto model);

@@ -16,6 +16,12 @@ namespace Discode_API_FinalProject.Hubs
             try
             {
                 var pair = await _callService.StartAsync(UserId, userName, video);
+                if (pair.Message is not null)
+                {
+                    await Clients.User(pair.CallerId).SendAsync("DirectMessage", new { message = pair.Message.MessageForSender, conversation = pair.Message.ConversationForSender });
+                    await Clients.User(pair.CalleeId).SendAsync("DirectMessage", new { message = pair.Message.MessageForRecipient, conversation = pair.Message.ConversationForRecipient });
+                }
+
                 await Clients.User(pair.CalleeId).SendAsync("IncomingCall", pair.ForCallee);
                 return pair.ForCaller;
             }
@@ -50,10 +56,20 @@ namespace Discode_API_FinalProject.Hubs
 
         public async Task EndCall(string callId, bool timedOut)
         {
-            var ended = _callService.End(UserId, callId, timedOut);
+            var ended = await _callService.EndAsync(UserId, callId, timedOut);
             if (ended is not null)
             {
-                await Clients.Users(ended.CallerId, ended.CalleeId).SendAsync("CallEnded", ended);
+                await AnnounceCallEndAsync(Clients, ended);
+            }
+        }
+
+        private static async Task AnnounceCallEndAsync(IHubClients<IClientProxy> clients, CallEndedDto ended)
+        {
+            await clients.Users(ended.CallerId, ended.CalleeId).SendAsync("CallEnded", new { callId = ended.CallId, reason = ended.Reason });
+            if (ended.Message is not null)
+            {
+                await clients.User(ended.CallerId).SendAsync("DirectMessageCallUpdated", new { message = ended.Message.MessageForSender });
+                await clients.User(ended.CalleeId).SendAsync("DirectMessageCallUpdated", new { message = ended.Message.MessageForRecipient });
             }
         }
 
@@ -88,9 +104,9 @@ namespace Discode_API_FinalProject.Hubs
             }
 
             var calls = scope.ServiceProvider.GetRequiredService<ICallService>();
-            foreach (var ended in calls.EndAllFor(userId))
+            foreach (var ended in await calls.EndAllForAsync(userId))
             {
-                await hubContext.Clients.Users(ended.CallerId, ended.CalleeId).SendAsync("CallEnded", ended);
+                await AnnounceCallEndAsync(hubContext.Clients, ended);
             }
         }
     }
