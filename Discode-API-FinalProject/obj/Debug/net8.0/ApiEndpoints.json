@@ -1,0 +1,840 @@
+[
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
+    "Method": "ForgotPassword",
+    "RelativePath": "api/Account/forgot-password",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Accounts.ForgotPasswordDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
+    "Method": "Login",
+    "RelativePath": "api/Account/login",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Accounts.LoginDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
+    "Method": "MyProfileUpdate",
+    "RelativePath": "api/Account/myprofileupdate",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Accounts.UpdateProfileDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
+    "Method": "ChangePassword",
+    "RelativePath": "api/Account/password",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Accounts.ChangePasswordDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
+    "Method": "Profile",
+    "RelativePath": "api/Account/profile",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
+    "Method": "MyProfileUpdate",
+    "RelativePath": "api/Account/profile",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Accounts.UpdateProfileDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
+    "Method": "Register",
+    "RelativePath": "api/Account/register",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Accounts.RegisterDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
+    "Method": "ResendCode",
+    "RelativePath": "api/Account/resend-code",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Accounts.ResendCodeDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
+    "Method": "ResetPassword",
+    "RelativePath": "api/Account/reset-password",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Accounts.ResetPasswordDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
+    "Method": "SearchUser",
+    "RelativePath": "api/Account/search",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "searchName",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
+    "Method": "ChangeUsername",
+    "RelativePath": "api/Account/username",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Accounts.ChangeUsernameDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
+    "Method": "UserProfile",
+    "RelativePath": "api/Account/users/{userName}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.AccountController",
+    "Method": "VerifyEmail",
+    "RelativePath": "api/Account/verify-email",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Accounts.VerifyEmailDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.BlockController",
+    "Method": "Block",
+    "RelativePath": "api/Block",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Friends.BlockUserDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.BlockController",
+    "Method": "GetAll",
+    "RelativePath": "api/Block",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.BlockController",
+    "Method": "Unblock",
+    "RelativePath": "api/Block/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "GetConversations",
+    "RelativePath": "api/dm",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "GetChat",
+    "RelativePath": "api/dm/{userName}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "Send",
+    "RelativePath": "api/dm/{userName}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userName",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.DirectMessages.SendMessageDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "Close",
+    "RelativePath": "api/dm/{userName}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "GetPins",
+    "RelativePath": "api/dm/{userName}/pins",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "Read",
+    "RelativePath": "api/dm/{userName}/read",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "Edit",
+    "RelativePath": "api/dm/messages/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.DirectMessages.SendMessageDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "DeleteMessage",
+    "RelativePath": "api/dm/messages/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "Forward",
+    "RelativePath": "api/dm/messages/{id}/forward",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.DirectMessages.ForwardMessageDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "Pin",
+    "RelativePath": "api/dm/messages/{id}/pin",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.DirectMessages.PinMessageDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "React",
+    "RelativePath": "api/dm/messages/{id}/reactions",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.DirectMessages.ToggleReactionDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.EmojiController",
+    "Method": "GetAll",
+    "RelativePath": "api/Emoji",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.FriendController",
+    "Method": "GetAll",
+    "RelativePath": "api/Friend",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.FriendController",
+    "Method": "Remove",
+    "RelativePath": "api/Friend/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.FriendController",
+    "Method": "Pending",
+    "RelativePath": "api/Friend/pending",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.FriendController",
+    "Method": "Send",
+    "RelativePath": "api/Friend/request",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Friends.SendFriendRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.FriendController",
+    "Method": "Cancel",
+    "RelativePath": "api/Friend/request/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.FriendController",
+    "Method": "Accept",
+    "RelativePath": "api/Friend/request/{id}/accept",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.FriendController",
+    "Method": "Decline",
+    "RelativePath": "api/Friend/request/{id}/decline",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.LiveController",
+    "Method": "GetActive",
+    "RelativePath": "api/Live",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.NotificationController",
+    "Method": "GetAll",
+    "RelativePath": "api/Notification",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.NotificationController",
+    "Method": "Delete",
+    "RelativePath": "api/Notification/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.NotificationController",
+    "Method": "Read",
+    "RelativePath": "api/Notification/{id}/read",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.NotificationController",
+    "Method": "ReadAll",
+    "RelativePath": "api/Notification/read",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.PostController",
+    "Method": "Create",
+    "RelativePath": "api/Post",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Posts.CreatePostDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.PostController",
+    "Method": "Delete",
+    "RelativePath": "api/Post/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.PostController",
+    "Method": "Comment",
+    "RelativePath": "api/Post/{id}/comments",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Posts.CreateCommentDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.PostController",
+    "Method": "Like",
+    "RelativePath": "api/Post/{id}/like",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.PostController",
+    "Method": "DeleteComment",
+    "RelativePath": "api/Post/comments/{commentId}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "commentId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.PostController",
+    "Method": "LikeComment",
+    "RelativePath": "api/Post/comments/{commentId}/like",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "commentId",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.PostController",
+    "Method": "Explore",
+    "RelativePath": "api/Post/explore",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.PostController",
+    "Method": "Friends",
+    "RelativePath": "api/Post/friends",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.PostController",
+    "Method": "ByUser",
+    "RelativePath": "api/Post/user/{userName}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userName",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.StoryController",
+    "Method": "Create",
+    "RelativePath": "api/Story",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.Stories.CreateStoryDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.StoryController",
+    "Method": "GetAll",
+    "RelativePath": "api/Story",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.StoryController",
+    "Method": "Delete",
+    "RelativePath": "api/Story/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.StoryController",
+    "Method": "Like",
+    "RelativePath": "api/Story/{id}/like",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.StoryController",
+    "Method": "View",
+    "RelativePath": "api/Story/{id}/view",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.StoryController",
+    "Method": "Viewers",
+    "RelativePath": "api/Story/{id}/viewers",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]
