@@ -65,7 +65,8 @@ namespace Service.Services
         public async Task<ChatDto> GetChatAsync(string userId, string userName)
         {
             var other = await GetChatPartnerAsync(userId, userName, requireFriendship: false);
-            var isFriend = (await _friendRequests.GetBetweenAsync(userId, other.Id))?.Status == FriendRequestStatus.Accepted;
+            var friendship = await _friendRequests.GetBetweenAsync(userId, other.Id);
+            var isFriend = friendship?.Status == FriendRequestStatus.Accepted;
             var showDetails = other.IsPublic || isFriend;
             var presence = await _presence.ResolveAsync(other);
             var chat = new ChatDto
@@ -79,7 +80,8 @@ namespace Service.Services
                 AvatarUrl = other.AvatarUrl ?? string.Empty,
                 Status = presence,
                 MemberSince = other.CreatedAt,
-                IsFriend = isFriend
+                IsFriend = isFriend,
+                FriendRequestId = isFriend ? friendship!.Id : null
             };
 
             var conversation = await _conversations.GetBetweenAsync(userId, other.Id);
