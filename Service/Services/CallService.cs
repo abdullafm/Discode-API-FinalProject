@@ -250,6 +250,16 @@ namespace Service.Services
             }
         }
 
+        public int? GetOngoingMessageId(string userId, string otherUserId)
+        {
+            lock (Gate)
+            {
+                var ongoing = Calls.Values.FirstOrDefault(x => x.Active && x.MessageId > 0 && (x.CallerIn || x.CalleeIn) &&
+                    ((x.CallerId == userId && x.CalleeId == otherUserId) || (x.CallerId == otherUserId && x.CalleeId == userId)));
+                return ongoing?.MessageId;
+            }
+        }
+
         public string? GetPeerId(string userId, string callId)
         {
             lock (Gate)
@@ -360,7 +370,8 @@ namespace Service.Services
                 CallId = state.Id,
                 Reason = reason,
                 CallerId = state.CallerId,
-                CalleeId = state.CalleeId
+                CalleeId = state.CalleeId,
+                MessageId = state.MessageId
             };
         }
 

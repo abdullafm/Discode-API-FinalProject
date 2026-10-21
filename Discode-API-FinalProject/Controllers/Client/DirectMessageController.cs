@@ -14,11 +14,13 @@ namespace Discode_API_FinalProject.Controllers.Client
     public class DirectMessageController : ControllerBase
     {
         private readonly IDirectMessageService _directMessages;
+        private readonly ICallService _callService;
         private readonly IHubContext<PresenceHub> _hubContext;
 
-        public DirectMessageController(IDirectMessageService directMessages, IHubContext<PresenceHub> hubContext)
+        public DirectMessageController(IDirectMessageService directMessages, ICallService callService, IHubContext<PresenceHub> hubContext)
         {
             _directMessages = directMessages;
+            _callService = callService;
             _hubContext = hubContext;
         }
 
@@ -39,7 +41,9 @@ namespace Discode_API_FinalProject.Controllers.Client
         [HttpGet("{userName}")]
         public async Task<IActionResult> GetChat(string userName)
         {
-            return Ok(await _directMessages.GetChatAsync(UserId, userName));
+            var chat = await _directMessages.GetChatAsync(UserId, userName);
+            chat.OngoingCallMessageId = _callService.GetOngoingMessageId(UserId, chat.UserId);
+            return Ok(chat);
         }
 
         [HttpGet("{userName}/relation")]

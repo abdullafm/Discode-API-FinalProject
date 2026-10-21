@@ -16,6 +16,7 @@ namespace Service.Helpers.DTOs.DirectMessages
         public string Relation { get; set; } = "none";
         public int? BlockId { get; set; }
         public bool IsPrivate { get; set; }
+        public int? OngoingCallMessageId { get; set; }
         public List<MessageDto> Messages { get; set; } = new();
     }
 }

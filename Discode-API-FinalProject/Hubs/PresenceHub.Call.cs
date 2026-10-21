@@ -82,7 +82,7 @@ namespace Discode_API_FinalProject.Hubs
                 }
                 else
                 {
-                    await clients.User(ended.LeftUserId).SendAsync("CallEnded", new { callId = ended.CallId, reason = ended.Reason });
+                    await clients.User(ended.LeftUserId).SendAsync("CallEnded", new { callId = ended.CallId, reason = ended.Reason, messageId = ended.MessageId });
                 }
 
                 await clients.User(peerId).SendAsync("CallPeerLeft", new { callId = ended.CallId, reason = ended.Reason });
@@ -95,7 +95,7 @@ namespace Discode_API_FinalProject.Hubs
                 return;
             }
 
-            await clients.Users(ended.CallerId, ended.CalleeId).SendAsync("CallEnded", new { callId = ended.CallId, reason = ended.Reason });
+            await clients.Users(ended.CallerId, ended.CalleeId).SendAsync("CallEnded", new { callId = ended.CallId, reason = ended.Reason, messageId = ended.MessageId });
             if (ended.Message is not null)
             {
                 await clients.User(ended.CallerId).SendAsync("DirectMessageCallUpdated", new { message = ended.Message.MessageForSender });

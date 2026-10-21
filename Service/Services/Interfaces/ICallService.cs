@@ -10,5 +10,6 @@ namespace Service.Services.Interfaces
         Task<IEnumerable<CallEndedDto>> EndAllForAsync(string userId);
         CallDto? GetFor(string userId);
         string? GetPeerId(string userId, string callId);
+        int? GetOngoingMessageId(string userId, string otherUserId);
     }
 }

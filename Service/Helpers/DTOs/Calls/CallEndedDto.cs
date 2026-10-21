@@ -7,6 +7,7 @@ namespace Service.Helpers.DTOs.Calls
         public string CallerId { get; set; } = string.Empty;
         public string CalleeId { get; set; } = string.Empty;
         public string? LeftUserId { get; set; }
+        public int MessageId { get; set; }
         public CallDto? LeftUserCall { get; set; }
         public Service.Helpers.DTOs.DirectMessages.EditedMessageDto? Message { get; set; }
     }
