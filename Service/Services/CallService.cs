@@ -47,6 +47,19 @@ namespace Service.Services
                 throw new BadRequestException("You cannot call this user.");
             }
 
+            lock (Gate)
+            {
+                var ongoing = Calls.Values.FirstOrDefault(x => x.Active &&
+                    ((x.CallerId == callerId && x.CalleeId == callee.Id) || (x.CallerId == callee.Id && x.CalleeId == callerId)));
+                if (ongoing is not null && !IsIn(ongoing, callerId) && IsIn(ongoing, callee.Id))
+                {
+                    SetIn(ongoing, callerId, true);
+                    var rejoin = ToPair(ongoing);
+                    rejoin.Rejoined = true;
+                    return rejoin;
+                }
+            }
+
             if (!callee.IsPublic)
             {
                 var friendship = await _friendRequests.GetBetweenAsync(callerId, callee.Id);
@@ -134,6 +147,17 @@ namespace Service.Services
                 }
 
                 state = found;
+                if (state.Active && !IsIn(state, userId))
+                {
+                    return null;
+                }
+
+                if (state.Active && IsIn(state, PeerOf(state, userId)))
+                {
+                    SetIn(state, userId, false);
+                    return ToLeft(state, userId);
+                }
+
                 Calls.Remove(callId);
                 reason = state.Active
                     ? "ended"
@@ -145,20 +169,33 @@ namespace Service.Services
 
         public async Task<IEnumerable<CallEndedDto>> EndAllForAsync(string userId)
         {
-            List<CallState> ended;
+            var results = new List<CallEndedDto>();
+            var finishing = new List<CallState>();
             lock (Gate)
             {
-                ended = Calls.Values
-                    .Where(x => x.CallerId == userId || x.CalleeId == userId)
-                    .ToList();
-                foreach (var state in ended)
+                foreach (var state in Calls.Values.Where(x => x.CallerId == userId || x.CalleeId == userId).ToList())
                 {
+                    if (state.Active)
+                    {
+                        if (!IsIn(state, userId))
+                        {
+                            continue;
+                        }
+
+                        if (IsIn(state, PeerOf(state, userId)))
+                        {
+                            SetIn(state, userId, false);
+                            results.Add(ToLeft(state, userId));
+                            continue;
+                        }
+                    }
+
                     Calls.Remove(state.Id);
+                    finishing.Add(state);
                 }
             }
 
-            var results = new List<CallEndedDto>();
-            foreach (var state in ended)
+            foreach (var state in finishing)
             {
                 results.Add(await FinishAsync(state, "ended"));
             }
@@ -197,12 +234,13 @@ namespace Service.Services
                     return null;
                 }
 
-                if (state.CallerId == userId)
+                if (state.CallerId != userId && state.CalleeId != userId)
                 {
-                    return state.CalleeId;
+                    return null;
                 }
 
-                return state.CalleeId == userId ? state.CallerId : null;
+                var peerId = PeerOf(state, userId);
+                return IsIn(state, userId) && IsIn(state, peerId) ? peerId : null;
             }
         }
 
@@ -220,7 +258,36 @@ namespace Service.Services
 
         private static CallState? FindFor(string userId)
         {
-            return Calls.Values.FirstOrDefault(x => x.CallerId == userId || x.CalleeId == userId);
+            return Calls.Values.FirstOrDefault(x => IsIn(x, userId));
+        }
+
+        private static bool IsIn(CallState state, string userId)
+        {
+            return state.CallerId == userId ? state.CallerIn : state.CalleeId == userId && state.CalleeIn;
+        }
+
+        private static void SetIn(CallState state, string userId, bool value)
+        {
+            if (state.CallerId == userId)
+            {
+                state.CallerIn = value;
+            }
+            else if (state.CalleeId == userId)
+            {
+                state.CalleeIn = value;
+            }
+        }
+
+        private static string PeerOf(CallState state, string userId)
+        {
+            return state.CallerId == userId ? state.CalleeId : state.CallerId;
+        }
+
+        private static CallEndedDto ToLeft(CallState state, string userId)
+        {
+            var left = ToEnded(state, "left");
+            left.LeftUserId = userId;
+            return left;
         }
 
         private static CallPartyDto ToParty(Domain.Entities.AppUser user)
@@ -243,6 +310,7 @@ namespace Service.Services
                 Status = state.Active ? "active" : "ringing",
                 Role = isCaller ? "caller" : "callee",
                 Video = state.Video,
+                PeerPresent = !state.Active || (isCaller ? state.CalleeIn : state.CallerIn),
                 Other = isCaller ? state.Callee : state.Caller
             };
         }
@@ -276,6 +344,8 @@ namespace Service.Services
             public string CalleeId { get; set; } = string.Empty;
             public bool Video { get; set; }
             public bool Active { get; set; }
+            public bool CallerIn { get; set; } = true;
+            public bool CalleeIn { get; set; } = true;
             public int MessageId { get; set; }
             public DateTime? AnsweredAt { get; set; }
             public DateTime StartedAt { get; set; }

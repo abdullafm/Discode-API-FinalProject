@@ -6,6 +6,7 @@ namespace Service.Helpers.DTOs.Calls
         public string Status { get; set; } = "ringing";
         public string Role { get; set; } = "caller";
         public bool Video { get; set; }
+        public bool PeerPresent { get; set; } = true;
         public CallPartyDto Other { get; set; } = new();
     }
 }

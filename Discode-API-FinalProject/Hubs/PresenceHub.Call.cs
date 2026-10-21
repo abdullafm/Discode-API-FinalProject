@@ -16,6 +16,14 @@ namespace Discode_API_FinalProject.Hubs
             try
             {
                 var pair = await _callService.StartAsync(UserId, userName, video);
+                if (pair.Rejoined)
+                {
+                    var peerId = UserId == pair.CallerId ? pair.CalleeId : pair.CallerId;
+                    var mine = UserId == pair.CallerId ? pair.ForCaller : pair.ForCallee;
+                    await Clients.User(peerId).SendAsync("CallPeerJoined", new { callId = mine.CallId });
+                    return mine;
+                }
+
                 if (pair.Message is not null)
                 {
                     await Clients.User(pair.CallerId).SendAsync("DirectMessage", new { message = pair.Message.MessageForSender, conversation = pair.Message.ConversationForSender });
@@ -65,6 +73,14 @@ namespace Discode_API_FinalProject.Hubs
 
         private static async Task AnnounceCallEndAsync(IHubClients<IClientProxy> clients, CallEndedDto ended)
         {
+            if (ended.Reason == "left" && ended.LeftUserId is not null)
+            {
+                var peerId = ended.LeftUserId == ended.CallerId ? ended.CalleeId : ended.CallerId;
+                await clients.User(ended.LeftUserId).SendAsync("CallEnded", new { callId = ended.CallId, reason = "left" });
+                await clients.User(peerId).SendAsync("CallPeerLeft", new { callId = ended.CallId });
+                return;
+            }
+
             await clients.Users(ended.CallerId, ended.CalleeId).SendAsync("CallEnded", new { callId = ended.CallId, reason = ended.Reason });
             if (ended.Message is not null)
             {
