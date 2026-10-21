@@ -72,6 +72,32 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(edited.MessageForSender);
         }
 
+        [HttpPost("messages/{id:int}/forward")]
+        public async Task<IActionResult> Forward(int id, [FromBody] ForwardMessageDto model)
+        {
+            var sent = await _directMessages.ForwardAsync(UserId, id, model);
+
+            foreach (var item in sent)
+            {
+                await _hubContext.Clients.User(item.SenderId).SendAsync("DirectMessage", new { message = item.MessageForSender, conversation = item.ConversationForSender });
+                await _hubContext.Clients.User(item.RecipientId).SendAsync("DirectMessage", new { message = item.MessageForRecipient, conversation = item.ConversationForRecipient });
+            }
+
+            return Ok(new { forwarded = model.UserNames.Count });
+        }
+
+        [HttpDelete("messages/{id:int}")]
+        public async Task<IActionResult> DeleteMessage(int id)
+        {
+            var deleted = await _directMessages.DeleteAsync(UserId, id);
+
+            var payload = new { messageId = deleted.MessageId, conversationId = deleted.ConversationId, preview = deleted.Preview };
+            await _hubContext.Clients.User(deleted.SenderId).SendAsync("DirectMessageDeleted", payload);
+            await _hubContext.Clients.User(deleted.RecipientId).SendAsync("DirectMessageDeleted", payload);
+
+            return NoContent();
+        }
+
         [HttpPut("messages/{id:int}/reactions")]
         public async Task<IActionResult> React(int id, [FromBody] ToggleReactionDto model)
         {

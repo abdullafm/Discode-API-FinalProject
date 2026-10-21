@@ -345,6 +345,46 @@
   },
   {
     "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+<<<<<<< Updated upstream
+=======
+    "Method": "DeleteMessage",
+    "RelativePath": "api/dm/messages/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "Pin",
+    "RelativePath": "api/dm/messages/{id}/pin",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.DirectMessages.PinMessageDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+>>>>>>> Stashed changes
     "Method": "React",
     "RelativePath": "api/dm/messages/{id}/reactions",
     "HttpMethod": "PUT",

@@ -25,6 +25,7 @@ builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    options.SchemaFilter<Discode_API_FinalProject.Helpers.SwaggerExamplesFilter>();
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -170,7 +171,7 @@ builder.Services.AddRateLimiter(options =>
             partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 10,
+                PermitLimit = builder.Environment.IsDevelopment() ? 100 : 10,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));

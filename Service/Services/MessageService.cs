@@ -26,11 +26,29 @@ namespace Service.Services
 
         public async Task<MessageDto> CreateAsync(int conversationId, string senderId, string text)
         {
+<<<<<<< Updated upstream
+=======
+            int? replyId = replyToMessageId is > 0 ? replyToMessageId : null;
+            if (replyId.HasValue)
+            {
+                var target = await _messages.GetWithDetailsAsync(replyId.Value);
+                if (target is null || target.ConversationId != conversationId)
+                {
+                    throw new BadRequestException("You can only reply to a message in this chat.");
+                }
+            }
+
+>>>>>>> Stashed changes
             var message = new Message
             {
                 ConversationId = conversationId,
                 SenderId = senderId,
+<<<<<<< Updated upstream
                 Text = text
+=======
+                Text = text,
+                ReplyToId = replyId
+>>>>>>> Stashed changes
             };
             await _messages.AddAsync(message);
 
@@ -50,6 +68,18 @@ namespace Service.Services
             message.EditedAt = DateTime.UtcNow;
             await _messages.UpdateAsync(message);
             return _mapper.Map<MessageDto>(message, ForViewer(viewerId));
+        }
+
+        public async Task DeleteAsync(int messageId)
+        {
+            var message = await _messages.GetWithDetailsAsync(messageId);
+            if (message is null)
+            {
+                return;
+            }
+
+            await _messages.ClearRepliesToAsync(messageId);
+            await _messages.DeleteAsync(message);
         }
 
         public async Task<int?> GetLatestIdAsync(int conversationId)

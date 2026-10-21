@@ -437,6 +437,35 @@ namespace Repository.Migrations
                     b.ToTable("Messages");
                 });
 
+            modelBuilder.Entity("Domain.Entities.MessageForward", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MessageId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OriginalSenderId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId")
+                        .IsUnique();
+
+                    b.HasIndex("OriginalSenderId");
+
+                    b.ToTable("MessageForwards");
+                });
+
             modelBuilder.Entity("Domain.Entities.MessageReaction", b =>
                 {
                     b.Property<int>("Id")
@@ -958,6 +987,25 @@ namespace Repository.Migrations
                     b.Navigation("Sender");
                 });
 
+            modelBuilder.Entity("Domain.Entities.MessageForward", b =>
+                {
+                    b.HasOne("Domain.Entities.Message", "Message")
+                        .WithOne("Forward")
+                        .HasForeignKey("Domain.Entities.MessageForward", "MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.AppUser", "OriginalSender")
+                        .WithMany()
+                        .HasForeignKey("OriginalSenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+
+                    b.Navigation("OriginalSender");
+                });
+
             modelBuilder.Entity("Domain.Entities.MessageReaction", b =>
                 {
                     b.HasOne("Domain.Entities.Message", "Message")
@@ -1189,6 +1237,8 @@ namespace Repository.Migrations
 
             modelBuilder.Entity("Domain.Entities.Message", b =>
                 {
+                    b.Navigation("Forward");
+
                     b.Navigation("Reactions");
                 });
 

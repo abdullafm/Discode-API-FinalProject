@@ -10,7 +10,9 @@ namespace Service.Helpers.Validators.Stories
         public CreateStoryDtoValidator()
         {
             RuleFor(x => x.ImageUrl)
-                .NotEmpty().WithMessage("Add a photo to your story.")
+                .NotEmpty().WithMessage("Add a photo to your story.");
+
+            RuleFor(x => x.ImageUrl)
                 .MaximumLength(200).WithMessage("The photo link is too long.")
                 .Must(BeUploadedImage).WithMessage("The photo is not valid.")
                 .When(x => !string.IsNullOrWhiteSpace(x.ImageUrl));

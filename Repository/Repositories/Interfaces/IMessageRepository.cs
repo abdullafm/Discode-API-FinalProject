@@ -6,5 +6,11 @@ namespace Repository.Repositories.Interfaces
     {
         Task<IEnumerable<Message>> GetLatestAsync(int conversationId, int count);
         Task<Message?> GetWithDetailsAsync(int id);
+<<<<<<< Updated upstream
+=======
+        Task<IEnumerable<Message>> GetPinnedAsync(int conversationId);
+        Task<int> CountPinnedAsync(int conversationId);
+        Task ClearRepliesToAsync(int messageId);
+>>>>>>> Stashed changes
     }
 }

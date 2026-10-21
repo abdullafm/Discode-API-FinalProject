@@ -565,6 +565,27 @@
             "description": "OK"
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "DirectMessage"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
       }
     },
     "/api/dm/messages/{id}/reactions": {
@@ -1224,11 +1245,13 @@
         "properties": {
           "userId": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": null
           },
           "userName": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "username"
           }
         },
         "additionalProperties": false
@@ -1238,15 +1261,18 @@
         "properties": {
           "currentPassword": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "Passw0rd!x"
           },
           "newPassword": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "Passw0rd!y"
           },
           "confirmPassword": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "Passw0rd!y"
           }
         },
         "additionalProperties": false
@@ -1256,11 +1282,13 @@
         "properties": {
           "userName": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "username"
           },
           "currentPassword": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "Passw0rd!x"
           }
         },
         "additionalProperties": false
@@ -1270,7 +1298,8 @@
         "properties": {
           "text": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "Hello"
           }
         },
         "additionalProperties": false
@@ -1280,11 +1309,13 @@
         "properties": {
           "text": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "Hello"
           },
           "imageUrl": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": ""
           }
         },
         "additionalProperties": false
@@ -1294,7 +1325,8 @@
         "properties": {
           "imageUrl": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "/uploads/stories/0123456789abcdef0123456789abcdef.jpg"
           }
         },
         "additionalProperties": false
@@ -1304,11 +1336,13 @@
         "properties": {
           "email": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "user@example.com"
           },
           "resetPageUrl": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "https://localhost:7208/Account/ResetPassword"
           }
         },
         "additionalProperties": false
@@ -1318,37 +1352,57 @@
         "properties": {
           "email": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "user@example.com"
           },
           "password": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "Passw0rd!x"
           }
         },
         "additionalProperties": false
       },
+<<<<<<< Updated upstream
+=======
+      "PinMessageDto": {
+        "type": "object",
+        "properties": {
+          "pinned": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "additionalProperties": false
+      },
+>>>>>>> Stashed changes
       "RegisterDto": {
         "type": "object",
         "properties": {
           "email": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "user@example.com"
           },
           "displayName": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "Display Name"
           },
           "userName": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "username"
           },
           "birthDay": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "example": "2000-01-01T00:00:00.0000000+00:00"
           },
           "password": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "Passw0rd!x"
           }
         },
         "additionalProperties": false
@@ -1358,7 +1412,8 @@
         "properties": {
           "email": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "user@example.com"
           }
         },
         "additionalProperties": false
@@ -1368,19 +1423,23 @@
         "properties": {
           "email": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "user@example.com"
           },
           "token": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "token-from-the-email"
           },
           "newPassword": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "Passw0rd!y"
           },
           "confirmPassword": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "Passw0rd!y"
           }
         },
         "additionalProperties": false
@@ -1390,11 +1449,13 @@
         "properties": {
           "userId": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": null
           },
           "userName": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "username"
           }
         },
         "additionalProperties": false
@@ -1404,7 +1465,18 @@
         "properties": {
           "text": {
             "type": "string",
+<<<<<<< Updated upstream
             "nullable": true
+=======
+            "nullable": true,
+            "example": "Hello"
+          },
+          "replyToMessageId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true,
+            "example": null
+>>>>>>> Stashed changes
           }
         },
         "additionalProperties": false
@@ -1414,7 +1486,8 @@
         "properties": {
           "emoji": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "❤️"
           }
         },
         "additionalProperties": false
@@ -1424,30 +1497,37 @@
         "properties": {
           "userName": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "username"
           },
           "displayName": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "Display Name"
           },
           "avatarUrl": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": ""
           },
           "customStatus": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "Hello!"
           },
           "isPublic": {
-            "type": "boolean"
+            "type": "boolean",
+            "example": true
           },
           "pronouns": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "they/them"
           },
           "bio": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "About me"
           }
         },
         "additionalProperties": false
@@ -1457,11 +1537,13 @@
         "properties": {
           "email": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "user@example.com"
           },
           "code": {
             "type": "string",
-            "nullable": true
+            "nullable": true,
+            "example": "1234"
           }
         },
         "additionalProperties": false

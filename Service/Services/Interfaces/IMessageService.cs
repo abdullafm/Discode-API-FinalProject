@@ -7,6 +7,7 @@ namespace Service.Services.Interfaces
         Task<MessageDto?> GetAsync(int messageId, string viewerId);
         Task<MessageDto> CreateAsync(int conversationId, string senderId, string text);
         Task<MessageDto?> EditAsync(int messageId, string text, string viewerId);
+        Task DeleteAsync(int messageId);
         Task<int?> GetLatestIdAsync(int conversationId);
     }
 }
