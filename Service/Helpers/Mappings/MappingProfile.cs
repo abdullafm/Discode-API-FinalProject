@@ -174,7 +174,7 @@ namespace Service.Helpers.Mappings
                     context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.Likes.Any(l => l.UserId == (string?)viewer)));
 
             CreateMap<Post, PostDto>()
-                .ForMember(d => d.Visibility, o => o.MapFrom(s => s.Visibility == Domain.Enums.PostVisibility.Friends ? "friends" : "public"))
+                .ForMember(d => d.Visibility, o => o.MapFrom(s => s.Author != null && !s.Author.IsPublic ? "friends" : "public"))
                 .ForMember(d => d.LikeCount, o => o.MapFrom(s => s.Likes.Count))
                 .ForMember(d => d.LikedByMe, o => o.MapFrom((s, d, m, context) =>
                     context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.Likes.Any(l => l.UserId == (string?)viewer)))

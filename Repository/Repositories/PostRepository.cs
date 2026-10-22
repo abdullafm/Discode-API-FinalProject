@@ -24,7 +24,6 @@ namespace Repository.Repositories
                 .Include(x => x.Comments).ThenInclude(c => c.Author)
                 .Include(x => x.Comments).ThenInclude(c => c.Likes)
                 .Where(x => x.Author.IsPublic &&
-                            x.Visibility == PostVisibility.Public &&
                             !_dbContext.UserBlocks.Any(b =>
                                 (b.BlockerId == x.AuthorId && b.BlockedId == viewerId) ||
                                 (b.BlockerId == viewerId && b.BlockedId == x.AuthorId)))
@@ -66,7 +65,7 @@ namespace Repository.Repositories
                                 (b.BlockerId == authorId && b.BlockedId == viewerId) ||
                                 (b.BlockerId == viewerId && b.BlockedId == authorId)) &&
                             (viewerId == authorId ||
-                             (x.Author.IsPublic && x.Visibility == PostVisibility.Public) ||
+                             x.Author.IsPublic ||
                              _dbContext.FriendRequests.Any(f =>
                                  f.Status == FriendRequestStatus.Accepted &&
                                  ((f.SenderId == viewerId && f.ReceiverId == authorId) ||
@@ -83,7 +82,7 @@ namespace Repository.Repositories
                                                   (b.BlockerId == x.AuthorId && b.BlockedId == viewerId) ||
                                                   (b.BlockerId == viewerId && b.BlockedId == x.AuthorId)) &&
                                               (x.AuthorId == viewerId ||
-                                               (x.Author.IsPublic && x.Visibility == PostVisibility.Public) ||
+                                               x.Author.IsPublic ||
                                                _dbContext.FriendRequests.Any(f =>
                                                    f.Status == FriendRequestStatus.Accepted &&
                                                    ((f.SenderId == viewerId && f.ReceiverId == x.AuthorId) ||
