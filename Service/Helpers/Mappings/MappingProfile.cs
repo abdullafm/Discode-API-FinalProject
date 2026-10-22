@@ -73,8 +73,11 @@ namespace Service.Helpers.Mappings
 
             CreateMap<GroupMessageAttachment, MessageAttachmentDto>();
 
+            CreateMap<GroupCall, Service.Helpers.DTOs.Groups.GroupCallBriefDto>();
+
             CreateMap<GroupMessage, Service.Helpers.DTOs.Groups.GroupMessageDto>()
                 .ForMember(d => d.IsPoll, o => o.MapFrom(s => s.Poll != null))
+                .ForMember(d => d.IsCall, o => o.MapFrom(s => s.Call != null))
                 .ForMember(d => d.ReplyTo, o => o.MapFrom(s => s.ReplyTo == null ? null : new ReplyDto
                 {
                     MessageId = s.ReplyTo.Id,

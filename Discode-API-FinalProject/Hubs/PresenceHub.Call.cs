@@ -152,6 +152,12 @@ namespace Discode_API_FinalProject.Hubs
             {
                 await AnnounceCallEndAsync(hubContext.Clients, ended);
             }
+
+            var groupCalls = scope.ServiceProvider.GetRequiredService<IGroupCallService>();
+            foreach (var change in await groupCalls.LeaveAllForAsync(userId))
+            {
+                await AnnounceGroupCallAsync(hubContext.Clients, change);
+            }
         }
     }
 }

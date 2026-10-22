@@ -9,6 +9,8 @@ namespace Service.Helpers.DTOs.Groups
         public string SenderAvatarUrl { get; set; } = string.Empty;
         public string Text { get; set; } = string.Empty;
         public bool IsSystem { get; set; }
+        public bool IsCall { get; set; }
+        public GroupCallBriefDto? Call { get; set; }
         public Service.Helpers.DTOs.DirectMessages.ReplyDto? ReplyTo { get; set; }
         public bool IsPoll { get; set; }
         public Service.Helpers.DTOs.DirectMessages.PollDto? Poll { get; set; }

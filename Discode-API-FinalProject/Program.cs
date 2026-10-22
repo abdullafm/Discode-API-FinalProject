@@ -184,6 +184,7 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();
     await scope.ServiceProvider.GetRequiredService<ICallRepository>().EndAllOpenAsync();
+    await scope.ServiceProvider.GetRequiredService<IGroupCallRepository>().EndAllOpenAsync();
 
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     await RoleSeeder.SeedAsync(roleManager);

@@ -217,7 +217,7 @@ namespace Service.Services
         {
             var group = await EnsureMemberAsync(userId, groupId);
             var message = await _messages.GetWithSenderAsync(messageId);
-            if (message is null || message.GroupId != groupId || message.IsSystem || message.SenderId != userId)
+            if (message is null || message.GroupId != groupId || message.IsSystem || message.Call is not null || message.SenderId != userId)
             {
                 throw new NotFoundException("Message not found.");
             }
@@ -231,7 +231,7 @@ namespace Service.Services
         {
             await EnsureMemberAsync(userId, groupId);
             var message = await _messages.GetWithSenderAsync(messageId);
-            if (message is null || message.GroupId != groupId || message.IsSystem || message.Poll is not null)
+            if (message is null || message.GroupId != groupId || message.IsSystem || message.Call is not null || message.Poll is not null)
             {
                 throw new NotFoundException("Message not found.");
             }
@@ -247,7 +247,7 @@ namespace Service.Services
             await _reactionValidator.EnsureValidAsync(model);
             var group = await EnsureMemberAsync(userId, groupId);
             var message = await _messages.GetWithSenderAsync(messageId);
-            if (message is null || message.GroupId != groupId || message.IsSystem)
+            if (message is null || message.GroupId != groupId || message.IsSystem || message.Call is not null)
             {
                 throw new NotFoundException("Message not found.");
             }

@@ -14,11 +14,13 @@ namespace Discode_API_FinalProject.Controllers.Client
     public class GroupController : ControllerBase
     {
         private readonly IGroupService _groupService;
+        private readonly IGroupCallService _groupCallService;
         private readonly IHubContext<PresenceHub> _hubContext;
 
-        public GroupController(IGroupService groupService, IHubContext<PresenceHub> hubContext)
+        public GroupController(IGroupService groupService, IGroupCallService groupCallService, IHubContext<PresenceHub> hubContext)
         {
             _groupService = groupService;
+            _groupCallService = groupCallService;
             _hubContext = hubContext;
         }
 
@@ -140,6 +142,11 @@ namespace Discode_API_FinalProject.Controllers.Client
         [HttpPost("{id:int}/leave")]
         public async Task<IActionResult> Leave(int id)
         {
+            foreach (var callChange in await _groupCallService.LeaveAllForAsync(UserId))
+            {
+                await PresenceHub.AnnounceGroupCallAsync(_hubContext.Clients, callChange);
+            }
+
             var change = await _groupService.LeaveAsync(UserId, id);
             await PublishAsync(change);
             return Ok(new { left = true });
