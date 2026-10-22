@@ -25,6 +25,9 @@ namespace Repository.Data
         public DbSet<MessageReaction> MessageReactions { get; set; }
         public DbSet<MessageForward> MessageForwards { get; set; }
         public DbSet<MessageAttachment> MessageAttachments { get; set; }
+        public DbSet<Poll> Polls { get; set; }
+        public DbSet<PollOption> PollOptions { get; set; }
+        public DbSet<PollVote> PollVotes { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {

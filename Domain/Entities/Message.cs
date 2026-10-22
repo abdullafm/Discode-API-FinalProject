@@ -15,6 +15,7 @@ namespace Domain.Entities
         public int? ReplyToId { get; set; }
         public Message? ReplyTo { get; set; }
         public MessageForward? Forward { get; set; }
+        public Poll? Poll { get; set; }
         public bool Undelivered { get; set; }
         public MessageKind Kind { get; set; }
         public int? CallSeconds { get; set; }
