@@ -24,6 +24,7 @@ namespace Repository.Repositories
                 .Include(x => x.Sender)
                 .Include(x => x.Reactions)
                 .Include(x => x.Forward)
+                .Include(x => x.Attachments)
                 .Include(x => x.ReplyTo)
                     .ThenInclude(r => r!.Sender)
                 .Where(x => x.Conversation.UserAId == first && x.Conversation.UserBId == second && (!x.Undelivered || x.SenderId == userId))

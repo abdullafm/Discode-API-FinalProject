@@ -139,13 +139,15 @@ namespace Service.Services
 
             var text = model.Text.Trim();
 
-            var conversation = await _conversations.GetBetweenAsync(senderId, recipient.Id)
-                               ?? await _conversations.CreateAsync(senderId, recipient.Id, undelivered ? string.Empty : Preview(text), hiddenForOther: undelivered);
+            var preview = Preview(text, model.Attachments.Count);
 
-            var messageForSender = await _messages.CreateAsync(conversation.ConversationId, senderId, text, model.ReplyToMessageId, undelivered);
+            var conversation = await _conversations.GetBetweenAsync(senderId, recipient.Id)
+                               ?? await _conversations.CreateAsync(senderId, recipient.Id, undelivered ? string.Empty : preview, hiddenForOther: undelivered);
+
+            var messageForSender = await _messages.CreateAsync(conversation.ConversationId, senderId, text, model.ReplyToMessageId, undelivered, model.Attachments);
             if (!undelivered)
             {
-                await _conversations.RecordMessageAsync(senderId, recipient.Id, Preview(text), messageForSender.CreatedAt);
+                await _conversations.RecordMessageAsync(senderId, recipient.Id, preview, messageForSender.CreatedAt);
             }
 
             return await ToSentAsync(senderId, recipient.Id, messageForSender);
@@ -189,7 +191,7 @@ namespace Service.Services
 
             if (await _messages.GetLatestIdAsync(conversation.ConversationId) == messageId)
             {
-                await _conversations.UpdatePreviewAsync(conversation.ConversationId, Preview(text));
+                await _conversations.UpdatePreviewAsync(conversation.ConversationId, Preview(text, original.Attachments.Count));
             }
 
             return new EditedMessageDto
@@ -236,14 +238,22 @@ namespace Service.Services
             foreach (var recipient in recipients)
             {
                 var target = await _conversations.GetBetweenAsync(userId, recipient.Id)
-                             ?? await _conversations.CreateAsync(userId, recipient.Id, Preview(message.Text), hiddenForOther: false);
+                             ?? await _conversations.CreateAsync(userId, recipient.Id, Preview(message.Text, message.Attachments.Count), hiddenForOther: false);
 
                 var forwarded = await _directMessages.ForwardAsync(new MessageForward
                 {
                     OriginalSenderId = originalSenderId,
-                    Message = new Message { ConversationId = target.ConversationId, SenderId = userId, Text = message.Text }
+                    Message = new Message
+                    {
+                        ConversationId = target.ConversationId,
+                        SenderId = userId,
+                        Text = message.Text,
+                        Attachments = message.Attachments
+                            .Select(a => new MessageAttachment { Url = a.Url, FileName = a.FileName, ContentType = a.ContentType, Size = a.Size })
+                            .ToList()
+                    }
                 });
-                await _conversations.RecordMessageAsync(userId, recipient.Id, Preview(message.Text), forwarded.Message.CreatedAt);
+                await _conversations.RecordMessageAsync(userId, recipient.Id, Preview(message.Text, message.Attachments.Count), forwarded.Message.CreatedAt);
                 sent.Add(await ToSentAsync(userId, recipient.Id, (await _messages.GetAsync(forwarded.MessageId, userId))!));
 
                 if (note.Length > 0)
@@ -295,7 +305,7 @@ namespace Service.Services
 
             var latestId = await _messages.GetLatestIdAsync(conversation.ConversationId);
             var latest = latestId.HasValue ? await _messages.GetAsync(latestId.Value, userId) : null;
-            var preview = latest is null ? string.Empty : Preview(latest.Text);
+            var preview = latest is null ? string.Empty : Preview(latest.Text, latest.Attachments.Count);
             await _conversations.UpdatePreviewAsync(conversation.ConversationId, preview);
 
             return new DeletedMessageDto
@@ -445,6 +455,16 @@ namespace Service.Services
         private static string Preview(string text)
         {
             return text.Length <= PreviewLength ? text : text.Substring(0, PreviewLength);
+        }
+
+        private static string Preview(string text, int attachments)
+        {
+            if (text.Length == 0 && attachments > 0)
+            {
+                return attachments == 1 ? "Sent an attachment" : "Sent " + attachments + " attachments";
+            }
+
+            return Preview(text);
         }
     }
 }

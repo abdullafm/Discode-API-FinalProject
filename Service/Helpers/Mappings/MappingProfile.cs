@@ -43,6 +43,8 @@ namespace Service.Helpers.Mappings
 
             CreateMap<AppUser, ProfileDto>();
 
+            CreateMap<MessageAttachment, MessageAttachmentDto>();
+
             CreateMap<Message, MessageDto>()
                 .ForMember(d => d.SenderUserName, o => o.MapFrom(s => s.Sender.UserName ?? string.Empty))
                 .ForMember(d => d.SenderDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Sender.DisplayName)
