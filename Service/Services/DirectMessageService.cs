@@ -295,6 +295,14 @@ namespace Service.Services
                 throw new NotFoundException("Message not found.");
             }
 
+            var originalSenderId = message.Mine ? userId : conversation.UserId;
+            return await ForwardContentAsync(userId, originalSenderId, message.Text, message.Attachments, model);
+        }
+
+        public async Task<IEnumerable<SentMessageDto>> ForwardContentAsync(string userId, string originalSenderId, string text, IEnumerable<MessageAttachmentDto> attachments, ForwardMessageDto model)
+        {
+            await _forwardValidator.EnsureValidAsync(model);
+
             var userNames = model.UserNames.Select(name => name.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
             var recipients = new List<AppUser>();
             foreach (var userName in userNames)
@@ -308,13 +316,12 @@ namespace Service.Services
                 recipients.Add(recipient);
             }
 
-            var originalSenderId = message.Mine ? userId : conversation.UserId;
             var note = model.Note.Trim();
             var sent = new List<SentMessageDto>();
             foreach (var recipient in recipients)
             {
                 var target = await _conversations.GetBetweenAsync(userId, recipient.Id)
-                             ?? await _conversations.CreateAsync(userId, recipient.Id, Preview(message.Text, message.Attachments.Count), hiddenForOther: false);
+                             ?? await _conversations.CreateAsync(userId, recipient.Id, Preview(text, attachments.Count()), hiddenForOther: false);
 
                 var forwarded = await _directMessages.ForwardAsync(new MessageForward
                 {
@@ -323,13 +330,13 @@ namespace Service.Services
                     {
                         ConversationId = target.ConversationId,
                         SenderId = userId,
-                        Text = message.Text,
-                        Attachments = message.Attachments
+                        Text = text,
+                        Attachments = attachments
                             .Select(a => new MessageAttachment { Url = a.Url, FileName = a.FileName, ContentType = a.ContentType, Size = a.Size })
                             .ToList()
                     }
                 });
-                await _conversations.RecordMessageAsync(userId, recipient.Id, Preview(message.Text, message.Attachments.Count), forwarded.Message.CreatedAt);
+                await _conversations.RecordMessageAsync(userId, recipient.Id, Preview(text, attachments.Count()), forwarded.Message.CreatedAt);
                 sent.Add(await ToSentAsync(userId, recipient.Id, (await _messages.GetAsync(forwarded.MessageId, userId))!));
 
                 if (note.Length > 0)

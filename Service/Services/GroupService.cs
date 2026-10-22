@@ -17,6 +17,7 @@ namespace Service.Services
 
         private const int HistoryLimit = 100;
 
+        private readonly IDirectMessageService _directMessages;
         private readonly IGroupRepository _groups;
         private readonly IGroupMessageRepository _messages;
         private readonly IPollRepository _polls;
@@ -31,7 +32,8 @@ namespace Service.Services
         private readonly IValidator<AddGroupMembersDto> _addValidator;
         private readonly IMapper _mapper;
 
-        public GroupService(IGroupRepository groups,
+        public GroupService(IDirectMessageService directMessages,
+                            IGroupRepository groups,
                             IGroupMessageRepository messages,
                             IPollRepository polls,
                             IValidator<Service.Helpers.DTOs.DirectMessages.CreatePollDto> pollValidator,
@@ -45,6 +47,7 @@ namespace Service.Services
                             IValidator<AddGroupMembersDto> addValidator,
                             IMapper mapper)
         {
+            _directMessages = directMessages;
             _groups = groups;
             _messages = messages;
             _polls = polls;
@@ -163,10 +166,20 @@ namespace Service.Services
             await _messageValidator.EnsureValidAsync(model);
             var group = await EnsureMemberAsync(userId, groupId);
 
+            if (model.ReplyToMessageId.HasValue)
+            {
+                var target = await _messages.GetWithSenderAsync(model.ReplyToMessageId.Value);
+                if (target is null || target.GroupId != groupId || target.IsSystem)
+                {
+                    throw new NotFoundException("Message not found.");
+                }
+            }
+
             var message = new GroupMessage
             {
                 GroupId = groupId,
                 SenderId = userId,
+                ReplyToMessageId = model.ReplyToMessageId,
                 Text = model.Text?.Trim() ?? string.Empty,
                 Attachments = model.Attachments
                     .Select(a => new GroupMessageAttachment { Url = a.Url, FileName = a.FileName, ContentType = a.ContentType, Size = a.Size })
@@ -198,6 +211,35 @@ namespace Service.Services
             };
             await _messages.AddAsync(message);
             return Change(group, await LoadMessageAsync(message.Id));
+        }
+
+        public async Task<GroupMessageDeletedDto> DeleteMessageAsync(string userId, int groupId, int messageId)
+        {
+            var group = await EnsureMemberAsync(userId, groupId);
+            var message = await _messages.GetWithSenderAsync(messageId);
+            if (message is null || message.GroupId != groupId || message.IsSystem || message.SenderId != userId)
+            {
+                throw new NotFoundException("Message not found.");
+            }
+
+            await _messages.ClearRepliesAsync(messageId);
+            await _messages.DeleteAsync(await _messages.GetByIdAsync(messageId) ?? throw new NotFoundException("Message not found."));
+            return new GroupMessageDeletedDto { GroupId = groupId, MessageId = messageId, UserIds = group.Members.Select(m => m.UserId).ToList() };
+        }
+
+        public async Task<IEnumerable<Service.Helpers.DTOs.DirectMessages.SentMessageDto>> ForwardMessageAsync(string userId, int groupId, int messageId, Service.Helpers.DTOs.DirectMessages.ForwardMessageDto model)
+        {
+            await EnsureMemberAsync(userId, groupId);
+            var message = await _messages.GetWithSenderAsync(messageId);
+            if (message is null || message.GroupId != groupId || message.IsSystem || message.Poll is not null)
+            {
+                throw new NotFoundException("Message not found.");
+            }
+
+            var attachments = message.Attachments
+                .Select(a => new Service.Helpers.DTOs.DirectMessages.MessageAttachmentDto { Url = a.Url, FileName = a.FileName, ContentType = a.ContentType, Size = a.Size })
+                .ToList();
+            return await _directMessages.ForwardContentAsync(userId, message.SenderId, message.Text, attachments, model);
         }
 
         public async Task<GroupMessageUpdateDto> ToggleReactionAsync(string userId, int groupId, int messageId, Service.Helpers.DTOs.DirectMessages.ToggleReactionDto model)

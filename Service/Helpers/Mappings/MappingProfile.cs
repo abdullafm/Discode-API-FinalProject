@@ -75,6 +75,14 @@ namespace Service.Helpers.Mappings
 
             CreateMap<GroupMessage, Service.Helpers.DTOs.Groups.GroupMessageDto>()
                 .ForMember(d => d.IsPoll, o => o.MapFrom(s => s.Poll != null))
+                .ForMember(d => d.ReplyTo, o => o.MapFrom(s => s.ReplyTo == null ? null : new ReplyDto
+                {
+                    MessageId = s.ReplyTo.Id,
+                    SenderUserName = s.ReplyTo.Sender.UserName ?? string.Empty,
+                    SenderDisplayName = string.IsNullOrWhiteSpace(s.ReplyTo.Sender.DisplayName) ? s.ReplyTo.Sender.UserName ?? string.Empty : s.ReplyTo.Sender.DisplayName,
+                    SenderAvatarUrl = s.ReplyTo.Sender.AvatarUrl ?? string.Empty,
+                    Text = s.ReplyTo.Text
+                }))
                 .ForMember(d => d.Poll, o => o.MapFrom((s, d, m, context) => s.Poll == null
                     ? null
                     : BuildPoll(s.Poll, context.Items.TryGetValue(ViewerIdKey, out var voter) ? (string?)voter : null)))
