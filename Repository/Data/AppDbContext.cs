@@ -24,6 +24,7 @@ namespace Repository.Data
         public DbSet<Message> Messages { get; set; }
         public DbSet<MessageReaction> MessageReactions { get; set; }
         public DbSet<MessageForward> MessageForwards { get; set; }
+        public DbSet<MessageAttachment> MessageAttachments { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {

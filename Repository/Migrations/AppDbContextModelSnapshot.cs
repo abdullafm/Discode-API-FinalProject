@@ -457,6 +457,45 @@ namespace Repository.Migrations
                     b.ToTable("Messages");
                 });
 
+            modelBuilder.Entity("Domain.Entities.MessageAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("MessageId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageId");
+
+                    b.ToTable("MessageAttachments");
+                });
+
             modelBuilder.Entity("Domain.Entities.MessageForward", b =>
                 {
                     b.Property<int>("Id")
@@ -1014,6 +1053,17 @@ namespace Repository.Migrations
                     b.Navigation("Sender");
                 });
 
+            modelBuilder.Entity("Domain.Entities.MessageAttachment", b =>
+                {
+                    b.HasOne("Domain.Entities.Message", "Message")
+                        .WithMany("Attachments")
+                        .HasForeignKey("MessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Message");
+                });
+
             modelBuilder.Entity("Domain.Entities.MessageForward", b =>
                 {
                     b.HasOne("Domain.Entities.Message", "Message")
@@ -1264,6 +1314,8 @@ namespace Repository.Migrations
 
             modelBuilder.Entity("Domain.Entities.Message", b =>
                 {
+                    b.Navigation("Attachments");
+
                     b.Navigation("Forward");
 
                     b.Navigation("Reactions");
