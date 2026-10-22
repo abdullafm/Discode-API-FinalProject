@@ -6,7 +6,7 @@ namespace Repository.Repositories.Interfaces
     {
         Task<Call?> GetOpenByIdAsync(int id);
         Task<Call?> GetOpenBetweenAsync(string userId, string otherUserId);
-        Task<List<Call>> GetOpenForUserAsync(string userId);
+        Task<IEnumerable<Call>> GetOpenForUserAsync(string userId);
         Task EndExpiredRingingAsync(DateTime startedBefore);
         Task EndAllOpenAsync();
     }

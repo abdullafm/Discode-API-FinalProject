@@ -30,7 +30,7 @@ namespace Repository.Repositories
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<List<Call>> GetOpenForUserAsync(string userId)
+        public async Task<IEnumerable<Call>> GetOpenForUserAsync(string userId)
         {
             return await _dbSet
                 .Include(x => x.Caller)
