@@ -34,6 +34,8 @@ namespace Discode_API_FinalProject.Controllers.Client
         {
             await _hubContext.Clients.Users(UserId, otherUserId).SendAsync("FriendsChanged");
             await _hubContext.Clients.Users(UserId, otherUserId).SendAsync("NotificationsChanged");
+            await _hubContext.Clients.Group(PresenceHub.ProfileGroup(UserId)).SendAsync("ProfileChanged", new { userId = UserId });
+            await _hubContext.Clients.Group(PresenceHub.ProfileGroup(otherUserId)).SendAsync("ProfileChanged", new { userId = otherUserId });
         }
 
         [HttpPost("request")]

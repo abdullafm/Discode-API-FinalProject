@@ -35,6 +35,8 @@ namespace Discode_API_FinalProject.Controllers.Client
         {
             var result = await _userBlockService.BlockAsync(UserId, model);
             await _hubContext.Clients.Users(UserId, result.UserId).SendAsync("FriendsChanged");
+            await _hubContext.Clients.Group(PresenceHub.ProfileGroup(UserId)).SendAsync("ProfileChanged", new { userId = UserId });
+            await _hubContext.Clients.Group(PresenceHub.ProfileGroup(result.UserId)).SendAsync("ProfileChanged", new { userId = result.UserId });
             return Ok(result);
         }
 
@@ -49,6 +51,8 @@ namespace Discode_API_FinalProject.Controllers.Client
         {
             var result = await _userBlockService.UnblockAsync(UserId, id);
             await _hubContext.Clients.Users(UserId, result.UserId).SendAsync("FriendsChanged");
+            await _hubContext.Clients.Group(PresenceHub.ProfileGroup(UserId)).SendAsync("ProfileChanged", new { userId = UserId });
+            await _hubContext.Clients.Group(PresenceHub.ProfileGroup(result.UserId)).SendAsync("ProfileChanged", new { userId = result.UserId });
             return Ok();
         }
     }
