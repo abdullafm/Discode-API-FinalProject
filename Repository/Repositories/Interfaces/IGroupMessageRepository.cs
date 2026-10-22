@@ -6,6 +6,7 @@ namespace Repository.Repositories.Interfaces
     {
         Task<IEnumerable<GroupMessage>> GetLatestAsync(int groupId, int count);
         Task<GroupMessage?> GetWithSenderAsync(int id);
+        Task ClearRepliesAsync(int messageId);
         Task ToggleReactionAsync(int messageId, string userId, string emoji);
     }
 }

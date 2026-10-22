@@ -19,6 +19,8 @@ namespace Repository.Repositories
                 .Include(x => x.Sender)
                 .Include(x => x.Attachments)
                 .Include(x => x.Reactions)
+                .Include(x => x.ReplyTo)
+                    .ThenInclude(r => r!.Sender)
                 .Include(x => x.Poll)
                     .ThenInclude(p => p!.Options)
                         .ThenInclude(o => o.Votes);
@@ -40,6 +42,11 @@ namespace Repository.Repositories
         public async Task<GroupMessage?> GetWithSenderAsync(int id)
         {
             return await WithDetails().FirstOrDefaultAsync(x => x.Id == id);
+        }
+
+        public async Task ClearRepliesAsync(int messageId)
+        {
+            await _dbSet.Where(x => x.ReplyToMessageId == messageId).ExecuteUpdateAsync(s => s.SetProperty(x => x.ReplyToMessageId, (int?)null));
         }
 
         public async Task ToggleReactionAsync(int messageId, string userId, string emoji)
