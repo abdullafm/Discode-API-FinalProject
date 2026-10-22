@@ -70,11 +70,6 @@ namespace Service.Services
                 }
             }
 
-            if (!await _tracker.IsOnlineAsync(callee.Id))
-            {
-                throw new BadRequestException(calleeName + " is not available right now.");
-            }
-
             CallEndedDto? leftPrevious = null;
             CallState? previous;
             lock (Gate)
