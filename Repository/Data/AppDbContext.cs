@@ -26,6 +26,8 @@ namespace Repository.Data
         public DbSet<MessageForward> MessageForwards { get; set; }
         public DbSet<MessageAttachment> MessageAttachments { get; set; }
         public DbSet<Call> Calls { get; set; }
+        public DbSet<Group> Groups { get; set; }
+        public DbSet<GroupMember> GroupMembers { get; set; }
         public DbSet<Poll> Polls { get; set; }
         public DbSet<PollOption> PollOptions { get; set; }
         public DbSet<PollVote> PollVotes { get; set; }
