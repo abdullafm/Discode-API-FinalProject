@@ -138,6 +138,71 @@ namespace Repository.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.Call", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("AnsweredAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CalleeId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("CalleeIn")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CalleeJoinable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CalleeScreen")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("CallerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("CallerIn")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CallerJoinable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("CallerScreen")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MessageId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Video")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CalleeId");
+
+                    b.HasIndex("EndedAt");
+
+                    b.HasIndex("CallerId", "CalleeId");
+
+                    b.ToTable("Calls");
+                });
+
             modelBuilder.Entity("Domain.Entities.Comment", b =>
                 {
                     b.Property<int>("Id")
@@ -1028,6 +1093,25 @@ namespace Repository.Migrations
                     b.HasKey("UserId", "LoginProvider", "Name");
 
                     b.ToTable("AspNetUserTokens", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.Call", b =>
+                {
+                    b.HasOne("Domain.Entities.AppUser", "Callee")
+                        .WithMany()
+                        .HasForeignKey("CalleeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.AppUser", "Caller")
+                        .WithMany()
+                        .HasForeignKey("CallerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Callee");
+
+                    b.Navigation("Caller");
                 });
 
             modelBuilder.Entity("Domain.Entities.Comment", b =>
