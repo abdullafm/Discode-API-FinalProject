@@ -12,6 +12,10 @@ namespace Domain.Configurations
                 .IsRequired()
                 .HasMaxLength(100);
 
+            builder.Property(x => x.IconUrl)
+                .IsRequired()
+                .HasMaxLength(200);
+
             builder.Property(x => x.OwnerId)
                 .IsRequired()
                 .HasMaxLength(450);
@@ -43,6 +47,32 @@ namespace Domain.Configurations
 
             builder.HasIndex(x => new { x.GroupId, x.UserId })
                 .IsUnique();
+        }
+    }
+
+    public class GroupMessageConfiguration : IEntityTypeConfiguration<GroupMessage>
+    {
+        public void Configure(EntityTypeBuilder<GroupMessage> builder)
+        {
+            builder.Property(x => x.Text)
+                .IsRequired()
+                .HasMaxLength(2000);
+
+            builder.Property(x => x.SenderId)
+                .IsRequired()
+                .HasMaxLength(450);
+
+            builder.HasOne(x => x.Group)
+                .WithMany(g => g.Messages)
+                .HasForeignKey(x => x.GroupId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(x => x.Sender)
+                .WithMany()
+                .HasForeignKey(x => x.SenderId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            builder.HasIndex(x => new { x.GroupId, x.CreatedAt });
         }
     }
 }
