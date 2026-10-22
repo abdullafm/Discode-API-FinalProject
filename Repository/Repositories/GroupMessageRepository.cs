@@ -19,6 +19,7 @@ namespace Repository.Repositories
                 .Include(x => x.Sender)
                 .Include(x => x.Attachments)
                 .Include(x => x.Reactions)
+                .Include(x => x.Call)
                 .Include(x => x.ReplyTo)
                     .ThenInclude(r => r!.Sender)
                 .Include(x => x.Poll)

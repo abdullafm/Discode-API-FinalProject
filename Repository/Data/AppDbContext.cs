@@ -31,6 +31,8 @@ namespace Repository.Data
         public DbSet<GroupMessage> GroupMessages { get; set; }
         public DbSet<GroupMessageAttachment> GroupMessageAttachments { get; set; }
         public DbSet<GroupMessageReaction> GroupMessageReactions { get; set; }
+        public DbSet<GroupCall> GroupCalls { get; set; }
+        public DbSet<GroupCallParticipant> GroupCallParticipants { get; set; }
         public DbSet<Poll> Polls { get; set; }
         public DbSet<PollOption> PollOptions { get; set; }
         public DbSet<PollVote> PollVotes { get; set; }

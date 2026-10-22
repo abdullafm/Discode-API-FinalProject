@@ -464,6 +464,87 @@ namespace Repository.Migrations
                     b.ToTable("Groups");
                 });
 
+            modelBuilder.Entity("Domain.Entities.GroupCall", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EndedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("GroupMessageId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StarterId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("Video")
+                        .HasColumnType("bit");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupMessageId")
+                        .IsUnique();
+
+                    b.HasIndex("StarterId");
+
+                    b.HasIndex("GroupId", "Active");
+
+                    b.ToTable("GroupCalls");
+                });
+
+            modelBuilder.Entity("Domain.Entities.GroupCallParticipant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("GroupCallId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LeftAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("Screen")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("GroupCallId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("GroupCallParticipants");
+                });
+
             modelBuilder.Entity("Domain.Entities.GroupMember", b =>
                 {
                     b.Property<int>("Id")
@@ -1403,6 +1484,52 @@ namespace Repository.Migrations
                     b.Navigation("Owner");
                 });
 
+            modelBuilder.Entity("Domain.Entities.GroupCall", b =>
+                {
+                    b.HasOne("Domain.Entities.Group", "Group")
+                        .WithMany()
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.GroupMessage", "GroupMessage")
+                        .WithOne("Call")
+                        .HasForeignKey("Domain.Entities.GroupCall", "GroupMessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.AppUser", "Starter")
+                        .WithMany()
+                        .HasForeignKey("StarterId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Group");
+
+                    b.Navigation("GroupMessage");
+
+                    b.Navigation("Starter");
+                });
+
+            modelBuilder.Entity("Domain.Entities.GroupCallParticipant", b =>
+                {
+                    b.HasOne("Domain.Entities.GroupCall", "GroupCall")
+                        .WithMany("Participants")
+                        .HasForeignKey("GroupCallId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("GroupCall");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Domain.Entities.GroupMember", b =>
                 {
                     b.HasOne("Domain.Entities.Group", "Group")
@@ -1830,9 +1957,16 @@ namespace Repository.Migrations
                     b.Navigation("Messages");
                 });
 
+            modelBuilder.Entity("Domain.Entities.GroupCall", b =>
+                {
+                    b.Navigation("Participants");
+                });
+
             modelBuilder.Entity("Domain.Entities.GroupMessage", b =>
                 {
                     b.Navigation("Attachments");
+
+                    b.Navigation("Call");
 
                     b.Navigation("Poll");
 

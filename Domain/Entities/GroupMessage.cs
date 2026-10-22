@@ -13,6 +13,7 @@ namespace Domain.Entities
         public int? ReplyToMessageId { get; set; }
         public GroupMessage? ReplyTo { get; set; }
         public Poll? Poll { get; set; }
+        public GroupCall? Call { get; set; }
         public ICollection<GroupMessageAttachment> Attachments { get; set; } = new List<GroupMessageAttachment>();
         public ICollection<GroupMessageReaction> Reactions { get; set; } = new List<GroupMessageReaction>();
     }
