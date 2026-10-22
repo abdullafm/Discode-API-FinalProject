@@ -13,6 +13,10 @@ namespace Service.Helpers.Validators.Posts
                 .Must(x => !string.IsNullOrWhiteSpace(x.Text) || !string.IsNullOrWhiteSpace(x.ImageUrl))
                 .WithMessage("Write something or add a photo.");
 
+            RuleFor(x => x.Visibility)
+                .Must(v => string.IsNullOrWhiteSpace(v) || v.Trim().Equals("public", StringComparison.OrdinalIgnoreCase) || v.Trim().Equals("friends", StringComparison.OrdinalIgnoreCase))
+                .WithMessage("Choose who can see the post.");
+
             RuleFor(x => x.Text)
                 .MaximumLength(500).WithMessage("A post can be at most 500 characters.");
 

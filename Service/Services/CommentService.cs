@@ -53,18 +53,34 @@ namespace Service.Services
                 throw new NotFoundException("User not found.");
             }
 
+            Comment? parent = null;
+            if (model.ParentCommentId.HasValue)
+            {
+                parent = await _comments.GetByIdAsync(model.ParentCommentId.Value);
+                if (parent is null || parent.PostId != postId)
+                {
+                    throw new BadRequestException("You can only reply to a comment on this post.");
+                }
+            }
+
             var comment = new Comment
             {
                 PostId = postId,
                 AuthorId = userId,
-                Text = model.Text.Trim()
+                Text = model.Text.Trim(),
+                ParentCommentId = parent?.Id
             };
 
             await _comments.AddAsync(comment);
             comment.Author = author;
 
             var post = await _posts.GetByIdAsync(postId);
-            if (post is not null)
+            if (parent is not null)
+            {
+                await _notifications.AddAsync(NotificationType.CommentReply, userId, parent.AuthorId, postId: postId, commentId: comment.Id, snippet: comment.Text);
+            }
+
+            if (post is not null && (parent is null || parent.AuthorId != post.AuthorId))
             {
                 await _notifications.AddAsync(NotificationType.PostComment, userId, post.AuthorId, postId: postId, commentId: comment.Id, snippet: comment.Text);
             }
@@ -81,8 +97,11 @@ namespace Service.Services
                 throw new NotFoundException("Comment not found.");
             }
 
-            await _comments.DeleteAsync(comment);
-            await _notifications.RemoveForCommentAsync(commentId);
+            foreach (var item in await _comments.GetThreadAsync(commentId))
+            {
+                await _notifications.RemoveForCommentAsync(item.Id);
+                await _comments.DeleteAsync(item);
+            }
         }
 
         public async Task<LikeDto> ToggleLikeAsync(string userId, int commentId)

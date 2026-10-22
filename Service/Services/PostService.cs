@@ -49,7 +49,8 @@ namespace Service.Services
             {
                 AuthorId = userId,
                 Text = model.Text?.Trim() ?? string.Empty,
-                ImageUrl = model.ImageUrl?.Trim() ?? string.Empty
+                ImageUrl = model.ImageUrl?.Trim() ?? string.Empty,
+                Visibility = string.Equals(model.Visibility?.Trim(), "friends", StringComparison.OrdinalIgnoreCase) ? PostVisibility.Friends : PostVisibility.Public
             };
 
             await _posts.AddAsync(post);

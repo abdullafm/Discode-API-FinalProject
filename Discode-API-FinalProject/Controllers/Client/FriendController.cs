@@ -30,9 +30,10 @@ namespace Discode_API_FinalProject.Controllers.Client
             }
         }
 
-        private Task NotifyAsync(string otherUserId)
+        private async Task NotifyAsync(string otherUserId)
         {
-            return _hubContext.Clients.Users(UserId, otherUserId).SendAsync("FriendsChanged");
+            await _hubContext.Clients.Users(UserId, otherUserId).SendAsync("FriendsChanged");
+            await _hubContext.Clients.Users(UserId, otherUserId).SendAsync("NotificationsChanged");
         }
 
         [HttpPost("request")]
@@ -47,6 +48,12 @@ namespace Discode_API_FinalProject.Controllers.Client
         public async Task<IActionResult> GetAll()
         {
             return Ok(await _friendRequestService.GetAllAsync(UserId));
+        }
+
+        [HttpGet("user/{userName}")]
+        public async Task<IActionResult> ByUser(string userName)
+        {
+            return Ok(await _friendRequestService.GetUserFriendsAsync(UserId, userName));
         }
 
         [HttpGet("pending")]

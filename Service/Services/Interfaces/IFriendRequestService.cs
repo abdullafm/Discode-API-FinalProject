@@ -7,6 +7,7 @@ namespace Service.Services.Interfaces
         Task<FriendRequestDto> SendAsync(string senderId, SendFriendRequestDto model);
         Task<FriendPendingDto> GetPendingAsync(string userId);
         Task<IEnumerable<FriendRequestDto>> GetAllAsync(string userId);
+        Task<IEnumerable<FriendRequestDto>> GetUserFriendsAsync(string viewerId, string userName);
         Task<string> CancelAsync(string userId, int requestId);
         Task<string> AcceptAsync(string userId, int requestId);
         Task<string> DeclineAsync(string userId, int requestId);
