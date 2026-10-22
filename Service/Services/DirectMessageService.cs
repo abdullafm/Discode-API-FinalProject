@@ -29,6 +29,8 @@ namespace Service.Services
         private readonly IValidator<SendMessageDto> _validator;
         private readonly IValidator<ToggleReactionDto> _reactionValidator;
         private readonly IValidator<ForwardMessageDto> _forwardValidator;
+        private readonly IValidator<CreatePollDto> _pollValidator;
+        private readonly IPollRepository _polls;
         private readonly IMapper _mapper;
 
         public DirectMessageService(IConversationService conversations,
@@ -42,6 +44,8 @@ namespace Service.Services
                                     IValidator<SendMessageDto> validator,
                                     IValidator<ToggleReactionDto> reactionValidator,
                                     IValidator<ForwardMessageDto> forwardValidator,
+                                    IValidator<CreatePollDto> pollValidator,
+                                    IPollRepository polls,
                                     IMapper mapper)
         {
             _conversations = conversations;
@@ -55,6 +59,8 @@ namespace Service.Services
             _validator = validator;
             _reactionValidator = reactionValidator;
             _forwardValidator = forwardValidator;
+            _pollValidator = pollValidator;
+            _polls = polls;
             _mapper = mapper;
         }
 
@@ -153,6 +159,76 @@ namespace Service.Services
             return await ToSentAsync(senderId, recipient.Id, messageForSender);
         }
 
+        public async Task<SentMessageDto> SendPollAsync(string senderId, string userName, CreatePollDto model)
+        {
+            await _pollValidator.EnsureValidAsync(model);
+
+            var recipient = await GetChatPartnerAsync(senderId, userName, requireFriendship: false);
+            var undelivered = await _blocks.IsBlockedEitherWayAsync(senderId, recipient.Id) || !await CanMessageAsync(senderId, recipient);
+
+            var preview = Preview("Poll: " + model.Question.Trim());
+            var conversation = await _conversations.GetBetweenAsync(senderId, recipient.Id)
+                               ?? await _conversations.CreateAsync(senderId, recipient.Id, undelivered ? string.Empty : preview, hiddenForOther: undelivered);
+
+            var messageForSender = await _messages.CreatePollAsync(conversation.ConversationId, senderId, model, undelivered);
+            if (!undelivered)
+            {
+                await _conversations.RecordMessageAsync(senderId, recipient.Id, preview, messageForSender.CreatedAt);
+            }
+
+            return await ToSentAsync(senderId, recipient.Id, messageForSender);
+        }
+
+        public async Task<PollUpdatedDto> VotePollAsync(string userId, int messageId, VotePollDto model)
+        {
+            var message = await _messages.GetAsync(messageId, userId);
+            if (message is null || !message.IsPoll)
+            {
+                throw new NotFoundException("Poll not found.");
+            }
+
+            var conversation = await _conversations.GetByIdAsync(message.ConversationId, userId);
+            if (conversation is null || await _blocks.IsBlockedEitherWayAsync(userId, conversation.UserId))
+            {
+                throw new NotFoundException("Poll not found.");
+            }
+
+            var poll = await _polls.GetByMessageIdAsync(messageId);
+            if (poll is null)
+            {
+                throw new NotFoundException("Poll not found.");
+            }
+
+            if (poll.ExpiresAt <= DateTime.UtcNow)
+            {
+                throw new BadRequestException("This poll has ended.");
+            }
+
+            var optionIds = (model.OptionIds ?? new List<int>()).Distinct().ToList();
+            if (optionIds.Any(id => poll.Options.All(o => o.Id != id)))
+            {
+                throw new BadRequestException("Choose one of the answers.");
+            }
+
+            if (!poll.AllowMultiple && optionIds.Count > 1)
+            {
+                throw new BadRequestException("You can choose only one answer.");
+            }
+
+            await _polls.SetVotesAsync(poll, userId, optionIds);
+
+            var forUser = await _messages.GetAsync(messageId, userId);
+            var forRecipient = await _messages.GetAsync(messageId, conversation.UserId);
+            return new PollUpdatedDto
+            {
+                UserId = userId,
+                RecipientId = conversation.UserId,
+                MessageId = messageId,
+                ForUser = forUser!.Poll!,
+                ForRecipient = forRecipient!.Poll!
+            };
+        }
+
         private async Task<SentMessageDto> ToSentAsync(string senderId, string recipientId, MessageDto messageForSender)
         {
             return new SentMessageDto
@@ -171,7 +247,7 @@ namespace Service.Services
             await _validator.EnsureValidAsync(model);
 
             var original = await _messages.GetAsync(messageId, userId);
-            if (original is null || !original.Mine || original.IsCall)
+            if (original is null || !original.Mine || original.IsCall || original.IsPoll)
             {
                 throw new NotFoundException("Message not found.");
             }
@@ -208,7 +284,7 @@ namespace Service.Services
             await _forwardValidator.EnsureValidAsync(model);
 
             var message = await _messages.GetAsync(messageId, userId);
-            if (message is null || message.IsCall)
+            if (message is null || message.IsCall || message.IsPoll)
             {
                 throw new NotFoundException("Message not found.");
             }
@@ -305,7 +381,7 @@ namespace Service.Services
 
             var latestId = await _messages.GetLatestIdAsync(conversation.ConversationId);
             var latest = latestId.HasValue ? await _messages.GetAsync(latestId.Value, userId) : null;
-            var preview = latest is null ? string.Empty : Preview(latest.Text, latest.Attachments.Count);
+            var preview = latest is null ? string.Empty : (latest.IsPoll && latest.Poll is not null ? Preview("Poll: " + latest.Poll.Question) : Preview(latest.Text, latest.Attachments.Count));
             await _conversations.UpdatePreviewAsync(conversation.ConversationId, preview);
 
             return new DeletedMessageDto

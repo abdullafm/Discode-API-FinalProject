@@ -74,6 +74,39 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(sent.MessageForSender);
         }
 
+        [HttpPost("{userName}/polls")]
+        public async Task<IActionResult> SendPoll(string userName, [FromBody] CreatePollDto model)
+        {
+            var sent = await _directMessages.SendPollAsync(UserId, userName, model);
+
+            await _hubContext.Clients.User(sent.SenderId).SendAsync("DirectMessage", new
+            {
+                message = sent.MessageForSender,
+                conversation = sent.ConversationForSender
+            });
+            if (!sent.MessageForSender.Undelivered)
+            {
+                await _hubContext.Clients.User(sent.RecipientId).SendAsync("DirectMessage", new
+                {
+                    message = sent.MessageForRecipient,
+                    conversation = sent.ConversationForRecipient
+                });
+            }
+
+            return Ok(sent.MessageForSender);
+        }
+
+        [HttpPut("messages/{id:int}/poll-votes")]
+        public async Task<IActionResult> VotePoll(int id, [FromBody] VotePollDto model)
+        {
+            var updated = await _directMessages.VotePollAsync(UserId, id, model);
+
+            await _hubContext.Clients.User(updated.UserId).SendAsync("DirectMessagePoll", new { messageId = id, poll = updated.ForUser });
+            await _hubContext.Clients.User(updated.RecipientId).SendAsync("DirectMessagePoll", new { messageId = id, poll = updated.ForRecipient });
+
+            return Ok(updated.ForUser);
+        }
+
         [HttpPut("messages/{id:int}")]
         public async Task<IActionResult> Edit(int id, [FromBody] SendMessageDto model)
         {

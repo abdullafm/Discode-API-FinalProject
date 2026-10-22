@@ -74,6 +74,31 @@ namespace Service.Services
             return _mapper.Map<MessageDto>(message, ForViewer(viewerId));
         }
 
+        public async Task<MessageDto> CreatePollAsync(int conversationId, string senderId, CreatePollDto model, bool undelivered)
+        {
+            var message = new Message
+            {
+                ConversationId = conversationId,
+                SenderId = senderId,
+                Text = string.Empty,
+                Kind = MessageKind.Poll,
+                Undelivered = undelivered,
+                Poll = new Poll
+                {
+                    Question = model.Question.Trim(),
+                    AllowMultiple = model.AllowMultiple,
+                    ExpiresAt = DateTime.UtcNow.AddHours(model.DurationHours),
+                    Options = model.Options
+                        .Select((o, index) => new PollOption { Text = o.Text.Trim(), Emoji = (o.Emoji ?? string.Empty).Trim(), Position = index })
+                        .ToList()
+                }
+            };
+            await _messages.AddAsync(message);
+
+            var saved = await _messages.GetWithDetailsAsync(message.Id);
+            return _mapper.Map<MessageDto>(saved, ForViewer(senderId));
+        }
+
         public async Task<MessageDto> CreateCallAsync(int conversationId, string senderId)
         {
             var message = new Message

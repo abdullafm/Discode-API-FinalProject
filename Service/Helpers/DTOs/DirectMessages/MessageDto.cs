@@ -20,5 +20,7 @@ namespace Service.Helpers.DTOs.DirectMessages
         public int? CallSeconds { get; set; }
         public bool CallMissed { get; set; }
         public List<MessageAttachmentDto> Attachments { get; set; } = new();
+        public bool IsPoll { get; set; }
+        public PollDto? Poll { get; set; }
     }
 }

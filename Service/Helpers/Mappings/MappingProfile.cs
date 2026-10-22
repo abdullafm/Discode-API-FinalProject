@@ -22,6 +22,28 @@ namespace Service.Helpers.Mappings
     {
         public const string ViewerIdKey = "viewerId";
 
+        private static PollDto BuildPoll(Poll poll, string? viewerId)
+        {
+            var options = poll.Options.OrderBy(o => o.Position).ThenBy(o => o.Id).ToList();
+            return new PollDto
+            {
+                Question = poll.Question,
+                AllowMultiple = poll.AllowMultiple,
+                ExpiresAt = poll.ExpiresAt,
+                Ended = poll.ExpiresAt <= DateTime.UtcNow,
+                TotalVoters = options.SelectMany(o => o.Votes).Select(v => v.UserId).Distinct().Count(),
+                Voted = viewerId != null && options.Any(o => o.Votes.Any(v => v.UserId == viewerId)),
+                Options = options.Select(o => new PollOptionDto
+                {
+                    Id = o.Id,
+                    Text = o.Text,
+                    Emoji = o.Emoji,
+                    Votes = o.Votes.Count,
+                    Voted = viewerId != null && o.Votes.Any(v => v.UserId == viewerId)
+                }).ToList()
+            };
+        }
+
         private static AppUser OtherParticipant(Conversation conversation, ResolutionContext context)
         {
             var viewer = context.Items.TryGetValue(ViewerIdKey, out var value) ? (string?)value : null;
@@ -55,6 +77,10 @@ namespace Service.Helpers.Mappings
                     context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.SenderId == (string?)viewer))
                 .ForMember(d => d.Forwarded, o => o.MapFrom(s => s.Forward != null))
                 .ForMember(d => d.IsCall, o => o.MapFrom(s => s.Kind == Domain.Enums.MessageKind.Call))
+                .ForMember(d => d.IsPoll, o => o.MapFrom(s => s.Kind == Domain.Enums.MessageKind.Poll))
+                .ForMember(d => d.Poll, o => o.MapFrom((s, d, m, context) => s.Poll == null
+                    ? null
+                    : BuildPoll(s.Poll, context.Items.TryGetValue(ViewerIdKey, out var voter) ? (string?)voter : null)))
                 .ForMember(d => d.ReplyTo, o => o.MapFrom((s, d, m, context) => s.ReplyTo == null ? null : new ReplyDto
                 {
                     MessageId = s.ReplyTo.Id,
