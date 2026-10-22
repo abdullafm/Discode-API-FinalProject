@@ -65,6 +65,18 @@ namespace Service.Helpers.Mappings
 
             CreateMap<AppUser, ProfileDto>();
 
+            CreateMap<GroupMember, Service.Helpers.DTOs.Groups.GroupMemberDto>()
+                .ForMember(d => d.UserName, o => o.MapFrom(s => s.User.UserName ?? string.Empty))
+                .ForMember(d => d.DisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.User.DisplayName) ? s.User.UserName ?? string.Empty : s.User.DisplayName))
+                .ForMember(d => d.AvatarUrl, o => o.MapFrom(s => s.User.AvatarUrl ?? string.Empty))
+                .ForMember(d => d.IsOwner, o => o.Ignore());
+
+            CreateMap<Group, Service.Helpers.DTOs.Groups.GroupDto>()
+                .ForMember(d => d.OwnerUserName, o => o.Ignore())
+                .ForMember(d => d.MemberCount, o => o.Ignore())
+                .ForMember(d => d.MaxMembers, o => o.Ignore())
+                .ForMember(d => d.Existing, o => o.Ignore());
+
             CreateMap<MessageAttachment, MessageAttachmentDto>();
 
             CreateMap<Message, MessageDto>()

@@ -1,0 +1,23 @@
+namespace Service.Helpers.DTOs.Groups
+{
+    public class GroupDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string OwnerUserName { get; set; } = string.Empty;
+        public int MemberCount { get; set; }
+        public int MaxMembers { get; set; }
+        public bool Existing { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public List<GroupMemberDto> Members { get; set; } = new();
+    }
+
+    public class GroupMemberDto
+    {
+        public string UserId { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public string AvatarUrl { get; set; } = string.Empty;
+        public bool IsOwner { get; set; }
+    }
+}

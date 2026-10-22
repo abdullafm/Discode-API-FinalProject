@@ -30,6 +30,7 @@ namespace Service
             services.AddScoped<IStoryViewService, StoryViewService>();
             services.AddScoped<ILiveTrackerService, LiveTrackerService>();
             services.AddScoped<ICallService, CallService>();
+            services.AddScoped<IGroupService, GroupService>();
             services.AddScoped<IUserBlockService, UserBlockService>();
             services.AddScoped<IPresenceService, PresenceService>();
             services.AddScoped<IPresenceTrackerService, PresenceTrackerService>();
