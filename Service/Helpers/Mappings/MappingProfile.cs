@@ -71,6 +71,11 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.AvatarUrl, o => o.MapFrom(s => s.User.AvatarUrl ?? string.Empty))
                 .ForMember(d => d.IsOwner, o => o.Ignore());
 
+            CreateMap<GroupMessage, Service.Helpers.DTOs.Groups.GroupMessageDto>()
+                .ForMember(d => d.SenderUserName, o => o.MapFrom(s => s.Sender.UserName ?? string.Empty))
+                .ForMember(d => d.SenderDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Sender.DisplayName) ? s.Sender.UserName ?? string.Empty : s.Sender.DisplayName))
+                .ForMember(d => d.SenderAvatarUrl, o => o.MapFrom(s => s.Sender.AvatarUrl ?? string.Empty));
+
             CreateMap<Group, Service.Helpers.DTOs.Groups.GroupDto>()
                 .ForMember(d => d.OwnerUserName, o => o.Ignore())
                 .ForMember(d => d.MemberCount, o => o.Ignore())

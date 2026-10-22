@@ -15,21 +15,35 @@ namespace Service.Services
     {
         private const int MaxNameLength = 100;
 
+        private const int HistoryLimit = 100;
+
         private readonly IGroupRepository _groups;
+        private readonly IGroupMessageRepository _messages;
         private readonly IAccountRepository _accounts;
         private readonly IFriendRequestRepository _friendRequests;
         private readonly IUserBlockRepository _blocks;
         private readonly IValidator<CreateGroupDto> _validator;
+        private readonly IValidator<SendGroupMessageDto> _messageValidator;
+        private readonly IValidator<UpdateGroupDto> _updateValidator;
+        private readonly IValidator<AddGroupMembersDto> _addValidator;
         private readonly IMapper _mapper;
 
         public GroupService(IGroupRepository groups,
+                            IGroupMessageRepository messages,
                             IAccountRepository accounts,
                             IFriendRequestRepository friendRequests,
                             IUserBlockRepository blocks,
                             IValidator<CreateGroupDto> validator,
+                            IValidator<SendGroupMessageDto> messageValidator,
+                            IValidator<UpdateGroupDto> updateValidator,
+                            IValidator<AddGroupMembersDto> addValidator,
                             IMapper mapper)
         {
             _groups = groups;
+            _messages = messages;
+            _messageValidator = messageValidator;
+            _updateValidator = updateValidator;
+            _addValidator = addValidator;
             _accounts = accounts;
             _friendRequests = friendRequests;
             _blocks = blocks;
@@ -126,6 +140,194 @@ namespace Service.Services
             }
 
             return ToDto(group);
+        }
+
+        public async Task<IEnumerable<GroupMessageDto>> GetMessagesAsync(string userId, int groupId)
+        {
+            await EnsureMemberAsync(userId, groupId);
+            var messages = await _messages.GetLatestAsync(groupId, HistoryLimit);
+            return _mapper.Map<List<GroupMessageDto>>(messages);
+        }
+
+        public async Task<GroupChangeDto> SendMessageAsync(string userId, int groupId, SendGroupMessageDto model)
+        {
+            await _messageValidator.EnsureValidAsync(model);
+            var group = await EnsureMemberAsync(userId, groupId);
+
+            var message = new GroupMessage { GroupId = groupId, SenderId = userId, Text = model.Text.Trim() };
+            await _messages.AddAsync(message);
+            return Change(group, await LoadMessageAsync(message.Id));
+        }
+
+        public async Task<GroupChangeDto> UpdateAsync(string userId, int groupId, UpdateGroupDto model)
+        {
+            await _updateValidator.EnsureValidAsync(model);
+            await EnsureMemberAsync(userId, groupId);
+
+            var group = (await _groups.GetTrackedWithMembersAsync(groupId))!;
+            var actor = DisplayNameOf(group.Members.First(m => m.UserId == userId).User);
+            var name = model.Name.Trim();
+            var icon = model.IconUrl?.Trim() ?? string.Empty;
+            var notes = new List<string>();
+            if (!string.Equals(group.Name, name, StringComparison.Ordinal))
+            {
+                notes.Add(actor + " changed the group name to " + name + ".");
+            }
+
+            if (!string.Equals(group.IconUrl, icon, StringComparison.Ordinal))
+            {
+                notes.Add(actor + " changed the group icon.");
+            }
+
+            group.Name = name;
+            group.IconUrl = icon;
+            await _groups.UpdateAsync(group);
+
+            GroupMessageDto? systemMessage = null;
+            foreach (var note in notes)
+            {
+                systemMessage = await AddSystemMessageAsync(groupId, userId, note);
+            }
+
+            return Change(group, systemMessage);
+        }
+
+        public async Task<GroupChangeDto> AddMembersAsync(string userId, int groupId, AddGroupMembersDto model)
+        {
+            await _addValidator.EnsureValidAsync(model);
+            var group = await EnsureMemberAsync(userId, groupId);
+
+            var added = new List<AppUser>();
+            foreach (var userName in model.UserNames.Select(n => n.Trim()).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                var friend = await _accounts.GetByUserNameAsync(userName);
+                if (friend is null || friend.Id == userId)
+                {
+                    throw new NotFoundException("User not found.");
+                }
+
+                if (group.Members.Any(m => m.UserId == friend.Id))
+                {
+                    throw new BadRequestException(userName + " is already in this group.");
+                }
+
+                if (await _blocks.IsBlockedEitherWayAsync(userId, friend.Id))
+                {
+                    throw new BadRequestException("You cannot add " + userName + " to a group.");
+                }
+
+                var friendship = await _friendRequests.GetBetweenAsync(userId, friend.Id);
+                if (friendship is null || friendship.Status != FriendRequestStatus.Accepted)
+                {
+                    throw new BadRequestException("You can only add your friends to a group. " + userName + " is not your friend.");
+                }
+
+                added.Add(friend);
+            }
+
+            if (group.Members.Count + added.Count > CreateGroupDtoValidator.MaxMembers)
+            {
+                throw new BadRequestException("A group can have up to " + CreateGroupDtoValidator.MaxMembers + " members.");
+            }
+
+            await _groups.AddMembersAsync(groupId, added.Select(a => a.Id));
+            var actor = DisplayNameOf(group.Members.First(m => m.UserId == userId).User);
+            var note = await AddSystemMessageAsync(groupId, userId, actor + " added " + string.Join(", ", added.Select(DisplayNameOf)) + " to the group.");
+            var fresh = (await _groups.GetWithMembersAsync(groupId))!;
+            return Change(fresh, note);
+        }
+
+        public async Task<GroupChangeDto> RemoveMemberAsync(string userId, int groupId, string userName)
+        {
+            var group = await EnsureMemberAsync(userId, groupId);
+            if (group.OwnerId != userId)
+            {
+                throw new BadRequestException("Only the group owner can remove people.");
+            }
+
+            var target = group.Members.FirstOrDefault(m => string.Equals(m.User.UserName, (userName ?? string.Empty).Trim(), StringComparison.OrdinalIgnoreCase));
+            if (target is null)
+            {
+                throw new NotFoundException("That person is not in this group.");
+            }
+
+            if (target.UserId == userId)
+            {
+                throw new BadRequestException("Use Leave Group to leave.");
+            }
+
+            var affected = group.Members.Select(m => m.UserId).ToList();
+            var actor = DisplayNameOf(group.Members.First(m => m.UserId == userId).User);
+            await _groups.RemoveMemberAsync(groupId, target.UserId);
+            var note = await AddSystemMessageAsync(groupId, userId, actor + " removed " + DisplayNameOf(target.User) + " from the group.");
+            var fresh = (await _groups.GetWithMembersAsync(groupId))!;
+            var change = Change(fresh, note);
+            change.UserIds = affected;
+            return change;
+        }
+
+        public async Task<GroupChangeDto> LeaveAsync(string userId, int groupId)
+        {
+            var group = await EnsureMemberAsync(userId, groupId);
+            var affected = group.Members.Select(m => m.UserId).ToList();
+            var leaver = DisplayNameOf(group.Members.First(m => m.UserId == userId).User);
+
+            if (group.Members.Count == 1)
+            {
+                await _groups.DeleteAsync((await _groups.GetByIdAsync(groupId))!);
+                return new GroupChangeDto { GroupId = groupId, UserIds = affected };
+            }
+
+            await _groups.RemoveMemberAsync(groupId, userId);
+            if (group.OwnerId == userId)
+            {
+                var tracked = (await _groups.GetTrackedWithMembersAsync(groupId))!;
+                tracked.OwnerId = tracked.Members.OrderBy(m => m.Id).First().UserId;
+                tracked.Owner = null!;
+                await _groups.UpdateAsync(tracked);
+            }
+
+            var remaining = group.Members.First(m => m.UserId != userId).UserId;
+            var note = await AddSystemMessageAsync(groupId, remaining, leaver + " left the group.");
+            var fresh = (await _groups.GetWithMembersAsync(groupId))!;
+            var change = Change(fresh, note);
+            change.UserIds = affected;
+            return change;
+        }
+
+        private async Task<Group> EnsureMemberAsync(string userId, int groupId)
+        {
+            var group = await _groups.GetWithMembersAsync(groupId);
+            if (group is null || group.Members.All(m => m.UserId != userId))
+            {
+                throw new NotFoundException("Group not found.");
+            }
+
+            return group;
+        }
+
+        private async Task<GroupMessageDto> AddSystemMessageAsync(int groupId, string actorId, string text)
+        {
+            var message = new GroupMessage { GroupId = groupId, SenderId = actorId, Text = text.Length > 2000 ? text.Substring(0, 2000) : text, IsSystem = true };
+            await _messages.AddAsync(message);
+            return await LoadMessageAsync(message.Id);
+        }
+
+        private async Task<GroupMessageDto> LoadMessageAsync(int id)
+        {
+            var saved = await _messages.GetWithSenderAsync(id);
+            return _mapper.Map<GroupMessageDto>(saved);
+        }
+
+        private GroupChangeDto Change(Group group, GroupMessageDto? message)
+        {
+            return new GroupChangeDto
+            {
+                GroupId = group.Id,
+                Group = ToDto(group),
+                UserIds = group.Members.Select(m => m.UserId).ToList(),
+                Message = message
+            };
         }
 
         private GroupDto ToDto(Group group)
