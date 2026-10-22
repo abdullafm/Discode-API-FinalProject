@@ -17,7 +17,15 @@ namespace Domain.Configurations
                 .HasForeignKey<Poll>(x => x.MessageId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.HasOne(x => x.GroupMessage)
+                .WithOne(m => m.Poll)
+                .HasForeignKey<Poll>(x => x.GroupMessageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
             builder.HasIndex(x => x.MessageId)
+                .IsUnique();
+
+            builder.HasIndex(x => x.GroupMessageId)
                 .IsUnique();
         }
     }

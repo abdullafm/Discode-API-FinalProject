@@ -529,6 +529,79 @@ namespace Repository.Migrations
                     b.ToTable("GroupMessages");
                 });
 
+            modelBuilder.Entity("Domain.Entities.GroupMessageAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("GroupMessageId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupMessageId");
+
+                    b.ToTable("GroupMessageAttachments");
+                });
+
+            modelBuilder.Entity("Domain.Entities.GroupMessageReaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Emoji")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int>("GroupMessageId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("GroupMessageId", "UserId", "Emoji")
+                        .IsUnique();
+
+                    b.ToTable("GroupMessageReactions");
+                });
+
             modelBuilder.Entity("Domain.Entities.LiveStream", b =>
                 {
                     b.Property<int>("Id")
@@ -798,7 +871,10 @@ namespace Repository.Migrations
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("MessageId")
+                    b.Property<int?>("GroupMessageId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("MessageId")
                         .HasColumnType("int");
 
                     b.Property<string>("Question")
@@ -808,8 +884,13 @@ namespace Repository.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("GroupMessageId")
+                        .IsUnique()
+                        .HasFilter("[GroupMessageId] IS NOT NULL");
+
                     b.HasIndex("MessageId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[MessageId] IS NOT NULL");
 
                     b.ToTable("Polls");
                 });
@@ -1355,6 +1436,36 @@ namespace Repository.Migrations
                     b.Navigation("Sender");
                 });
 
+            modelBuilder.Entity("Domain.Entities.GroupMessageAttachment", b =>
+                {
+                    b.HasOne("Domain.Entities.GroupMessage", "GroupMessage")
+                        .WithMany("Attachments")
+                        .HasForeignKey("GroupMessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GroupMessage");
+                });
+
+            modelBuilder.Entity("Domain.Entities.GroupMessageReaction", b =>
+                {
+                    b.HasOne("Domain.Entities.GroupMessage", "GroupMessage")
+                        .WithMany("Reactions")
+                        .HasForeignKey("GroupMessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("GroupMessage");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Domain.Entities.LiveStream", b =>
                 {
                     b.HasOne("Domain.Entities.AppUser", "Host")
@@ -1476,11 +1587,17 @@ namespace Repository.Migrations
 
             modelBuilder.Entity("Domain.Entities.Poll", b =>
                 {
+                    b.HasOne("Domain.Entities.GroupMessage", "GroupMessage")
+                        .WithOne("Poll")
+                        .HasForeignKey("Domain.Entities.Poll", "GroupMessageId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("Domain.Entities.Message", "Message")
                         .WithOne("Poll")
                         .HasForeignKey("Domain.Entities.Poll", "MessageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("GroupMessage");
 
                     b.Navigation("Message");
                 });
@@ -1699,6 +1816,15 @@ namespace Repository.Migrations
                     b.Navigation("Members");
 
                     b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("Domain.Entities.GroupMessage", b =>
+                {
+                    b.Navigation("Attachments");
+
+                    b.Navigation("Poll");
+
+                    b.Navigation("Reactions");
                 });
 
             modelBuilder.Entity("Domain.Entities.Message", b =>
