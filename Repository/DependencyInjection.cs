@@ -24,6 +24,7 @@ namespace Repository
             services.AddScoped<IDirectMessageRepository, DirectMessageRepository>();
             services.AddScoped<IMessageReactionRepository, MessageReactionRepository>();
             services.AddScoped<IPollRepository, PollRepository>();
+            services.AddScoped<ICallRepository, CallRepository>();
             services.AddSingleton<ILiveTrackerRepository, LiveTrackerRepository>();
             services.AddScoped<IPostLikeRepository, PostLikeRepository>();
             services.AddScoped<ICommentLikeRepository, CommentLikeRepository>();
