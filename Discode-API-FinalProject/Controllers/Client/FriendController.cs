@@ -15,11 +15,13 @@ namespace Discode_API_FinalProject.Controllers.Client
     {
         private readonly IFriendRequestService _friendRequestService;
         private readonly IHubContext<PresenceHub> _hubContext;
+        private readonly ICallService _callService;
 
-        public FriendController(IFriendRequestService friendRequestService, IHubContext<PresenceHub> hubContext)
+        public FriendController(IFriendRequestService friendRequestService, IHubContext<PresenceHub> hubContext, ICallService callService)
         {
             _friendRequestService = friendRequestService;
             _hubContext = hubContext;
+            _callService = callService;
         }
 
         private string UserId
@@ -69,6 +71,10 @@ namespace Discode_API_FinalProject.Controllers.Client
         {
             var otherUserId = await _friendRequestService.RemoveAsync(UserId, id);
             await NotifyAsync(otherUserId);
+            foreach (var ended in await _callService.EndIfNotAllowedAsync(UserId, otherUserId))
+            {
+                await PresenceHub.AnnounceCallEndAsync(_hubContext.Clients, ended);
+            }
             return Ok();
         }
 

@@ -8,6 +8,7 @@ namespace Service.Services.Interfaces
         CallPairDto Accept(string userId, string callId);
         Task<CallEndedDto?> EndAsync(string userId, string callId, bool timedOut);
         Task<IEnumerable<CallEndedDto>> EndAllForAsync(string userId);
+        Task<IEnumerable<CallEndedDto>> EndIfNotAllowedAsync(string userId, string otherUserId);
         CallDto? GetFor(string userId);
         CallDto? SetScreen(string userId, string callId, bool on, out string peerId, out bool peerIn);
         string? GetPeerId(string userId, string callId);

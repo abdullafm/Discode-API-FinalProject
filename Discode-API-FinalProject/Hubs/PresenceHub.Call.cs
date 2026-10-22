@@ -76,7 +76,7 @@ namespace Discode_API_FinalProject.Hubs
             }
         }
 
-        private static async Task AnnounceCallEndAsync(IHubClients<IClientProxy> clients, CallEndedDto ended)
+        internal static async Task AnnounceCallEndAsync(IHubClients<IClientProxy> clients, CallEndedDto ended)
         {
             if (ended.LeftUserId is not null)
             {

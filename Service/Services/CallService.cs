@@ -240,6 +240,51 @@ namespace Service.Services
             return results;
         }
 
+        public async Task<IEnumerable<CallEndedDto>> EndIfNotAllowedAsync(string userId, string otherUserId)
+        {
+            var results = new List<CallEndedDto>();
+            List<CallState> between;
+            lock (Gate)
+            {
+                between = Calls.Values.Where(x => (x.CallerId == userId && x.CalleeId == otherUserId) || (x.CallerId == otherUserId && x.CalleeId == userId)).ToList();
+            }
+
+            if (between.Count == 0)
+            {
+                return results;
+            }
+
+            var allowed = !await _blocks.IsBlockedEitherWayAsync(userId, otherUserId);
+            if (allowed)
+            {
+                var first = await _accounts.GetByIdAsync(userId);
+                var second = await _accounts.GetByIdAsync(otherUserId);
+                var friendship = await _friendRequests.GetBetweenAsync(userId, otherUserId);
+                var friends = friendship is not null && friendship.Status == FriendRequestStatus.Accepted;
+                allowed = friends || (first is not null && second is not null && first.IsPublic && second.IsPublic);
+            }
+
+            if (allowed)
+            {
+                return results;
+            }
+
+            lock (Gate)
+            {
+                foreach (var state in between)
+                {
+                    Calls.Remove(state.Id);
+                }
+            }
+
+            foreach (var state in between)
+            {
+                results.Add(await FinishAsync(state, "ended"));
+            }
+
+            return results;
+        }
+
         private async Task<CallEndedDto> FinishAsync(CallState state, string reason)
         {
             var ended = ToEnded(state, reason);
