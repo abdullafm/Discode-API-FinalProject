@@ -75,6 +75,23 @@ namespace Service.Services
                 throw new BadRequestException(calleeName + " is not available right now.");
             }
 
+            CallEndedDto? leftPrevious = null;
+            CallState? previous;
+            lock (Gate)
+            {
+                Purge();
+                previous = FindFor(callerId);
+                if (FindFor(callee.Id) is not null)
+                {
+                    throw new BadRequestException(calleeName + " is already in a call.");
+                }
+            }
+
+            if (previous is not null)
+            {
+                leftPrevious = await EndAsync(callerId, previous.Id, false);
+            }
+
             var state = new CallState
             {
                 Id = Guid.NewGuid().ToString("N"),
@@ -108,6 +125,7 @@ namespace Service.Services
                 state.MessageId = sent.MessageForSender.Id;
                 var pair = ToPair(state);
                 pair.Message = sent;
+                pair.LeftPrevious = leftPrevious;
                 return pair;
             }
             catch

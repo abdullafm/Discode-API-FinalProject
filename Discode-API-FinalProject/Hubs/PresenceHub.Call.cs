@@ -16,6 +16,11 @@ namespace Discode_API_FinalProject.Hubs
             try
             {
                 var pair = await _callService.StartAsync(UserId, userName, video);
+                if (pair.LeftPrevious is not null)
+                {
+                    await AnnounceCallEndAsync(Clients, pair.LeftPrevious);
+                }
+
                 if (pair.Rejoined)
                 {
                     var peerId = UserId == pair.CallerId ? pair.CalleeId : pair.CallerId;

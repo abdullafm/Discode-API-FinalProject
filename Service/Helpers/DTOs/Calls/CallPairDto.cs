@@ -7,6 +7,7 @@ namespace Service.Helpers.DTOs.Calls
         public CallDto ForCaller { get; set; } = new();
         public CallDto ForCallee { get; set; } = new();
         public bool Rejoined { get; set; }
+        public CallEndedDto? LeftPrevious { get; set; }
         public Service.Helpers.DTOs.DirectMessages.SentMessageDto? Message { get; set; }
     }
 }
