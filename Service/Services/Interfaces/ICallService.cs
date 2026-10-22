@@ -5,13 +5,13 @@ namespace Service.Services.Interfaces
     public interface ICallService
     {
         Task<CallPairDto> StartAsync(string callerId, string userName, bool video);
-        CallPairDto Accept(string userId, string callId);
+        Task<CallPairDto> AcceptAsync(string userId, string callId);
         Task<CallEndedDto?> EndAsync(string userId, string callId, bool timedOut);
         Task<IEnumerable<CallEndedDto>> EndAllForAsync(string userId);
         Task<IEnumerable<CallEndedDto>> EndIfNotAllowedAsync(string userId, string otherUserId);
-        CallDto? GetFor(string userId);
-        CallDto? SetScreen(string userId, string callId, bool on, out string peerId, out bool peerIn);
-        string? GetPeerId(string userId, string callId);
-        int? GetOngoingMessageId(string userId, string otherUserId);
+        Task<CallDto?> GetForAsync(string userId);
+        Task<CallScreenDto?> SetScreenAsync(string userId, string callId, bool on);
+        Task<string?> GetPeerIdAsync(string userId, string callId);
+        Task<int?> GetOngoingMessageIdAsync(string userId, string otherUserId);
     }
 }

@@ -52,7 +52,7 @@ namespace Discode_API_FinalProject.Hubs
         {
             try
             {
-                var pair = _callService.Accept(UserId, callId);
+                var pair = await _callService.AcceptAsync(UserId, callId);
                 await Clients.User(pair.CallerId).SendAsync("CallAccepted", pair.ForCaller);
                 await Clients.User(pair.CalleeId).SendAsync("CallAccepted", pair.ForCallee);
             }
@@ -115,7 +115,7 @@ namespace Discode_API_FinalProject.Hubs
                 return;
             }
 
-            var peerId = _callService.GetPeerId(UserId, callId);
+            var peerId = await _callService.GetPeerIdAsync(UserId, callId);
             if (peerId is not null)
             {
                 await Clients.User(peerId).SendAsync("CallSignal", new { callId, payload });
@@ -124,16 +124,16 @@ namespace Discode_API_FinalProject.Hubs
 
         public async Task SetCallScreen(string callId, bool on)
         {
-            var peerView = _callService.SetScreen(UserId, callId, on, out var peerId, out var peerIn);
-            if (peerView is not null && !peerIn)
+            var change = await _callService.SetScreenAsync(UserId, callId, on);
+            if (change is not null && !change.PeerIn)
             {
-                await Clients.User(peerId).SendAsync("CallUpdated", peerView);
+                await Clients.User(change.PeerId).SendAsync("CallUpdated", change.PeerView);
             }
         }
 
         public Task<CallDto?> GetMyCall()
         {
-            return Task.FromResult(_callService.GetFor(UserId));
+            return _callService.GetForAsync(UserId);
         }
 
         private static async Task EndCallsAfterGraceAsync(string userId, IServiceScopeFactory scopes, IHubContext<PresenceHub> hubContext)

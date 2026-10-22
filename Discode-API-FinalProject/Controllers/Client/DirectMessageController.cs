@@ -42,7 +42,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         public async Task<IActionResult> GetChat(string userName)
         {
             var chat = await _directMessages.GetChatAsync(UserId, userName);
-            chat.OngoingCallMessageId = _callService.GetOngoingMessageId(UserId, chat.UserId);
+            chat.OngoingCallMessageId = await _callService.GetOngoingMessageIdAsync(UserId, chat.UserId);
             return Ok(chat);
         }
 
