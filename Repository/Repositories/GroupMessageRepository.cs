@@ -11,11 +11,22 @@ namespace Repository.Repositories
         {
         }
 
+        private IQueryable<GroupMessage> WithDetails()
+        {
+            return _dbSet
+                .AsNoTracking()
+                .AsSplitQuery()
+                .Include(x => x.Sender)
+                .Include(x => x.Attachments)
+                .Include(x => x.Reactions)
+                .Include(x => x.Poll)
+                    .ThenInclude(p => p!.Options)
+                        .ThenInclude(o => o.Votes);
+        }
+
         public async Task<IEnumerable<GroupMessage>> GetLatestAsync(int groupId, int count)
         {
-            var latest = await _dbSet
-                .AsNoTracking()
-                .Include(x => x.Sender)
+            var latest = await WithDetails()
                 .Where(x => x.GroupId == groupId)
                 .OrderByDescending(x => x.CreatedAt)
                 .ThenByDescending(x => x.Id)
@@ -28,10 +39,23 @@ namespace Repository.Repositories
 
         public async Task<GroupMessage?> GetWithSenderAsync(int id)
         {
-            return await _dbSet
-                .AsNoTracking()
-                .Include(x => x.Sender)
-                .FirstOrDefaultAsync(x => x.Id == id);
+            return await WithDetails().FirstOrDefaultAsync(x => x.Id == id);
+        }
+
+        public async Task ToggleReactionAsync(int messageId, string userId, string emoji)
+        {
+            var existing = await _dbContext.Set<GroupMessageReaction>()
+                .FirstOrDefaultAsync(x => x.GroupMessageId == messageId && x.UserId == userId && x.Emoji == emoji);
+            if (existing is null)
+            {
+                _dbContext.Set<GroupMessageReaction>().Add(new GroupMessageReaction { GroupMessageId = messageId, UserId = userId, Emoji = emoji });
+            }
+            else
+            {
+                _dbContext.Set<GroupMessageReaction>().Remove(existing);
+            }
+
+            await _dbContext.SaveChangesAsync();
         }
     }
 }

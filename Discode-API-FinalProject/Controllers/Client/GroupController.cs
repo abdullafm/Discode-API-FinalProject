@@ -68,6 +68,30 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(change.Message);
         }
 
+        [HttpPost("{id:int}/polls")]
+        public async Task<IActionResult> SendPoll(int id, [FromBody] Service.Helpers.DTOs.DirectMessages.CreatePollDto model)
+        {
+            var change = await _groupService.SendPollAsync(UserId, id, model);
+            await PublishAsync(change);
+            return Ok(change.Message);
+        }
+
+        [HttpPut("{id:int}/messages/{messageId:int}/reactions")]
+        public async Task<IActionResult> React(int id, int messageId, [FromBody] Service.Helpers.DTOs.DirectMessages.ToggleReactionDto model)
+        {
+            var update = await _groupService.ToggleReactionAsync(UserId, id, messageId, model);
+            await PublishUpdateAsync(update);
+            return Ok(update.Views[UserId]);
+        }
+
+        [HttpPut("{id:int}/messages/{messageId:int}/poll-votes")]
+        public async Task<IActionResult> VotePoll(int id, int messageId, [FromBody] Service.Helpers.DTOs.DirectMessages.VotePollDto model)
+        {
+            var update = await _groupService.VotePollAsync(UserId, id, messageId, model);
+            await PublishUpdateAsync(update);
+            return Ok(update.Views[UserId]);
+        }
+
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateGroupDto model)
         {
@@ -98,6 +122,14 @@ namespace Discode_API_FinalProject.Controllers.Client
             var change = await _groupService.LeaveAsync(UserId, id);
             await PublishAsync(change);
             return Ok(new { left = true });
+        }
+
+        private async Task PublishUpdateAsync(GroupMessageUpdateDto update)
+        {
+            foreach (var view in update.Views)
+            {
+                await _hubContext.Clients.User(view.Key).SendAsync("GroupMessageUpdated", new { groupId = update.GroupId, message = view.Value });
+            }
         }
 
         private async Task PublishAsync(GroupChangeDto change)

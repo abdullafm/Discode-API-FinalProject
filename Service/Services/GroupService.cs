@@ -19,6 +19,9 @@ namespace Service.Services
 
         private readonly IGroupRepository _groups;
         private readonly IGroupMessageRepository _messages;
+        private readonly IPollRepository _polls;
+        private readonly IValidator<Service.Helpers.DTOs.DirectMessages.CreatePollDto> _pollValidator;
+        private readonly IValidator<Service.Helpers.DTOs.DirectMessages.ToggleReactionDto> _reactionValidator;
         private readonly IAccountRepository _accounts;
         private readonly IFriendRequestRepository _friendRequests;
         private readonly IUserBlockRepository _blocks;
@@ -30,6 +33,9 @@ namespace Service.Services
 
         public GroupService(IGroupRepository groups,
                             IGroupMessageRepository messages,
+                            IPollRepository polls,
+                            IValidator<Service.Helpers.DTOs.DirectMessages.CreatePollDto> pollValidator,
+                            IValidator<Service.Helpers.DTOs.DirectMessages.ToggleReactionDto> reactionValidator,
                             IAccountRepository accounts,
                             IFriendRequestRepository friendRequests,
                             IUserBlockRepository blocks,
@@ -41,6 +47,9 @@ namespace Service.Services
         {
             _groups = groups;
             _messages = messages;
+            _polls = polls;
+            _pollValidator = pollValidator;
+            _reactionValidator = reactionValidator;
             _messageValidator = messageValidator;
             _updateValidator = updateValidator;
             _addValidator = addValidator;
@@ -146,7 +155,7 @@ namespace Service.Services
         {
             await EnsureMemberAsync(userId, groupId);
             var messages = await _messages.GetLatestAsync(groupId, HistoryLimit);
-            return _mapper.Map<List<GroupMessageDto>>(messages);
+            return _mapper.Map<List<GroupMessageDto>>(messages, options => options.Items[Service.Helpers.Mappings.MappingProfile.ViewerIdKey] = userId);
         }
 
         public async Task<GroupChangeDto> SendMessageAsync(string userId, int groupId, SendGroupMessageDto model)
@@ -154,9 +163,102 @@ namespace Service.Services
             await _messageValidator.EnsureValidAsync(model);
             var group = await EnsureMemberAsync(userId, groupId);
 
-            var message = new GroupMessage { GroupId = groupId, SenderId = userId, Text = model.Text.Trim() };
+            var message = new GroupMessage
+            {
+                GroupId = groupId,
+                SenderId = userId,
+                Text = model.Text?.Trim() ?? string.Empty,
+                Attachments = model.Attachments
+                    .Select(a => new GroupMessageAttachment { Url = a.Url, FileName = a.FileName, ContentType = a.ContentType, Size = a.Size })
+                    .ToList()
+            };
             await _messages.AddAsync(message);
             return Change(group, await LoadMessageAsync(message.Id));
+        }
+
+        public async Task<GroupChangeDto> SendPollAsync(string userId, int groupId, Service.Helpers.DTOs.DirectMessages.CreatePollDto model)
+        {
+            await _pollValidator.EnsureValidAsync(model);
+            var group = await EnsureMemberAsync(userId, groupId);
+
+            var message = new GroupMessage
+            {
+                GroupId = groupId,
+                SenderId = userId,
+                Text = string.Empty,
+                Poll = new Poll
+                {
+                    Question = model.Question.Trim(),
+                    AllowMultiple = model.AllowMultiple,
+                    ExpiresAt = DateTime.UtcNow.AddHours(model.DurationHours),
+                    Options = model.Options
+                        .Select((o, index) => new PollOption { Text = o.Text.Trim(), Emoji = (o.Emoji ?? string.Empty).Trim(), Position = index })
+                        .ToList()
+                }
+            };
+            await _messages.AddAsync(message);
+            return Change(group, await LoadMessageAsync(message.Id));
+        }
+
+        public async Task<GroupMessageUpdateDto> ToggleReactionAsync(string userId, int groupId, int messageId, Service.Helpers.DTOs.DirectMessages.ToggleReactionDto model)
+        {
+            await _reactionValidator.EnsureValidAsync(model);
+            var group = await EnsureMemberAsync(userId, groupId);
+            var message = await _messages.GetWithSenderAsync(messageId);
+            if (message is null || message.GroupId != groupId || message.IsSystem)
+            {
+                throw new NotFoundException("Message not found.");
+            }
+
+            await _messages.ToggleReactionAsync(messageId, userId, model.Emoji.Trim());
+            return await ViewsAsync(group, messageId);
+        }
+
+        public async Task<GroupMessageUpdateDto> VotePollAsync(string userId, int groupId, int messageId, Service.Helpers.DTOs.DirectMessages.VotePollDto model)
+        {
+            var group = await EnsureMemberAsync(userId, groupId);
+            var message = await _messages.GetWithSenderAsync(messageId);
+            if (message is null || message.GroupId != groupId)
+            {
+                throw new NotFoundException("Poll not found.");
+            }
+
+            var poll = await _polls.GetByGroupMessageIdAsync(messageId);
+            if (poll is null)
+            {
+                throw new NotFoundException("Poll not found.");
+            }
+
+            if (poll.ExpiresAt <= DateTime.UtcNow)
+            {
+                throw new BadRequestException("This poll has ended.");
+            }
+
+            var optionIds = (model.OptionIds ?? new List<int>()).Distinct().ToList();
+            if (optionIds.Any(id => poll.Options.All(o => o.Id != id)))
+            {
+                throw new BadRequestException("Choose one of the answers.");
+            }
+
+            if (!poll.AllowMultiple && optionIds.Count > 1)
+            {
+                throw new BadRequestException("You can choose only one answer.");
+            }
+
+            await _polls.SetVotesAsync(poll, userId, optionIds);
+            return await ViewsAsync(group, messageId);
+        }
+
+        private async Task<GroupMessageUpdateDto> ViewsAsync(Group group, int messageId)
+        {
+            var saved = await _messages.GetWithSenderAsync(messageId);
+            var update = new GroupMessageUpdateDto { GroupId = group.Id };
+            foreach (var member in group.Members)
+            {
+                update.Views[member.UserId] = _mapper.Map<GroupMessageDto>(saved, options => options.Items[Service.Helpers.Mappings.MappingProfile.ViewerIdKey] = member.UserId);
+            }
+
+            return update;
         }
 
         public async Task<GroupChangeDto> UpdateAsync(string userId, int groupId, UpdateGroupDto model)
@@ -316,7 +418,7 @@ namespace Service.Services
         private async Task<GroupMessageDto> LoadMessageAsync(int id)
         {
             var saved = await _messages.GetWithSenderAsync(id);
-            return _mapper.Map<GroupMessageDto>(saved);
+            return _mapper.Map<GroupMessageDto>(saved, options => options.Items[Service.Helpers.Mappings.MappingProfile.ViewerIdKey] = string.Empty);
         }
 
         private GroupChangeDto Change(Group group, GroupMessageDto? message)
