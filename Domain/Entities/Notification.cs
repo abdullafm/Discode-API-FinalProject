@@ -15,6 +15,7 @@ namespace Domain.Entities
         public int? CommentId { get; set; }
         public int? StoryId { get; set; }
         public Story? Story { get; set; }
+        public int? LiveStreamId { get; set; }
         public string? Snippet { get; set; }
         public bool IsRead { get; set; }
     }

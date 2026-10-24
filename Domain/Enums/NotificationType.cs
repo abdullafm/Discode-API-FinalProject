@@ -8,6 +8,7 @@ namespace Domain.Enums
         StoryLike = 3,
         CommentReply = 4,
         FriendRequest = 5,
-        FriendAccepted = 6
+        FriendAccepted = 6,
+        LiveInvite = 7
     }
 }

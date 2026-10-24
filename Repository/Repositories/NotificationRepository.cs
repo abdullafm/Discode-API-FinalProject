@@ -25,14 +25,15 @@ namespace Repository.Repositories
                 .ToListAsync();
         }
 
-        public async Task<Notification?> FindAsync(NotificationType type, string actorId, string recipientId, int? postId, int? commentId, int? storyId)
+        public async Task<Notification?> FindAsync(NotificationType type, string actorId, string recipientId, int? postId, int? commentId, int? storyId, int? liveStreamId = null)
         {
             return await _dbSet.FirstOrDefaultAsync(x => x.Type == type &&
                                                          x.ActorId == actorId &&
                                                          x.RecipientId == recipientId &&
                                                          x.PostId == postId &&
                                                          x.CommentId == commentId &&
-                                                         x.StoryId == storyId);
+                                                         x.StoryId == storyId &&
+                                                         x.LiveStreamId == liveStreamId);
         }
 
         public async Task DeleteByCommentAsync(int commentId)

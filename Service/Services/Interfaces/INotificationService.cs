@@ -5,7 +5,7 @@ namespace Service.Services.Interfaces
 {
     public interface INotificationService
     {
-        Task AddAsync(NotificationType type, string actorId, string recipientId, int? postId = null, int? commentId = null, int? storyId = null, string? snippet = null);
+        Task AddAsync(NotificationType type, string actorId, string recipientId, int? postId = null, int? commentId = null, int? storyId = null, string? snippet = null, int? liveStreamId = null);
         Task RemoveAsync(NotificationType type, string actorId, string recipientId, int? postId = null, int? commentId = null, int? storyId = null);
         Task RemoveForCommentAsync(int commentId);
         Task<IEnumerable<NotificationDto>> GetAsync(string userId);
