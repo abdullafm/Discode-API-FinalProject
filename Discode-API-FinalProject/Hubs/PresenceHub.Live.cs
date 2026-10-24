@@ -75,7 +75,7 @@ namespace Discode_API_FinalProject.Hubs
             }
         }
 
-        public async Task<IReadOnlyList<LiveViewerDto>> GetLiveViewers(int streamId)
+        public async Task<IEnumerable<LiveViewerDto>> GetLiveViewers(int streamId)
         {
             try
             {

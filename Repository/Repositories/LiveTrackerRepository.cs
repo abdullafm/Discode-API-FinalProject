@@ -134,11 +134,11 @@ namespace Repository.Repositories
             }
         }
 
-        public Task<IReadOnlyList<string>> GetViewerUserIdsAsync(int streamId)
+        public Task<IEnumerable<string>> GetViewerUserIdsAsync(int streamId)
         {
             lock (_lock)
             {
-                IReadOnlyList<string> ids = _rooms.TryGetValue(streamId, out var room)
+                IEnumerable<string> ids = _rooms.TryGetValue(streamId, out var room)
                     ? room.ViewerUsers.Values.Where(x => x.Length > 0).Distinct().ToList()
                     : new List<string>();
                 return Task.FromResult(ids);

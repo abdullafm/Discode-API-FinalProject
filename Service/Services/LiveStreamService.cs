@@ -194,7 +194,7 @@ namespace Service.Services
             };
         }
 
-        public async Task<IReadOnlyList<LiveViewerDto>> GetViewersAsync(string connectionId, int streamId)
+        public async Task<IEnumerable<LiveViewerDto>> GetViewersAsync(string connectionId, int streamId)
         {
             if (!await _tracker.IsParticipantAsync(streamId, connectionId))
             {

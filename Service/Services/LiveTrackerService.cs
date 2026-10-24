@@ -52,7 +52,7 @@ namespace Service.Services
             return _tracker.ClearGuestAsync(streamId);
         }
 
-        public Task<IReadOnlyList<string>> GetViewerUserIdsAsync(int streamId)
+        public Task<IEnumerable<string>> GetViewerUserIdsAsync(int streamId)
         {
             return _tracker.GetViewerUserIdsAsync(streamId);
         }
