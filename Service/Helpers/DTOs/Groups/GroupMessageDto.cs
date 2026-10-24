@@ -1,3 +1,5 @@
+using Service.Helpers.DTOs.DirectMessages;
+
 namespace Service.Helpers.DTOs.Groups
 {
     public class GroupMessageDto
@@ -11,11 +13,11 @@ namespace Service.Helpers.DTOs.Groups
         public bool IsSystem { get; set; }
         public bool IsCall { get; set; }
         public GroupCallBriefDto? Call { get; set; }
-        public Service.Helpers.DTOs.DirectMessages.ReplyDto? ReplyTo { get; set; }
+        public ReplyDto? ReplyTo { get; set; }
         public bool IsPoll { get; set; }
-        public Service.Helpers.DTOs.DirectMessages.PollDto? Poll { get; set; }
-        public List<Service.Helpers.DTOs.DirectMessages.MessageAttachmentDto> Attachments { get; set; } = new();
-        public List<Service.Helpers.DTOs.DirectMessages.ReactionDto> Reactions { get; set; } = new();
+        public PollDto? Poll { get; set; }
+        public List<MessageAttachmentDto> Attachments { get; set; } = new();
+        public List<ReactionDto> Reactions { get; set; } = new();
         public DateTime CreatedAt { get; set; }
     }
 }

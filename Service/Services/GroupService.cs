@@ -3,6 +3,7 @@ using Domain.Entities;
 using Domain.Enums;
 using FluentValidation;
 using Repository.Repositories.Interfaces;
+using Service.Helpers.DTOs.DirectMessages;
 using Service.Helpers.DTOs.Groups;
 using Service.Helpers.Exceptions;
 using Service.Helpers.Validators;
@@ -21,8 +22,8 @@ namespace Service.Services
         private readonly IGroupRepository _groups;
         private readonly IGroupMessageRepository _messages;
         private readonly IPollRepository _polls;
-        private readonly IValidator<Service.Helpers.DTOs.DirectMessages.CreatePollDto> _pollValidator;
-        private readonly IValidator<Service.Helpers.DTOs.DirectMessages.ToggleReactionDto> _reactionValidator;
+        private readonly IValidator<CreatePollDto> _pollValidator;
+        private readonly IValidator<ToggleReactionDto> _reactionValidator;
         private readonly IAccountRepository _accounts;
         private readonly IFriendRequestRepository _friendRequests;
         private readonly IUserBlockRepository _blocks;
@@ -36,8 +37,8 @@ namespace Service.Services
                             IGroupRepository groups,
                             IGroupMessageRepository messages,
                             IPollRepository polls,
-                            IValidator<Service.Helpers.DTOs.DirectMessages.CreatePollDto> pollValidator,
-                            IValidator<Service.Helpers.DTOs.DirectMessages.ToggleReactionDto> reactionValidator,
+                            IValidator<CreatePollDto> pollValidator,
+                            IValidator<ToggleReactionDto> reactionValidator,
                             IAccountRepository accounts,
                             IFriendRequestRepository friendRequests,
                             IUserBlockRepository blocks,
@@ -207,7 +208,7 @@ namespace Service.Services
             return Change(group, await LoadMessageAsync(message.Id));
         }
 
-        public async Task<GroupChangeDto> SendPollAsync(string userId, int groupId, Service.Helpers.DTOs.DirectMessages.CreatePollDto model)
+        public async Task<GroupChangeDto> SendPollAsync(string userId, int groupId, CreatePollDto model)
         {
             await _pollValidator.EnsureValidAsync(model);
             var group = await EnsureMemberAsync(userId, groupId);
@@ -245,7 +246,7 @@ namespace Service.Services
             return new GroupMessageDeletedDto { GroupId = groupId, MessageId = messageId, UserIds = group.Members.Select(m => m.UserId).ToList() };
         }
 
-        public async Task<IEnumerable<Service.Helpers.DTOs.DirectMessages.SentMessageDto>> ForwardMessageAsync(string userId, int groupId, int messageId, Service.Helpers.DTOs.DirectMessages.ForwardMessageDto model)
+        public async Task<IEnumerable<SentMessageDto>> ForwardMessageAsync(string userId, int groupId, int messageId, ForwardMessageDto model)
         {
             await EnsureMemberAsync(userId, groupId);
             var message = await _messages.GetWithSenderAsync(messageId);
@@ -255,12 +256,12 @@ namespace Service.Services
             }
 
             var attachments = message.Attachments
-                .Select(a => new Service.Helpers.DTOs.DirectMessages.MessageAttachmentDto { Url = a.Url, FileName = a.FileName, ContentType = a.ContentType, Size = a.Size })
+                .Select(a => new MessageAttachmentDto { Url = a.Url, FileName = a.FileName, ContentType = a.ContentType, Size = a.Size })
                 .ToList();
             return await _directMessages.ForwardContentAsync(userId, message.SenderId, message.Text, attachments, model);
         }
 
-        public async Task<GroupMessageUpdateDto> ToggleReactionAsync(string userId, int groupId, int messageId, Service.Helpers.DTOs.DirectMessages.ToggleReactionDto model)
+        public async Task<GroupMessageUpdateDto> ToggleReactionAsync(string userId, int groupId, int messageId, ToggleReactionDto model)
         {
             await _reactionValidator.EnsureValidAsync(model);
             var group = await EnsureMemberAsync(userId, groupId);
@@ -274,7 +275,7 @@ namespace Service.Services
             return await ViewsAsync(group, messageId);
         }
 
-        public async Task<GroupMessageUpdateDto> VotePollAsync(string userId, int groupId, int messageId, Service.Helpers.DTOs.DirectMessages.VotePollDto model)
+        public async Task<GroupMessageUpdateDto> VotePollAsync(string userId, int groupId, int messageId, VotePollDto model)
         {
             var group = await EnsureMemberAsync(userId, groupId);
             var message = await _messages.GetWithSenderAsync(messageId);

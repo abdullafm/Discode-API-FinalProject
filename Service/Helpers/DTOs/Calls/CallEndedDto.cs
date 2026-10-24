@@ -1,3 +1,5 @@
+using Service.Helpers.DTOs.DirectMessages;
+
 namespace Service.Helpers.DTOs.Calls
 {
     public class CallEndedDto
@@ -9,6 +11,6 @@ namespace Service.Helpers.DTOs.Calls
         public string? LeftUserId { get; set; }
         public int MessageId { get; set; }
         public CallDto? LeftUserCall { get; set; }
-        public Service.Helpers.DTOs.DirectMessages.EditedMessageDto? Message { get; set; }
+        public EditedMessageDto? Message { get; set; }
     }
 }

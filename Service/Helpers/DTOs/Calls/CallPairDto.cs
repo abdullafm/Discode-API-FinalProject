@@ -1,3 +1,5 @@
+using Service.Helpers.DTOs.DirectMessages;
+
 namespace Service.Helpers.DTOs.Calls
 {
     public class CallPairDto
@@ -8,6 +10,6 @@ namespace Service.Helpers.DTOs.Calls
         public CallDto ForCallee { get; set; } = new();
         public bool Rejoined { get; set; }
         public CallEndedDto? LeftPrevious { get; set; }
-        public Service.Helpers.DTOs.DirectMessages.SentMessageDto? Message { get; set; }
+        public SentMessageDto? Message { get; set; }
     }
 }

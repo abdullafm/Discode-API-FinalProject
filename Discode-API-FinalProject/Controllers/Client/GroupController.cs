@@ -2,6 +2,7 @@ using Discode_API_FinalProject.Hubs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Service.Helpers.DTOs.DirectMessages;
 using Service.Helpers.DTOs.Groups;
 using Service.Services.Interfaces;
 using System.Security.Claims;
@@ -78,7 +79,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [HttpPost("{id:int}/polls")]
-        public async Task<IActionResult> SendPoll(int id, [FromBody] Service.Helpers.DTOs.DirectMessages.CreatePollDto model)
+        public async Task<IActionResult> SendPoll(int id, [FromBody] CreatePollDto model)
         {
             var change = await _groupService.SendPollAsync(UserId, id, model);
             await PublishAsync(change);
@@ -94,7 +95,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [HttpPost("{id:int}/messages/{messageId:int}/forward")]
-        public async Task<IActionResult> Forward(int id, int messageId, [FromBody] Service.Helpers.DTOs.DirectMessages.ForwardMessageDto model)
+        public async Task<IActionResult> Forward(int id, int messageId, [FromBody] ForwardMessageDto model)
         {
             var sent = await _groupService.ForwardMessageAsync(UserId, id, messageId, model);
             foreach (var item in sent)
@@ -107,7 +108,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [HttpPut("{id:int}/messages/{messageId:int}/reactions")]
-        public async Task<IActionResult> React(int id, int messageId, [FromBody] Service.Helpers.DTOs.DirectMessages.ToggleReactionDto model)
+        public async Task<IActionResult> React(int id, int messageId, [FromBody] ToggleReactionDto model)
         {
             var update = await _groupService.ToggleReactionAsync(UserId, id, messageId, model);
             await PublishUpdateAsync(update);
@@ -115,7 +116,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [HttpPut("{id:int}/messages/{messageId:int}/poll-votes")]
-        public async Task<IActionResult> VotePoll(int id, int messageId, [FromBody] Service.Helpers.DTOs.DirectMessages.VotePollDto model)
+        public async Task<IActionResult> VotePoll(int id, int messageId, [FromBody] VotePollDto model)
         {
             var update = await _groupService.VotePollAsync(UserId, id, messageId, model);
             await PublishUpdateAsync(update);

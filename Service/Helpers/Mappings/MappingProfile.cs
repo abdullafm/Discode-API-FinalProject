@@ -1,5 +1,6 @@
 using AutoMapper;
 using Domain.Entities;
+using Service.Helpers.DTOs.Groups;
 using Service.Helpers.DTOs.Accounts;
 using Service.Helpers.DTOs.DirectMessages;
 using Service.Helpers.DTOs.Emojis;
@@ -65,7 +66,7 @@ namespace Service.Helpers.Mappings
 
             CreateMap<AppUser, ProfileDto>();
 
-            CreateMap<GroupMember, Service.Helpers.DTOs.Groups.GroupMemberDto>()
+            CreateMap<GroupMember, GroupMemberDto>()
                 .ForMember(d => d.UserName, o => o.MapFrom(s => s.User.UserName ?? string.Empty))
                 .ForMember(d => d.DisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.User.DisplayName) ? s.User.UserName ?? string.Empty : s.User.DisplayName))
                 .ForMember(d => d.AvatarUrl, o => o.MapFrom(s => s.User.AvatarUrl ?? string.Empty))
@@ -73,9 +74,9 @@ namespace Service.Helpers.Mappings
 
             CreateMap<GroupMessageAttachment, MessageAttachmentDto>();
 
-            CreateMap<GroupCall, Service.Helpers.DTOs.Groups.GroupCallBriefDto>();
+            CreateMap<GroupCall, GroupCallBriefDto>();
 
-            CreateMap<GroupMessage, Service.Helpers.DTOs.Groups.GroupMessageDto>()
+            CreateMap<GroupMessage, GroupMessageDto>()
                 .ForMember(d => d.IsPoll, o => o.MapFrom(s => s.Poll != null))
                 .ForMember(d => d.IsCall, o => o.MapFrom(s => s.Call != null))
                 .ForMember(d => d.ReplyTo, o => o.MapFrom(s => s.ReplyTo == null ? null : new ReplyDto
@@ -104,7 +105,7 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.SenderDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Sender.DisplayName) ? s.Sender.UserName ?? string.Empty : s.Sender.DisplayName))
                 .ForMember(d => d.SenderAvatarUrl, o => o.MapFrom(s => s.Sender.AvatarUrl ?? string.Empty));
 
-            CreateMap<Group, Service.Helpers.DTOs.Groups.GroupDto>()
+            CreateMap<Group, GroupDto>()
                 .ForMember(d => d.OwnerUserName, o => o.Ignore())
                 .ForMember(d => d.MemberCount, o => o.Ignore())
                 .ForMember(d => d.MaxMembers, o => o.Ignore())
