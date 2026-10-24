@@ -195,7 +195,7 @@ namespace Service.Services
 
         public async Task<IReadOnlyList<LiveViewerDto>> GetViewersAsync(string connectionId, int streamId)
         {
-            if (await _tracker.GetHostConnectionAsync(streamId) != connectionId)
+            if (!await _tracker.IsParticipantAsync(streamId, connectionId))
             {
                 throw new NotFoundException("This stream is not live.");
             }
