@@ -64,6 +64,22 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(await _postService.GetByUserAsync(UserId, userName));
         }
 
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateTextDto model)
+        {
+            var result = await _postService.UpdateAsync(UserId, id, model);
+            await NotifyAsync();
+            return Ok(result);
+        }
+
+        [HttpPut("comments/{commentId:int}")]
+        public async Task<IActionResult> UpdateComment(int commentId, [FromBody] UpdateTextDto model)
+        {
+            var result = await _commentService.UpdateAsync(UserId, commentId, model);
+            await NotifyAsync();
+            return Ok(result);
+        }
+
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {

@@ -109,6 +109,30 @@ namespace Service.Services
             return like;
         }
 
+        public async Task<PostDto> UpdateAsync(string userId, int postId, UpdateTextDto model)
+        {
+            var post = await _posts.GetByIdAsync(postId);
+            if (post is null || post.AuthorId != userId)
+            {
+                throw new NotFoundException("Post not found.");
+            }
+
+            await _validator.EnsureValidAsync(new CreatePostDto { Text = model.Text, ImageUrl = post.ImageUrl });
+
+            var text = model.Text?.Trim() ?? string.Empty;
+            if (!string.Equals(text, post.Text, StringComparison.Ordinal))
+            {
+                post.Text = text;
+                post.EditedAt = DateTime.UtcNow;
+                await _posts.UpdateAsync(post);
+                await _mentions.NotifyAsync(NotificationType.PostMention, userId, text, postId: post.Id);
+            }
+
+            var author = await _accounts.GetByIdAsync(userId);
+            post.Author = author!;
+            return _mapper.Map<PostDto>(post, ForViewer(userId));
+        }
+
         public async Task DeleteAsync(string userId, int postId)
         {
             var post = await _posts.GetByIdAsync(postId);

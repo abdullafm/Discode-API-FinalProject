@@ -93,6 +93,29 @@ namespace Service.Services
             return _mapper.Map<CommentDto>(comment, options => options.Items[MappingProfile.ViewerIdKey] = userId);
         }
 
+        public async Task<CommentDto> UpdateAsync(string userId, int commentId, UpdateTextDto model)
+        {
+            var comment = await _comments.GetByIdAsync(commentId);
+            if (comment is null || comment.AuthorId != userId)
+            {
+                throw new NotFoundException("Comment not found.");
+            }
+
+            await _validator.EnsureValidAsync(new CreateCommentDto { Text = model.Text });
+
+            var text = model.Text.Trim();
+            if (!string.Equals(text, comment.Text, StringComparison.Ordinal))
+            {
+                comment.Text = text;
+                comment.EditedAt = DateTime.UtcNow;
+                await _comments.UpdateAsync(comment);
+                await _mentions.NotifyAsync(NotificationType.CommentMention, userId, text, postId: comment.PostId, commentId: comment.Id);
+            }
+
+            comment.Author = (await _accounts.GetByIdAsync(userId))!;
+            return _mapper.Map<CommentDto>(comment, options => options.Items[MappingProfile.ViewerIdKey] = userId);
+        }
+
         public async Task DeleteAsync(string userId, int commentId)
         {
             var comment = await _comments.GetByIdAsync(commentId);
