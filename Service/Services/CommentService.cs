@@ -18,6 +18,7 @@ namespace Service.Services
         private readonly IPostRepository _posts;
         private readonly INotificationService _notifications;
         private readonly IAccountRepository _accounts;
+        private readonly IMentionService _mentions;
         private readonly IValidator<CreateCommentDto> _validator;
         private readonly IMapper _mapper;
 
@@ -26,6 +27,7 @@ namespace Service.Services
                               IPostRepository posts,
                               INotificationService notifications,
                               IAccountRepository accounts,
+                              IMentionService mentions,
                               IValidator<CreateCommentDto> validator,
                               IMapper mapper)
         {
@@ -34,6 +36,7 @@ namespace Service.Services
             _posts = posts;
             _notifications = notifications;
             _accounts = accounts;
+            _mentions = mentions;
             _validator = validator;
             _mapper = mapper;
         }
@@ -84,6 +87,8 @@ namespace Service.Services
             {
                 await _notifications.AddAsync(NotificationType.PostComment, userId, post.AuthorId, postId: postId, commentId: comment.Id, snippet: comment.Text);
             }
+
+            await _mentions.NotifyAsync(NotificationType.CommentMention, userId, comment.Text, postId: postId, commentId: comment.Id);
 
             return _mapper.Map<CommentDto>(comment, options => options.Items[MappingProfile.ViewerIdKey] = userId);
         }
