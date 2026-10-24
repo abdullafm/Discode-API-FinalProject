@@ -768,6 +768,13 @@ namespace Repository.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int?>("StoryId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("StoryImageUrl")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<string>("Text")
                         .IsRequired()
                         .HasMaxLength(2000)

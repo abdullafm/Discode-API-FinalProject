@@ -20,6 +20,8 @@ namespace Domain.Entities
         public MessageKind Kind { get; set; }
         public int? CallSeconds { get; set; }
         public bool CallMissed { get; set; }
+        public int? StoryId { get; set; }
+        public string? StoryImageUrl { get; set; }
         public ICollection<MessageReaction> Reactions { get; set; } = new List<MessageReaction>();
         public ICollection<MessageAttachment> Attachments { get; set; } = new List<MessageAttachment>();
     }

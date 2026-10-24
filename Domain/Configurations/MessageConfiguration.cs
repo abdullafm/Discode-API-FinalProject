@@ -16,6 +16,9 @@ namespace Domain.Configurations
                 .IsRequired()
                 .HasMaxLength(2000);
 
+            builder.Property(x => x.StoryImageUrl)
+                .HasMaxLength(200);
+
             builder.HasOne(x => x.Conversation)
                 .WithMany(c => c.Messages)
                 .HasForeignKey(x => x.ConversationId)
