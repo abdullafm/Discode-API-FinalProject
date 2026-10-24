@@ -194,7 +194,7 @@ namespace Service.Services
                    await _tracker.IsParticipantAsync(streamId, targetConnectionId);
         }
 
-        public async Task<LiveMessageDto> CreateMessageAsync(string userId, string connectionId, int streamId, string text)
+        public async Task<LiveMessageDto> CreateMessageAsync(string userId, string connectionId, int streamId, string text, string? replyUserName = null, string? replyText = null)
         {
             await _messageValidator.EnsureValidAsync(text ?? string.Empty);
 
@@ -214,8 +214,16 @@ namespace Service.Services
                 StreamId = streamId,
                 UserName = user.UserName ?? string.Empty,
                 AvatarUrl = user.AvatarUrl ?? string.Empty,
-                Text = text!.Trim()
+                Text = text!.Trim(),
+                ReplyToUserName = Clip(replyUserName, 60),
+                ReplyToText = Clip(replyText, 100)
             };
+        }
+
+        private static string Clip(string? value, int length)
+        {
+            var text = (value ?? string.Empty).Trim();
+            return text.Length > length ? text.Substring(0, length) : text;
         }
 
         public async Task<LiveDisconnectDto> DisconnectAsync(string connectionId)

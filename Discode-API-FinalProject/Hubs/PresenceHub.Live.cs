@@ -93,6 +93,23 @@ namespace Discode_API_FinalProject.Hubs
             await Clients.Client(targetConnectionId).SendAsync("ReceiveSignal", streamId, Context.ConnectionId, payload);
         }
 
+        public async Task SendLiveReply(int streamId, string text, string replyUserName, string replyText)
+        {
+            try
+            {
+                var message = await _liveStreamService.CreateMessageAsync(UserId, Context.ConnectionId, streamId, text, replyUserName, replyText);
+                await Clients.Group(LiveGroup(streamId)).SendAsync("LiveMessage", message);
+            }
+            catch (BadRequestException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+            catch (NotFoundException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+        }
+
         public async Task SendLiveMessage(int streamId, string text)
         {
             try

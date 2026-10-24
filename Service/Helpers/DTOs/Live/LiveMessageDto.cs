@@ -6,5 +6,7 @@ namespace Service.Helpers.DTOs.Live
         public string UserName { get; set; } = string.Empty;
         public string AvatarUrl { get; set; } = string.Empty;
         public string Text { get; set; } = string.Empty;
+        public string ReplyToUserName { get; set; } = string.Empty;
+        public string ReplyToText { get; set; } = string.Empty;
     }
 }
