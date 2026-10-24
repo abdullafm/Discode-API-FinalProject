@@ -30,27 +30,4 @@ namespace Domain.Configurations
             builder.HasIndex(x => new { x.GroupId, x.Active });
         }
     }
-
-    public class GroupCallParticipantConfiguration : IEntityTypeConfiguration<GroupCallParticipant>
-    {
-        public void Configure(EntityTypeBuilder<GroupCallParticipant> builder)
-        {
-            builder.Property(x => x.UserId)
-                .IsRequired()
-                .HasMaxLength(450);
-
-            builder.HasOne(x => x.GroupCall)
-                .WithMany(c => c.Participants)
-                .HasForeignKey(x => x.GroupCallId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.HasOne(x => x.User)
-                .WithMany()
-                .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
-
-            builder.HasIndex(x => new { x.GroupCallId, x.UserId })
-                .IsUnique();
-        }
-    }
 }
