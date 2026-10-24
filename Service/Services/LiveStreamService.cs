@@ -1,5 +1,6 @@
 using AutoMapper;
 using Domain.Entities;
+using Domain.Enums;
 using FluentValidation;
 using Repository.Repositories.Interfaces;
 using Service.Helpers.DTOs.Live;
@@ -16,6 +17,7 @@ namespace Service.Services
         private readonly ILiveTrackerService _tracker;
         private readonly IFriendRequestRepository _friendRequests;
         private readonly IAccountRepository _accounts;
+        private readonly INotificationService _notifications;
         private readonly IValidator<StartLiveDto> _startValidator;
         private readonly IValidator<LiveThumbnailDto> _thumbnailValidator;
         private readonly IValidator<string> _messageValidator;
@@ -25,6 +27,7 @@ namespace Service.Services
                            ILiveTrackerService tracker,
                            IFriendRequestRepository friendRequests,
                            IAccountRepository accounts,
+                           INotificationService notifications,
                            IValidator<StartLiveDto> startValidator,
                            IValidator<LiveThumbnailDto> thumbnailValidator,
                            IValidator<string> messageValidator,
@@ -34,6 +37,7 @@ namespace Service.Services
             _tracker = tracker;
             _friendRequests = friendRequests;
             _accounts = accounts;
+            _notifications = notifications;
             _startValidator = startValidator;
             _thumbnailValidator = thumbnailValidator;
             _messageValidator = messageValidator;
@@ -106,6 +110,41 @@ namespace Service.Services
             }
 
             return result;
+        }
+
+        public async Task<IReadOnlyList<string>> InviteAsync(string userId, int streamId, IEnumerable<string> userNames)
+        {
+            var stream = await _streams.GetActiveVisibleByIdAsync(userId, streamId);
+            if (stream is null || await _tracker.GetHostConnectionAsync(streamId) is null)
+            {
+                throw new NotFoundException("This stream is not live.");
+            }
+
+            var invited = new List<string>();
+            foreach (var name in userNames.Select(n => (n ?? string.Empty).Trim()).Where(n => n.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                var friend = await _accounts.GetByUserNameAsync(name);
+                if (friend is null || friend.Id == userId)
+                {
+                    continue;
+                }
+
+                var friendship = await _friendRequests.GetBetweenAsync(userId, friend.Id);
+                if (friendship is null || friendship.Status != FriendRequestStatus.Accepted)
+                {
+                    continue;
+                }
+
+                await _notifications.AddAsync(NotificationType.LiveInvite, userId, friend.Id, snippet: stream.Title, liveStreamId: stream.Id);
+                invited.Add(friend.Id);
+            }
+
+            if (invited.Count == 0)
+            {
+                throw new BadRequestException("Pick at least one friend.");
+            }
+
+            return invited;
         }
 
         public async Task<LiveJoinDto> JoinAsync(string viewerId, string connectionId, int streamId)
