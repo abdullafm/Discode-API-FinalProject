@@ -34,7 +34,7 @@ namespace Repository.Repositories
             }
         }
 
-        public Task<int> AddViewerAsync(int streamId, string connectionId)
+        public Task<int> AddViewerAsync(int streamId, string connectionId, string userId = "")
         {
             lock (_lock)
             {
@@ -44,6 +44,7 @@ namespace Repository.Repositories
                 }
 
                 room.Viewers.Add(connectionId);
+                room.ViewerUsers[connectionId] = userId;
                 return Task.FromResult(room.Viewers.Count);
             }
         }
@@ -58,6 +59,7 @@ namespace Repository.Repositories
                 }
 
                 room.Viewers.Remove(connectionId);
+                room.ViewerUsers.Remove(connectionId);
                 return Task.FromResult(room.Viewers.Count);
             }
         }
@@ -67,6 +69,17 @@ namespace Repository.Repositories
             lock (_lock)
             {
                 return Task.FromResult(_rooms.TryGetValue(streamId, out var room) ? room.Viewers.Count : 0);
+            }
+        }
+
+        public Task<IReadOnlyList<string>> GetViewerUserIdsAsync(int streamId)
+        {
+            lock (_lock)
+            {
+                IReadOnlyList<string> ids = _rooms.TryGetValue(streamId, out var room)
+                    ? room.ViewerUsers.Values.Where(x => x.Length > 0).Distinct().ToList()
+                    : new List<string>();
+                return Task.FromResult(ids);
             }
         }
 
@@ -98,6 +111,11 @@ namespace Repository.Repositories
             lock (_lock)
             {
                 var viewed = _rooms.Where(x => x.Value.Viewers.Remove(connectionId)).Select(x => x.Key).ToList();
+                foreach (var room in _rooms.Values)
+                {
+                    room.ViewerUsers.Remove(connectionId);
+                }
+
                 return Task.FromResult<IEnumerable<int>>(viewed);
             }
         }

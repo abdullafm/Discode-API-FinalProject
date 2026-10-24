@@ -9,6 +9,7 @@ namespace Service.Services.Interfaces
         Task<IEnumerable<LiveStreamDto>> GetActiveAsync(string viewerId);
         Task<LiveJoinDto> JoinAsync(string viewerId, string connectionId, int streamId);
         Task SetThumbnailAsync(string userId, LiveThumbnailDto model);
+        Task<IReadOnlyList<LiveViewerDto>> GetViewersAsync(string connectionId, int streamId);
         Task<int> LeaveAsync(string connectionId, int streamId);
         Task<LiveInviteResultDto> InviteAsync(string userId, int streamId, IEnumerable<string> userNames);
         Task<bool> CanSignalAsync(string connectionId, int streamId, string targetConnectionId);

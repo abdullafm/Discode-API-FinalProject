@@ -75,6 +75,18 @@ namespace Discode_API_FinalProject.Hubs
             }
         }
 
+        public async Task<IReadOnlyList<LiveViewerDto>> GetLiveViewers(int streamId)
+        {
+            try
+            {
+                return await _liveStreamService.GetViewersAsync(Context.ConnectionId, streamId);
+            }
+            catch (NotFoundException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+        }
+
         public async Task LeaveLive(int streamId)
         {
             var count = await _liveStreamService.LeaveAsync(Context.ConnectionId, streamId);

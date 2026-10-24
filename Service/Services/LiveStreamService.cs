@@ -176,7 +176,7 @@ namespace Service.Services
                 throw new NotFoundException("User not found.");
             }
 
-            await _tracker.AddViewerAsync(streamId, connectionId);
+            await _tracker.AddViewerAsync(streamId, connectionId, viewerId);
             var friendIds = await GetFriendIdsAsync(viewerId);
 
             return new LiveJoinDto
@@ -187,9 +187,38 @@ namespace Service.Services
                 {
                     StreamId = streamId,
                     UserName = viewer.UserName ?? string.Empty,
+                    DisplayName = string.IsNullOrWhiteSpace(viewer.DisplayName) ? viewer.UserName ?? string.Empty : viewer.DisplayName,
                     AvatarUrl = viewer.AvatarUrl ?? string.Empty
                 }
             };
+        }
+
+        public async Task<IReadOnlyList<LiveViewerDto>> GetViewersAsync(string connectionId, int streamId)
+        {
+            if (await _tracker.GetHostConnectionAsync(streamId) != connectionId)
+            {
+                throw new NotFoundException("This stream is not live.");
+            }
+
+            var viewers = new List<LiveViewerDto>();
+            foreach (var id in await _tracker.GetViewerUserIdsAsync(streamId))
+            {
+                var user = await _accounts.GetByIdAsync(id);
+                if (user is null)
+                {
+                    continue;
+                }
+
+                viewers.Add(new LiveViewerDto
+                {
+                    StreamId = streamId,
+                    UserName = user.UserName ?? string.Empty,
+                    DisplayName = string.IsNullOrWhiteSpace(user.DisplayName) ? user.UserName ?? string.Empty : user.DisplayName,
+                    AvatarUrl = user.AvatarUrl ?? string.Empty
+                });
+            }
+
+            return viewers;
         }
 
         public async Task<int> LeaveAsync(string connectionId, int streamId)
