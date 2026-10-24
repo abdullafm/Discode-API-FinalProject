@@ -11,6 +11,7 @@ namespace Service.Helpers.DTOs.Groups
         public bool Existing { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime LastMessageAt { get; set; }
+        public int UnreadCount { get; set; }
         public List<GroupMemberDto> Members { get; set; } = new();
     }
 

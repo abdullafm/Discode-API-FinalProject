@@ -142,8 +142,10 @@ namespace Service.Services
             var groups = (await _groups.GetForUserAsync(userId)).ToList();
             var activity = await _messages.GetLastActivityAsync(groups.Select(g => g.Id).ToList());
             var dtos = groups.Select(ToDto).ToList();
+            var unread = await _groups.GetUnreadCountsAsync(userId);
             foreach (var dto in dtos)
             {
+                dto.UnreadCount = unread.TryGetValue(dto.Id, out var count) ? count : 0;
                 if (activity.TryGetValue(dto.Id, out var last) && last > dto.LastMessageAt)
                 {
                     dto.LastMessageAt = last;
@@ -151,6 +153,12 @@ namespace Service.Services
             }
 
             return dtos;
+        }
+
+        public async Task MarkReadAsync(string userId, int groupId)
+        {
+            await EnsureMemberAsync(userId, groupId);
+            await _groups.MarkReadAsync(groupId, userId);
         }
 
         public async Task<GroupDto> GetAsync(string userId, int groupId)

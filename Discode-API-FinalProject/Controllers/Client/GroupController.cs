@@ -56,6 +56,13 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(await _groupService.GetAsync(UserId, id));
         }
 
+        [HttpPost("{id:int}/read")]
+        public async Task<IActionResult> MarkRead(int id)
+        {
+            await _groupService.MarkReadAsync(UserId, id);
+            return NoContent();
+        }
+
         [HttpGet("{id:int}/messages")]
         public async Task<IActionResult> GetMessages(int id)
         {
