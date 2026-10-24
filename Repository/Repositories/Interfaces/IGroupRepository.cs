@@ -10,5 +10,7 @@ namespace Repository.Repositories.Interfaces
         Task<Group?> GetTrackedWithMembersAsync(int id);
         Task AddMembersAsync(int groupId, IEnumerable<string> userIds);
         Task RemoveMemberAsync(int groupId, string userId);
+        Task<Dictionary<int, int>> GetUnreadCountsAsync(string userId);
+        Task MarkReadAsync(int groupId, string userId);
     }
 }

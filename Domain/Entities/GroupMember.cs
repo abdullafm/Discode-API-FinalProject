@@ -8,5 +8,6 @@ namespace Domain.Entities
         public Group Group { get; set; } = null!;
         public string UserId { get; set; } = string.Empty;
         public AppUser User { get; set; } = null!;
+        public DateTime? LastReadAt { get; set; }
     }
 }

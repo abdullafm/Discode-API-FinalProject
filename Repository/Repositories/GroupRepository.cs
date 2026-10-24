@@ -43,6 +43,28 @@ namespace Repository.Repositories
                 .ExecuteDeleteAsync();
         }
 
+        public async Task<Dictionary<int, int>> GetUnreadCountsAsync(string userId)
+        {
+            var members = _dbContext.Set<GroupMember>().AsNoTracking();
+            var messages = _dbContext.Set<GroupMessage>().AsNoTracking();
+            return await members
+                .Where(m => m.UserId == userId)
+                .Select(m => new
+                {
+                    m.GroupId,
+                    Count = messages.Count(x => x.GroupId == m.GroupId && x.SenderId != userId && !x.IsSystem && x.CreatedAt > (m.LastReadAt ?? m.CreatedAt))
+                })
+                .ToDictionaryAsync(x => x.GroupId, x => x.Count);
+        }
+
+        public async Task MarkReadAsync(int groupId, string userId)
+        {
+            var now = DateTime.UtcNow;
+            await _dbContext.Set<GroupMember>()
+                .Where(x => x.GroupId == groupId && x.UserId == userId)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.LastReadAt, now));
+        }
+
         public async Task<IEnumerable<Group>> GetForUserAsync(string userId)
         {
             return await _dbSet
