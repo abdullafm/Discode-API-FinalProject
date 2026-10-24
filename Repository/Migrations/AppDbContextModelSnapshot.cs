@@ -1287,6 +1287,37 @@ namespace Repository.Migrations
                     b.ToTable("UserBlocks");
                 });
 
+            modelBuilder.Entity("Domain.Entities.UserIgnore", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IgnoredId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("IgnorerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IgnoredId");
+
+                    b.HasIndex("IgnorerId", "IgnoredId")
+                        .IsUnique();
+
+                    b.ToTable("UserIgnores");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -1946,6 +1977,25 @@ namespace Repository.Migrations
                     b.Navigation("Blocked");
 
                     b.Navigation("Blocker");
+                });
+
+            modelBuilder.Entity("Domain.Entities.UserIgnore", b =>
+                {
+                    b.HasOne("Domain.Entities.AppUser", "Ignored")
+                        .WithMany()
+                        .HasForeignKey("IgnoredId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.AppUser", "Ignorer")
+                        .WithMany()
+                        .HasForeignKey("IgnorerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Ignored");
+
+                    b.Navigation("Ignorer");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
