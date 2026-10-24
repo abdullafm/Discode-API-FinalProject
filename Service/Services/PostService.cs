@@ -17,6 +17,7 @@ namespace Service.Services
         private readonly IPostLikeService _postLikes;
         private readonly INotificationService _notifications;
         private readonly IAccountRepository _accounts;
+        private readonly IMentionService _mentions;
         private readonly IValidator<CreatePostDto> _validator;
         private readonly IMapper _mapper;
 
@@ -24,6 +25,7 @@ namespace Service.Services
                            IPostLikeService postLikes,
                            INotificationService notifications,
                            IAccountRepository accounts,
+                           IMentionService mentions,
                            IValidator<CreatePostDto> validator,
                            IMapper mapper)
         {
@@ -31,6 +33,7 @@ namespace Service.Services
             _postLikes = postLikes;
             _notifications = notifications;
             _accounts = accounts;
+            _mentions = mentions;
             _validator = validator;
             _mapper = mapper;
         }
@@ -53,6 +56,7 @@ namespace Service.Services
             };
 
             await _posts.AddAsync(post);
+            await _mentions.NotifyAsync(NotificationType.PostMention, userId, post.Text, postId: post.Id);
             post.Author = author;
             return _mapper.Map<PostDto>(post, ForViewer(userId));
         }

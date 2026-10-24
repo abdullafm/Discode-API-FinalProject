@@ -9,6 +9,8 @@ namespace Domain.Enums
         CommentReply = 4,
         FriendRequest = 5,
         FriendAccepted = 6,
-        LiveInvite = 7
+        LiveInvite = 7,
+        PostMention = 8,
+        CommentMention = 9
     }
 }
