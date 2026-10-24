@@ -219,6 +219,9 @@ namespace Repository.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("EditedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<int?>("ParentCommentId")
                         .HasColumnType("int");
 
@@ -1071,6 +1074,9 @@ namespace Repository.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("EditedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("ImageUrl")
