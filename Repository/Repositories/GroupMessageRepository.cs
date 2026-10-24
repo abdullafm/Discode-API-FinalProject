@@ -27,10 +27,10 @@ namespace Repository.Repositories
                         .ThenInclude(o => o.Votes);
         }
 
-        public async Task<IEnumerable<GroupMessage>> GetLatestAsync(int groupId, int count)
+        public async Task<IEnumerable<GroupMessage>> GetLatestAsync(int groupId, int count, int? beforeId = null)
         {
             var latest = await WithDetails()
-                .Where(x => x.GroupId == groupId)
+                .Where(x => x.GroupId == groupId && (beforeId == null || x.Id < beforeId))
                 .OrderByDescending(x => x.CreatedAt)
                 .ThenByDescending(x => x.Id)
                 .Take(count)

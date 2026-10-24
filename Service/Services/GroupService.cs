@@ -172,10 +172,10 @@ namespace Service.Services
             return ToDto(group);
         }
 
-        public async Task<IEnumerable<GroupMessageDto>> GetMessagesAsync(string userId, int groupId)
+        public async Task<IEnumerable<GroupMessageDto>> GetMessagesAsync(string userId, int groupId, int? beforeId = null)
         {
             await EnsureMemberAsync(userId, groupId);
-            var messages = await _messages.GetLatestAsync(groupId, HistoryLimit);
+            var messages = await _messages.GetLatestAsync(groupId, HistoryLimit, beforeId);
             return _mapper.Map<List<GroupMessageDto>>(messages, options => options.Items[Service.Helpers.Mappings.MappingProfile.ViewerIdKey] = userId);
         }
 

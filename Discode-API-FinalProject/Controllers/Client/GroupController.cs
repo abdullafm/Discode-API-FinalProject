@@ -64,9 +64,9 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [HttpGet("{id:int}/messages")]
-        public async Task<IActionResult> GetMessages(int id)
+        public async Task<IActionResult> GetMessages(int id, [FromQuery] int? before = null)
         {
-            return Ok(await _groupService.GetMessagesAsync(UserId, id));
+            return Ok(await _groupService.GetMessagesAsync(UserId, id, before));
         }
 
         [HttpPost("{id:int}/messages")]

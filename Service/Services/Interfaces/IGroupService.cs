@@ -8,7 +8,7 @@ namespace Service.Services.Interfaces
         Task<IEnumerable<GroupDto>> GetMineAsync(string userId);
         Task<GroupDto> GetAsync(string userId, int groupId);
         Task MarkReadAsync(string userId, int groupId);
-        Task<IEnumerable<GroupMessageDto>> GetMessagesAsync(string userId, int groupId);
+        Task<IEnumerable<GroupMessageDto>> GetMessagesAsync(string userId, int groupId, int? beforeId = null);
         Task<GroupChangeDto> SendMessageAsync(string userId, int groupId, SendGroupMessageDto model);
         Task<GroupChangeDto> SendPollAsync(string userId, int groupId, Service.Helpers.DTOs.DirectMessages.CreatePollDto model);
         Task<GroupMessageDeletedDto> DeleteMessageAsync(string userId, int groupId, int messageId);
