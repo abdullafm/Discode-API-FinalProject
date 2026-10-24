@@ -21,6 +21,8 @@ namespace Service.Helpers.DTOs.DirectMessages
         public bool CallMissed { get; set; }
         public List<MessageAttachmentDto> Attachments { get; set; } = new();
         public bool IsPoll { get; set; }
+        public int? StoryId { get; set; }
+        public string StoryImageUrl { get; set; } = string.Empty;
         public PollDto? Poll { get; set; }
     }
 }

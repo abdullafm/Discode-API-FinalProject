@@ -23,6 +23,7 @@ namespace Service.Services
         private readonly IDirectMessageRepository _directMessages;
         private readonly IMessageReactionService _reactions;
         private readonly IAccountRepository _accounts;
+        private readonly IStoryRepository _stories;
         private readonly IFriendRequestRepository _friendRequests;
         private readonly IUserBlockRepository _blocks;
         private readonly IPresenceService _presence;
@@ -38,6 +39,7 @@ namespace Service.Services
                                     IDirectMessageRepository directMessages,
                                     IMessageReactionService reactions,
                                     IAccountRepository accounts,
+                                    IStoryRepository stories,
                                     IFriendRequestRepository friendRequests,
                                     IUserBlockRepository blocks,
                                     IPresenceService presence,
@@ -53,6 +55,7 @@ namespace Service.Services
             _directMessages = directMessages;
             _reactions = reactions;
             _accounts = accounts;
+            _stories = stories;
             _friendRequests = friendRequests;
             _blocks = blocks;
             _presence = presence;
@@ -136,7 +139,29 @@ namespace Service.Services
             };
         }
 
-        public async Task<SentMessageDto> SendAsync(string senderId, string userName, SendMessageDto model)
+        public async Task<SentMessageDto> SendStoryReplyAsync(string senderId, int storyId, string text)
+        {
+            var story = await _stories.GetByIdAsync(storyId);
+            if (story is null || story.AuthorId == senderId || !await _stories.IsVisibleAsync(senderId, storyId))
+            {
+                throw new NotFoundException("Story not found.");
+            }
+
+            var author = await _accounts.GetByIdAsync(story.AuthorId);
+            if (author is null)
+            {
+                throw new NotFoundException("User not found.");
+            }
+
+            return await SendCoreAsync(senderId, author.UserName ?? string.Empty, new SendMessageDto { Text = text ?? string.Empty }, story.Id, story.ImageUrl);
+        }
+
+        public Task<SentMessageDto> SendAsync(string senderId, string userName, SendMessageDto model)
+        {
+            return SendCoreAsync(senderId, userName, model, null, null);
+        }
+
+        private async Task<SentMessageDto> SendCoreAsync(string senderId, string userName, SendMessageDto model, int? storyId, string? storyImageUrl)
         {
             await _validator.EnsureValidAsync(model);
 
@@ -150,7 +175,7 @@ namespace Service.Services
             var conversation = await _conversations.GetBetweenAsync(senderId, recipient.Id)
                                ?? await _conversations.CreateAsync(senderId, recipient.Id, undelivered ? string.Empty : preview, hiddenForOther: undelivered);
 
-            var messageForSender = await _messages.CreateAsync(conversation.ConversationId, senderId, text, model.ReplyToMessageId, undelivered, model.Attachments);
+            var messageForSender = await _messages.CreateAsync(conversation.ConversationId, senderId, text, model.ReplyToMessageId, undelivered, model.Attachments, storyId, storyImageUrl);
             if (!undelivered)
             {
                 await _conversations.RecordMessageAsync(senderId, recipient.Id, preview, messageForSender.CreatedAt);

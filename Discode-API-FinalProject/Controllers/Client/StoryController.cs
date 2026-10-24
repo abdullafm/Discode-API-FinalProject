@@ -14,11 +14,13 @@ namespace Discode_API_FinalProject.Controllers.Client
     public class StoryController : ControllerBase
     {
         private readonly IStoryService _storyService;
+        private readonly IDirectMessageService _directMessages;
         private readonly IHubContext<PresenceHub> _hubContext;
 
-        public StoryController(IStoryService storyService, IHubContext<PresenceHub> hubContext)
+        public StoryController(IStoryService storyService, IDirectMessageService directMessages, IHubContext<PresenceHub> hubContext)
         {
             _storyService = storyService;
+            _directMessages = directMessages;
             _hubContext = hubContext;
         }
 
@@ -42,6 +44,28 @@ namespace Discode_API_FinalProject.Controllers.Client
         public async Task<IActionResult> GetAll()
         {
             return Ok(await _storyService.GetAsync(UserId));
+        }
+
+        [HttpPost("{id:int}/reply")]
+        public async Task<IActionResult> Reply(int id, [FromBody] StoryReplyDto model)
+        {
+            var sent = await _directMessages.SendStoryReplyAsync(UserId, id, model.Text);
+
+            await _hubContext.Clients.User(sent.SenderId).SendAsync("DirectMessage", new
+            {
+                message = sent.MessageForSender,
+                conversation = sent.ConversationForSender
+            });
+            if (!sent.MessageForSender.Undelivered)
+            {
+                await _hubContext.Clients.User(sent.RecipientId).SendAsync("DirectMessage", new
+                {
+                    message = sent.MessageForRecipient,
+                    conversation = sent.ConversationForRecipient
+                });
+            }
+
+            return Ok(sent.MessageForSender);
         }
 
         [HttpPost("{id:int}/like")]

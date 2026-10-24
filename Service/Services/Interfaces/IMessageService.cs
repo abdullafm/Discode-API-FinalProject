@@ -6,7 +6,7 @@ namespace Service.Services.Interfaces
     {
         Task<MessageDto?> GetAsync(int messageId, string viewerId);
         Task<MessageDto> CreatePollAsync(int conversationId, string senderId, CreatePollDto model, bool undelivered);
-        Task<MessageDto> CreateAsync(int conversationId, string senderId, string text, int? replyToMessageId, bool undelivered, IEnumerable<MessageAttachmentDto>? attachments = null);
+        Task<MessageDto> CreateAsync(int conversationId, string senderId, string text, int? replyToMessageId, bool undelivered, IEnumerable<MessageAttachmentDto>? attachments = null, int? storyId = null, string? storyImageUrl = null);
         Task<MessageDto?> EditAsync(int messageId, string text, string viewerId);
         Task DeleteAsync(int messageId);
         Task<MessageDto> CreateCallAsync(int conversationId, string senderId);
