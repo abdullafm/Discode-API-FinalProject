@@ -149,6 +149,12 @@ namespace Service.Services
             return call is null ? null : ToDto(call);
         }
 
+        public async Task<GroupCallDto?> GetActiveForGroupAsync(int groupId)
+        {
+            var call = await _calls.GetActiveForGroupAsync(groupId);
+            return call is null ? null : ToDto(call);
+        }
+
         public async Task<IEnumerable<GroupCallDto>> GetActiveInMyGroupsAsync(string userId)
         {
             var groups = await _groups.GetForUserAsync(userId);

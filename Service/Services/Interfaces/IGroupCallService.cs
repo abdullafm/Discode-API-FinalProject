@@ -10,6 +10,7 @@ namespace Service.Services.Interfaces
         Task<IEnumerable<GroupCallChangeDto>> LeaveAllForAsync(string userId);
         Task<GroupCallChangeDto?> SetScreenAsync(string userId, int callId, bool on);
         Task<GroupCallDto?> GetMineAsync(string userId);
+        Task<GroupCallDto?> GetActiveForGroupAsync(int groupId);
         Task<IEnumerable<GroupCallDto>> GetActiveInMyGroupsAsync(string userId);
         Task<bool> AreTogetherAsync(string userId, string otherUserId, int callId);
     }

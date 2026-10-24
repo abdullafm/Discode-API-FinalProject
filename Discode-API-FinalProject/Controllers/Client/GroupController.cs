@@ -128,6 +128,17 @@ namespace Discode_API_FinalProject.Controllers.Client
         {
             var change = await _groupService.AddMembersAsync(UserId, id, model);
             await PublishAsync(change);
+
+            var running = await _groupCallService.GetActiveForGroupAsync(id);
+            if (running is not null && change.Group is not null)
+            {
+                var added = change.Group.Members
+                    .Where(m => model.UserNames.Any(n => string.Equals(n.Trim(), m.UserName, StringComparison.OrdinalIgnoreCase)))
+                    .Select(m => m.UserId)
+                    .ToList();
+                await _hubContext.Clients.Users(added).SendAsync("GroupCallIncoming", running);
+            }
+
             return Ok(change.Group);
         }
 
