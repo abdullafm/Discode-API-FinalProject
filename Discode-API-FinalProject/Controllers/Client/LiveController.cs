@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Discode_API_FinalProject.Hubs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Service.Helpers.DTOs.DirectMessages;
 using Service.Helpers.DTOs.Live;
 using Service.Services.Interfaces;
 using System.Security.Claims;
@@ -15,10 +16,12 @@ namespace Discode_API_FinalProject.Controllers.Client
     {
         private readonly ILiveStreamService _liveStreamService;
         private readonly IHubContext<PresenceHub> _hubContext;
+        private readonly IDirectMessageService _directMessages;
 
-        public LiveController(ILiveStreamService liveStreamService, IHubContext<PresenceHub> hubContext)
+        public LiveController(ILiveStreamService liveStreamService, IDirectMessageService directMessages, IHubContext<PresenceHub> hubContext)
         {
             _liveStreamService = liveStreamService;
+            _directMessages = directMessages;
             _hubContext = hubContext;
         }
 
@@ -34,8 +37,26 @@ namespace Discode_API_FinalProject.Controllers.Client
         public async Task<IActionResult> Invite(int id, [FromBody] InviteToLiveDto model)
         {
             var invited = await _liveStreamService.InviteAsync(UserId, id, model.UserNames ?? new List<string>());
-            await _hubContext.Clients.Users(invited).SendAsync("NotificationsChanged");
-            return Ok(new { invited = invited.Count });
+            var text = $"Join my live stream \"{invited.Title}\": /Social/Index?live={id}";
+            foreach (var userName in invited.UserNames)
+            {
+                var sent = await _directMessages.SendAsync(UserId, userName, new SendMessageDto { Text = text });
+                await _hubContext.Clients.User(sent.SenderId).SendAsync("DirectMessage", new
+                {
+                    message = sent.MessageForSender,
+                    conversation = sent.ConversationForSender
+                });
+                if (!sent.MessageForSender.Undelivered)
+                {
+                    await _hubContext.Clients.User(sent.RecipientId).SendAsync("DirectMessage", new
+                    {
+                        message = sent.MessageForRecipient,
+                        conversation = sent.ConversationForRecipient
+                    });
+                }
+            }
+
+            return Ok(new { invited = invited.UserNames.Count });
         }
 
         [HttpGet]
