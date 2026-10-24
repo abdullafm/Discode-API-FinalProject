@@ -60,6 +60,11 @@ namespace Repository.Repositories
 
                 room.Viewers.Remove(connectionId);
                 room.ViewerUsers.Remove(connectionId);
+                if (room.GuestConnectionId == connectionId)
+                {
+                    room.GuestConnectionId = string.Empty;
+                }
+
                 return Task.FromResult(room.Viewers.Count);
             }
         }
@@ -69,6 +74,63 @@ namespace Repository.Repositories
             lock (_lock)
             {
                 return Task.FromResult(_rooms.TryGetValue(streamId, out var room) ? room.Viewers.Count : 0);
+            }
+        }
+
+        public Task<string?> GetViewerUserIdAsync(int streamId, string connectionId)
+        {
+            lock (_lock)
+            {
+                string? id = null;
+                if (_rooms.TryGetValue(streamId, out var room) && room.ViewerUsers.TryGetValue(connectionId, out var found) && found.Length > 0)
+                {
+                    id = found;
+                }
+
+                return Task.FromResult(id);
+            }
+        }
+
+        public Task<bool> SetGuestAsync(int streamId, string connectionId)
+        {
+            lock (_lock)
+            {
+                if (!_rooms.TryGetValue(streamId, out var room) || !room.Viewers.Contains(connectionId) || room.GuestConnectionId.Length > 0)
+                {
+                    return Task.FromResult(false);
+                }
+
+                room.GuestConnectionId = connectionId;
+                return Task.FromResult(true);
+            }
+        }
+
+        public Task<string?> GetGuestAsync(int streamId)
+        {
+            lock (_lock)
+            {
+                string? id = null;
+                if (_rooms.TryGetValue(streamId, out var room) && room.GuestConnectionId.Length > 0)
+                {
+                    id = room.GuestConnectionId;
+                }
+
+                return Task.FromResult(id);
+            }
+        }
+
+        public Task<string?> ClearGuestAsync(int streamId)
+        {
+            lock (_lock)
+            {
+                string? id = null;
+                if (_rooms.TryGetValue(streamId, out var room) && room.GuestConnectionId.Length > 0)
+                {
+                    id = room.GuestConnectionId;
+                    room.GuestConnectionId = string.Empty;
+                }
+
+                return Task.FromResult(id);
             }
         }
 
@@ -114,6 +176,10 @@ namespace Repository.Repositories
                 foreach (var room in _rooms.Values)
                 {
                     room.ViewerUsers.Remove(connectionId);
+                    if (room.GuestConnectionId == connectionId)
+                    {
+                        room.GuestConnectionId = string.Empty;
+                    }
                 }
 
                 return Task.FromResult<IEnumerable<int>>(viewed);

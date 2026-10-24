@@ -183,6 +183,7 @@ namespace Service.Services
             {
                 Stream = await ToDtoAsync(stream, viewerId, friendIds),
                 HostConnectionId = hostConnection,
+                Guest = await GetGuestDtoAsync(streamId),
                 Viewer = new LiveViewerDto
                 {
                     StreamId = streamId,
@@ -219,6 +220,85 @@ namespace Service.Services
             }
 
             return viewers;
+        }
+
+        private async Task<LiveGuestDto?> GetGuestDtoAsync(int streamId)
+        {
+            var connection = await _tracker.GetGuestAsync(streamId);
+            return connection is null ? null : await ToGuestDtoAsync(streamId, connection);
+        }
+
+        private async Task<LiveGuestDto?> ToGuestDtoAsync(int streamId, string connectionId)
+        {
+            var userId = await _tracker.GetViewerUserIdAsync(streamId, connectionId);
+            var user = userId is null ? null : await _accounts.GetByIdAsync(userId);
+            if (user is null)
+            {
+                return null;
+            }
+
+            return new LiveGuestDto
+            {
+                StreamId = streamId,
+                ConnectionId = connectionId,
+                UserName = user.UserName ?? string.Empty,
+                DisplayName = string.IsNullOrWhiteSpace(user.DisplayName) ? user.UserName ?? string.Empty : user.DisplayName,
+                AvatarUrl = user.AvatarUrl ?? string.Empty
+            };
+        }
+
+        public async Task<LiveGuestRequestDto> RequestGuestAsync(string connectionId, int streamId)
+        {
+            var hostConnection = await _tracker.GetHostConnectionAsync(streamId);
+            if (hostConnection is null || hostConnection == connectionId || !await _tracker.IsParticipantAsync(streamId, connectionId))
+            {
+                throw new NotFoundException("This stream is not live.");
+            }
+
+            if (await _tracker.GetGuestAsync(streamId) is not null)
+            {
+                throw new BadRequestException("Someone is already a guest in this stream.");
+            }
+
+            var guest = await ToGuestDtoAsync(streamId, connectionId);
+            if (guest is null)
+            {
+                throw new NotFoundException("User not found.");
+            }
+
+            return new LiveGuestRequestDto { HostConnectionId = hostConnection, Guest = guest };
+        }
+
+        public async Task<LiveGuestDto?> RespondGuestAsync(string hostConnectionId, int streamId, string targetConnectionId, bool accept)
+        {
+            if (await _tracker.GetHostConnectionAsync(streamId) != hostConnectionId)
+            {
+                throw new NotFoundException("This stream is not live.");
+            }
+
+            if (!accept)
+            {
+                return null;
+            }
+
+            if (!await _tracker.SetGuestAsync(streamId, targetConnectionId))
+            {
+                throw new BadRequestException("That viewer cannot join as a guest right now.");
+            }
+
+            return await ToGuestDtoAsync(streamId, targetConnectionId);
+        }
+
+        public async Task<string?> EndGuestAsync(string connectionId, int streamId)
+        {
+            var guest = await _tracker.GetGuestAsync(streamId);
+            var isHost = await _tracker.GetHostConnectionAsync(streamId) == connectionId;
+            if (guest is null || (!isHost && guest != connectionId))
+            {
+                return null;
+            }
+
+            return await _tracker.ClearGuestAsync(streamId);
         }
 
         public async Task<int> LeaveAsync(string connectionId, int streamId)

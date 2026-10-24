@@ -32,6 +32,26 @@ namespace Service.Services
             return _tracker.AddViewerAsync(streamId, connectionId, userId);
         }
 
+        public Task<string?> GetViewerUserIdAsync(int streamId, string connectionId)
+        {
+            return _tracker.GetViewerUserIdAsync(streamId, connectionId);
+        }
+
+        public Task<bool> SetGuestAsync(int streamId, string connectionId)
+        {
+            return _tracker.SetGuestAsync(streamId, connectionId);
+        }
+
+        public Task<string?> GetGuestAsync(int streamId)
+        {
+            return _tracker.GetGuestAsync(streamId);
+        }
+
+        public Task<string?> ClearGuestAsync(int streamId)
+        {
+            return _tracker.ClearGuestAsync(streamId);
+        }
+
         public Task<IReadOnlyList<string>> GetViewerUserIdsAsync(int streamId)
         {
             return _tracker.GetViewerUserIdsAsync(streamId);
