@@ -9,6 +9,7 @@ namespace Service.Services.Interfaces
         Task<RelationDto> GetRelationAsync(string userId, string userName);
         Task<SentMessageDto> SendAsync(string senderId, string userName, SendMessageDto model);
         Task<SentMessageDto> SendStoryReplyAsync(string senderId, int storyId, string text);
+        Task<SentMessageDto> SendLiveShareAsync(string senderId, string userName, LiveShareDto live);
         Task<SentMessageDto> SendPollAsync(string senderId, string userName, CreatePollDto model);
         Task<PollUpdatedDto> VotePollAsync(string userId, int messageId, VotePollDto model);
         Task<EditedMessageDto> EditAsync(string userId, int messageId, SendMessageDto model);

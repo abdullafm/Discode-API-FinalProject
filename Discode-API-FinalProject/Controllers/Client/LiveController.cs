@@ -37,10 +37,16 @@ namespace Discode_API_FinalProject.Controllers.Client
         public async Task<IActionResult> Invite(int id, [FromBody] InviteToLiveDto model)
         {
             var invited = await _liveStreamService.InviteAsync(UserId, id, model.UserNames ?? new List<string>());
-            var text = $"Join my live stream \"{invited.Title}\": /Social/Index?live={id}";
+            var share = new LiveShareDto
+            {
+                StreamId = invited.StreamId,
+                Title = invited.Title,
+                HostName = invited.HostName,
+                ImageUrl = invited.ThumbnailUrl
+            };
             foreach (var userName in invited.UserNames)
             {
-                var sent = await _directMessages.SendAsync(UserId, userName, new SendMessageDto { Text = text });
+                var sent = await _directMessages.SendLiveShareAsync(UserId, userName, share);
                 await _hubContext.Clients.User(sent.SenderId).SendAsync("DirectMessage", new
                 {
                     message = sent.MessageForSender,

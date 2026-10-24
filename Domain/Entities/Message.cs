@@ -22,6 +22,10 @@ namespace Domain.Entities
         public bool CallMissed { get; set; }
         public int? StoryId { get; set; }
         public string? StoryImageUrl { get; set; }
+        public int? LiveStreamId { get; set; }
+        public string? LiveTitle { get; set; }
+        public string? LiveHostName { get; set; }
+        public string? LiveImageUrl { get; set; }
         public ICollection<MessageReaction> Reactions { get; set; } = new List<MessageReaction>();
         public ICollection<MessageAttachment> Attachments { get; set; } = new List<MessageAttachment>();
     }

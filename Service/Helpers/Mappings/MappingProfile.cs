@@ -122,6 +122,9 @@ namespace Service.Helpers.Mappings
                     context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.SenderId == (string?)viewer))
                 .ForMember(d => d.Forwarded, o => o.MapFrom(s => s.Forward != null))
                 .ForMember(d => d.StoryImageUrl, o => o.MapFrom(s => s.StoryImageUrl ?? string.Empty))
+                .ForMember(d => d.LiveTitle, o => o.MapFrom(s => s.LiveTitle ?? string.Empty))
+                .ForMember(d => d.LiveHostName, o => o.MapFrom(s => s.LiveHostName ?? string.Empty))
+                .ForMember(d => d.LiveImageUrl, o => o.MapFrom(s => s.LiveImageUrl ?? string.Empty))
                 .ForMember(d => d.IsCall, o => o.MapFrom(s => s.Kind == Domain.Enums.MessageKind.Call))
                 .ForMember(d => d.IsPoll, o => o.MapFrom(s => s.Kind == Domain.Enums.MessageKind.Poll))
                 .ForMember(d => d.Poll, o => o.MapFrom((s, d, m, context) => s.Poll == null

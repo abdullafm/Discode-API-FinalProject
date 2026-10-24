@@ -760,6 +760,18 @@ namespace Repository.Migrations
                     b.Property<int>("Kind")
                         .HasColumnType("int");
 
+                    b.Property<string>("LiveHostName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LiveImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("LiveStreamId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LiveTitle")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("PinnedAt")
                         .HasColumnType("datetime2");
 

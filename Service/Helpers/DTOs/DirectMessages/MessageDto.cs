@@ -23,6 +23,10 @@ namespace Service.Helpers.DTOs.DirectMessages
         public bool IsPoll { get; set; }
         public int? StoryId { get; set; }
         public string StoryImageUrl { get; set; } = string.Empty;
+        public int? LiveStreamId { get; set; }
+        public string LiveTitle { get; set; } = string.Empty;
+        public string LiveHostName { get; set; } = string.Empty;
+        public string LiveImageUrl { get; set; } = string.Empty;
         public PollDto? Poll { get; set; }
     }
 }

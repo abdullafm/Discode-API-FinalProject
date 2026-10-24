@@ -31,7 +31,7 @@ namespace Service.Services
             return _mapper.Map<MessageDto>(message, ForViewer(viewerId));
         }
 
-        public async Task<MessageDto> CreateAsync(int conversationId, string senderId, string text, int? replyToMessageId, bool undelivered, IEnumerable<MessageAttachmentDto>? attachments = null, int? storyId = null, string? storyImageUrl = null)
+        public async Task<MessageDto> CreateAsync(int conversationId, string senderId, string text, int? replyToMessageId, bool undelivered, IEnumerable<MessageAttachmentDto>? attachments = null, int? storyId = null, string? storyImageUrl = null, LiveShareDto? live = null)
         {
             int? replyId = replyToMessageId is > 0 ? replyToMessageId : null;
             if (replyId.HasValue)
@@ -52,6 +52,10 @@ namespace Service.Services
                 Undelivered = undelivered,
                 StoryId = storyId,
                 StoryImageUrl = storyImageUrl,
+                LiveStreamId = live?.StreamId,
+                LiveTitle = live?.Title,
+                LiveHostName = live?.HostName,
+                LiveImageUrl = live?.ImageUrl,
                 Attachments = (attachments ?? Enumerable.Empty<MessageAttachmentDto>())
                     .Select(a => new MessageAttachment { Url = a.Url, FileName = a.FileName, ContentType = a.ContentType, Size = a.Size })
                     .ToList()

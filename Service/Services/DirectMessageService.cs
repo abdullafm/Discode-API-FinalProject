@@ -153,29 +153,37 @@ namespace Service.Services
                 throw new NotFoundException("User not found.");
             }
 
-            return await SendCoreAsync(senderId, author.UserName ?? string.Empty, new SendMessageDto { Text = text ?? string.Empty }, story.Id, story.ImageUrl);
+            return await SendCoreAsync(senderId, author.UserName ?? string.Empty, new SendMessageDto { Text = text ?? string.Empty }, story.Id, story.ImageUrl, null);
         }
 
         public Task<SentMessageDto> SendAsync(string senderId, string userName, SendMessageDto model)
         {
-            return SendCoreAsync(senderId, userName, model, null, null);
+            return SendCoreAsync(senderId, userName, model, null, null, null);
         }
 
-        private async Task<SentMessageDto> SendCoreAsync(string senderId, string userName, SendMessageDto model, int? storyId, string? storyImageUrl)
+        public Task<SentMessageDto> SendLiveShareAsync(string senderId, string userName, LiveShareDto live)
         {
-            await _validator.EnsureValidAsync(model);
+            return SendCoreAsync(senderId, userName, new SendMessageDto(), null, null, live);
+        }
+
+        private async Task<SentMessageDto> SendCoreAsync(string senderId, string userName, SendMessageDto model, int? storyId, string? storyImageUrl, LiveShareDto? live)
+        {
+            if (live is null)
+            {
+                await _validator.EnsureValidAsync(model);
+            }
 
             var recipient = await GetChatPartnerAsync(senderId, userName, requireFriendship: false);
             var undelivered = await _blocks.IsBlockedEitherWayAsync(senderId, recipient.Id) || !await CanMessageAsync(senderId, recipient);
 
             var text = model.Text.Trim();
 
-            var preview = Preview(text, model.Attachments.Count);
+            var preview = live is null ? Preview(text, model.Attachments.Count) : Preview("Live: " + live.Title);
 
             var conversation = await _conversations.GetBetweenAsync(senderId, recipient.Id)
                                ?? await _conversations.CreateAsync(senderId, recipient.Id, undelivered ? string.Empty : preview, hiddenForOther: undelivered);
 
-            var messageForSender = await _messages.CreateAsync(conversation.ConversationId, senderId, text, model.ReplyToMessageId, undelivered, model.Attachments, storyId, storyImageUrl);
+            var messageForSender = await _messages.CreateAsync(conversation.ConversationId, senderId, text, model.ReplyToMessageId, undelivered, model.Attachments, storyId, storyImageUrl, live);
             if (!undelivered)
             {
                 await _conversations.RecordMessageAsync(senderId, recipient.Id, preview, messageForSender.CreatedAt);

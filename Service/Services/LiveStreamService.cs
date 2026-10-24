@@ -146,7 +146,14 @@ namespace Service.Services
                 throw new BadRequestException("Pick at least one friend.");
             }
 
-            return new LiveInviteResultDto { Title = stream.Title, UserNames = names };
+            return new LiveInviteResultDto
+            {
+                StreamId = stream.Id,
+                Title = stream.Title,
+                HostName = string.IsNullOrWhiteSpace(stream.Host?.DisplayName) ? stream.Host?.UserName ?? string.Empty : stream.Host.DisplayName,
+                ThumbnailUrl = stream.ThumbnailUrl,
+                UserNames = names
+            };
         }
 
         public async Task<LiveJoinDto> JoinAsync(string viewerId, string connectionId, int streamId)
