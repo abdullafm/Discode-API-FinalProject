@@ -10,6 +10,7 @@ namespace Service.Helpers.DTOs.Groups
         public int MaxMembers { get; set; }
         public bool Existing { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime LastMessageAt { get; set; }
         public List<GroupMemberDto> Members { get; set; } = new();
     }
 

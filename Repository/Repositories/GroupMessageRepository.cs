@@ -45,6 +45,16 @@ namespace Repository.Repositories
             return await WithDetails().FirstOrDefaultAsync(x => x.Id == id);
         }
 
+        public async Task<Dictionary<int, DateTime>> GetLastActivityAsync(IReadOnlyCollection<int> groupIds)
+        {
+            return await _dbSet
+                .AsNoTracking()
+                .Where(x => groupIds.Contains(x.GroupId))
+                .GroupBy(x => x.GroupId)
+                .Select(g => new { g.Key, Last = g.Max(x => x.CreatedAt) })
+                .ToDictionaryAsync(x => x.Key, x => x.Last);
+        }
+
         public async Task ClearRepliesAsync(int messageId)
         {
             await _dbSet.Where(x => x.ReplyToMessageId == messageId).ExecuteUpdateAsync(s => s.SetProperty(x => x.ReplyToMessageId, (int?)null));

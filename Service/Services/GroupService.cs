@@ -139,8 +139,18 @@ namespace Service.Services
 
         public async Task<IEnumerable<GroupDto>> GetMineAsync(string userId)
         {
-            var groups = await _groups.GetForUserAsync(userId);
-            return groups.Select(ToDto).ToList();
+            var groups = (await _groups.GetForUserAsync(userId)).ToList();
+            var activity = await _messages.GetLastActivityAsync(groups.Select(g => g.Id).ToList());
+            var dtos = groups.Select(ToDto).ToList();
+            foreach (var dto in dtos)
+            {
+                if (activity.TryGetValue(dto.Id, out var last) && last > dto.LastMessageAt)
+                {
+                    dto.LastMessageAt = last;
+                }
+            }
+
+            return dtos;
         }
 
         public async Task<GroupDto> GetAsync(string userId, int groupId)
@@ -478,6 +488,7 @@ namespace Service.Services
         {
             var dto = _mapper.Map<GroupDto>(group);
             dto.MaxMembers = CreateGroupDtoValidator.MaxMembers;
+            dto.LastMessageAt = group.CreatedAt;
             dto.MemberCount = group.Members.Count;
             dto.OwnerUserName = group.Members.Where(m => m.UserId == group.OwnerId).Select(m => m.User.UserName ?? string.Empty).FirstOrDefault() ?? string.Empty;
             foreach (var member in dto.Members)
