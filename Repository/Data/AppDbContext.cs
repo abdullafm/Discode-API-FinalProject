@@ -12,6 +12,7 @@ namespace Repository.Data
         public DbSet<Post> Posts { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<PostLike> PostLikes { get; set; }
+        public DbSet<PostRepost> PostReposts { get; set; }
         public DbSet<CommentLike> CommentLikes { get; set; }
         public DbSet<Story> Stories { get; set; }
         public DbSet<StoryLike> StoryLikes { get; set; }

@@ -21,6 +21,7 @@ namespace Repository.Repositories
                 .AsSplitQuery()
                 .Include(x => x.Author)
                 .Include(x => x.Likes)
+                .Include(x => x.Reposts)
                 .Include(x => x.Comments).ThenInclude(c => c.Author)
                 .Include(x => x.Comments).ThenInclude(c => c.Likes)
                 .Where(x => x.Author.IsPublic &&
@@ -39,6 +40,7 @@ namespace Repository.Repositories
                 .AsSplitQuery()
                 .Include(x => x.Author)
                 .Include(x => x.Likes)
+                .Include(x => x.Reposts)
                 .Include(x => x.Comments).ThenInclude(c => c.Author)
                 .Include(x => x.Comments).ThenInclude(c => c.Likes)
                 .Where(x => x.AuthorId == viewerId ||
@@ -58,6 +60,7 @@ namespace Repository.Repositories
                 .AsSplitQuery()
                 .Include(x => x.Author)
                 .Include(x => x.Likes)
+                .Include(x => x.Reposts)
                 .Include(x => x.Comments).ThenInclude(c => c.Author)
                 .Include(x => x.Comments).ThenInclude(c => c.Likes)
                 .Where(x => x.AuthorId == authorId &&
@@ -71,6 +74,45 @@ namespace Repository.Repositories
                                  ((f.SenderId == viewerId && f.ReceiverId == authorId) ||
                                   (f.SenderId == authorId && f.ReceiverId == viewerId)))))
                 .OrderByDescending(x => x.CreatedAt)
+                .Take(FeedLimit)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Post>> GetRepostedByAsync(string viewerId, string userId)
+        {
+            var allowed = viewerId == userId ||
+                          await _dbContext.Users.AnyAsync(u => u.Id == userId && u.IsPublic) ||
+                          await _dbContext.FriendRequests.AnyAsync(f =>
+                              f.Status == FriendRequestStatus.Accepted &&
+                              ((f.SenderId == viewerId && f.ReceiverId == userId) ||
+                               (f.SenderId == userId && f.ReceiverId == viewerId)));
+            if (!allowed ||
+                await _dbContext.UserBlocks.AnyAsync(b =>
+                    (b.BlockerId == userId && b.BlockedId == viewerId) ||
+                    (b.BlockerId == viewerId && b.BlockedId == userId)))
+            {
+                return new List<Post>();
+            }
+
+            return await _dbSet
+                .AsNoTracking()
+                .AsSplitQuery()
+                .Include(x => x.Author)
+                .Include(x => x.Likes)
+                .Include(x => x.Reposts)
+                .Include(x => x.Comments).ThenInclude(c => c.Author)
+                .Include(x => x.Comments).ThenInclude(c => c.Likes)
+                .Where(x => x.Reposts.Any(r => r.UserId == userId) &&
+                            !_dbContext.UserBlocks.Any(b =>
+                                (b.BlockerId == x.AuthorId && b.BlockedId == viewerId) ||
+                                (b.BlockerId == viewerId && b.BlockedId == x.AuthorId)) &&
+                            (x.AuthorId == viewerId ||
+                             x.Author.IsPublic ||
+                             _dbContext.FriendRequests.Any(f =>
+                                 f.Status == FriendRequestStatus.Accepted &&
+                                 ((f.SenderId == viewerId && f.ReceiverId == x.AuthorId) ||
+                                  (f.SenderId == x.AuthorId && f.ReceiverId == viewerId)))))
+                .OrderByDescending(x => x.Reposts.Where(r => r.UserId == userId).Max(r => r.CreatedAt))
                 .Take(FeedLimit)
                 .ToListAsync();
         }

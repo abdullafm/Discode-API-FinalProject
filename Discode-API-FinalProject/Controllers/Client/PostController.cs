@@ -96,6 +96,20 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(result);
         }
 
+        [HttpPost("{id:int}/repost")]
+        public async Task<IActionResult> Repost(int id)
+        {
+            var result = await _postService.ToggleRepostAsync(UserId, id);
+            await NotifyAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("reposts/{userName}")]
+        public async Task<IActionResult> Reposts(string userName)
+        {
+            return Ok(await _postService.GetRepostsAsync(UserId, userName));
+        }
+
         [HttpPost("{id:int}/comments")]
         public async Task<IActionResult> Comment(int id, [FromBody] CreateCommentDto model)
         {

@@ -224,6 +224,9 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.LikeCount, o => o.MapFrom(s => s.Likes.Count))
                 .ForMember(d => d.LikedByMe, o => o.MapFrom((s, d, m, context) =>
                     context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.Likes.Any(l => l.UserId == (string?)viewer)))
+                .ForMember(d => d.RepostCount, o => o.MapFrom(s => s.Reposts.Count))
+                .ForMember(d => d.RepostedByMe, o => o.MapFrom((s, d, m, context) =>
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.Reposts.Any(l => l.UserId == (string?)viewer)))
                 .ForMember(d => d.Comments, o => o.MapFrom(s => s.Comments.OrderBy(c => c.CreatedAt)))
                 .ForMember(d => d.AuthorUserName, o => o.MapFrom(s => s.Author.UserName ?? string.Empty))
                 .ForMember(d => d.AuthorDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Author.DisplayName)

@@ -11,5 +11,6 @@ namespace Domain.Entities
         public DateTime? EditedAt { get; set; }
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
         public ICollection<PostLike> Likes { get; set; } = new List<PostLike>();
+        public ICollection<PostRepost> Reposts { get; set; } = new List<PostRepost>();
     }
 }

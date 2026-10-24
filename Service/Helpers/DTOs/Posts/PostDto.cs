@@ -13,6 +13,8 @@ namespace Service.Helpers.DTOs.Posts
         public DateTime? EditedAt { get; set; }
         public int LikeCount { get; set; }
         public bool LikedByMe { get; set; }
+        public int RepostCount { get; set; }
+        public bool RepostedByMe { get; set; }
         public List<CommentDto> Comments { get; set; } = new List<CommentDto>();
     }
 }
