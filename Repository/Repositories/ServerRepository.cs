@@ -36,7 +36,8 @@ namespace Repository.Repositories
                 .Include(x => x.Owner)
                 .Include(x => x.Members)
                 .Where(x => x.Members.Any(m => m.UserId == userId))
-                .OrderBy(x => x.Members.Where(m => m.UserId == userId).Select(m => m.JoinedAt).FirstOrDefault())
+                .OrderBy(x => x.Members.Where(m => m.UserId == userId).Select(m => m.Position).FirstOrDefault())
+                .ThenBy(x => x.Members.Where(m => m.UserId == userId).Select(m => m.JoinedAt).FirstOrDefault())
                 .ToListAsync();
         }
 

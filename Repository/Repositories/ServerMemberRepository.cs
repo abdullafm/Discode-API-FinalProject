@@ -11,6 +11,17 @@ namespace Repository.Repositories
         {
         }
 
+        public async Task<IEnumerable<ServerMember>> GetForUserAsync(string userId)
+        {
+            return await _dbSet.AsNoTracking().Where(x => x.UserId == userId).OrderBy(x => x.Position).ThenBy(x => x.JoinedAt).ToListAsync();
+        }
+
+        public async Task<int> NextPositionAsync(string userId)
+        {
+            var positions = await _dbSet.Where(x => x.UserId == userId).Select(x => x.Position).ToListAsync();
+            return positions.Count == 0 ? 0 : positions.Max() + 1;
+        }
+
         public async Task<ServerMember?> GetAsync(int serverId, string userId)
         {
             return await _dbSet.AsNoTracking().FirstOrDefaultAsync(x => x.ServerId == serverId && x.UserId == userId);

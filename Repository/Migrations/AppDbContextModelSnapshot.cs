@@ -1220,11 +1220,29 @@ namespace Repository.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("HideMutedChannels")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("JoinedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("MutedIndefinitely")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("MutedUntil")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("NotificationLevel")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
+
                     b.Property<int>("ServerId")
                         .HasColumnType("int");
+
+                    b.Property<bool>("ShowAllChannels")
+                        .HasColumnType("bit");
 
                     b.Property<string>("UserId")
                         .IsRequired()
