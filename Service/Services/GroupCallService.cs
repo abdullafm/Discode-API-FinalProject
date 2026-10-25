@@ -43,7 +43,7 @@ namespace Service.Services
                 if (existing is not null)
                 {
                     await _calls.SetParticipantAsync(existing.Id, userId, true);
-                    await _rings.StopAsync(existing.Id, userId);
+                    await _rings.SetAsync(existing.Id, userId, null);
                     var joined = await BuildAsync(existing.Id, group, false, false, null);
                     joined.Left = left;
                     return joined;
@@ -63,11 +63,6 @@ namespace Service.Services
 
                 var change = await BuildAsync(call.Id, group, true, false, await LoadMessageAsync(message.Id));
                 change.Left = left;
-                foreach (var member in group.Members.Where(m => m.UserId != userId))
-                {
-                    await _rings.RingAsync(call.Id, member.UserId, RingWindow);
-                }
-
                 return change;
             }
             finally
@@ -95,7 +90,7 @@ namespace Service.Services
 
                 var left = await LeaveOthersAsync(userId, callId, null);
                 await _calls.SetParticipantAsync(callId, userId, true);
-                await _rings.StopAsync(callId, userId);
+                await _rings.SetAsync(callId, userId, null);
                 var change = await BuildAsync(callId, group, false, false, null);
                 change.Left = left;
                 return change;
@@ -109,14 +104,14 @@ namespace Service.Services
         public async Task<GroupCallRingDto> RingAsync(string userId, int callId, string userName)
         {
             var (call, target) = await FindRingTargetAsync(userId, callId, userName);
-            await _rings.RingAsync(callId, target, RingWindow);
+            await _rings.SetAsync(callId, target, DateTime.UtcNow.Add(RingWindow));
             return new GroupCallRingDto { UserId = target, Call = ToDto(call) };
         }
 
         public async Task<string> StopRingingAsync(string userId, int callId, string userName)
         {
             var (_, target) = await FindRingTargetAsync(userId, callId, userName);
-            await _rings.StopAsync(callId, target);
+            await _rings.SetAsync(callId, target, null);
             return target;
         }
 
@@ -129,15 +124,24 @@ namespace Service.Services
             }
 
             var group = await _groups.GetWithMembersAsync(call.GroupId);
-            var ringing = await _rings.GetRingingAsync(callId);
-            return group is null
-                ? new List<string>()
-                : group.Members.Where(m => ringing.Contains(m.UserId)).Select(m => m.User.UserName ?? string.Empty).ToList();
+            if (group is null)
+            {
+                return new List<string>();
+            }
+
+            var states = await _rings.GetAsync(callId);
+            var now = DateTime.UtcNow;
+            var firstRing = call.CreatedAt.Add(RingWindow) > now;
+            return group.Members
+                .Where(m => call.Participants.All(p => p.UserId != m.UserId || p.LeftAt != null))
+                .Where(m => states.TryGetValue(m.UserId, out var until) ? until.HasValue && until.Value > now : firstRing)
+                .Select(m => m.User.UserName ?? string.Empty)
+                .ToList();
         }
 
         public async Task DeclineAsync(string userId, int callId)
         {
-            await _rings.StopAsync(callId, userId);
+            await _rings.SetAsync(callId, userId, null);
         }
 
         private async Task<(GroupCall Call, string TargetId)> FindRingTargetAsync(string userId, int callId, string userName)

@@ -2,8 +2,7 @@ namespace Repository.Repositories.Interfaces
 {
     public interface IGroupCallRingRepository
     {
-        Task RingAsync(int callId, string userId, TimeSpan window);
-        Task<bool> StopAsync(int callId, string userId);
-        Task<IEnumerable<string>> GetRingingAsync(int callId);
+        Task SetAsync(int callId, string userId, DateTime? ringingUntil);
+        Task<Dictionary<string, DateTime?>> GetAsync(int callId);
     }
 }
