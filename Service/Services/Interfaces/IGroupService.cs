@@ -19,6 +19,7 @@ namespace Service.Services.Interfaces
         Task<GroupChangeDto> UpdateAsync(string userId, int groupId, UpdateGroupDto model);
         Task<GroupChangeDto> AddMembersAsync(string userId, int groupId, AddGroupMembersDto model);
         Task<GroupChangeDto> RemoveMemberAsync(string userId, int groupId, string userName);
+        Task<GroupChangeDto> TransferOwnerAsync(string userId, int groupId, TransferGroupOwnerDto model);
         Task<GroupChangeDto> LeaveAsync(string userId, int groupId);
     }
 }

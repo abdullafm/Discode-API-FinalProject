@@ -158,6 +158,14 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(change.Group);
         }
 
+        [HttpPost("{id:int}/owner")]
+        public async Task<IActionResult> TransferOwner(int id, [FromBody] TransferGroupOwnerDto model)
+        {
+            var change = await _groupService.TransferOwnerAsync(UserId, id, model);
+            await PublishAsync(change);
+            return Ok(change.Group);
+        }
+
         [HttpPost("{id:int}/leave")]
         public async Task<IActionResult> Leave(int id)
         {

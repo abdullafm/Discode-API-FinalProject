@@ -429,6 +429,38 @@ namespace Service.Services
             return change;
         }
 
+        public async Task<GroupChangeDto> TransferOwnerAsync(string userId, int groupId, TransferGroupOwnerDto model)
+        {
+            var group = await EnsureMemberAsync(userId, groupId);
+            if (group.OwnerId != userId)
+            {
+                throw new BadRequestException("Only the group owner can give the ownership away.");
+            }
+
+            var target = group.Members.FirstOrDefault(m => string.Equals(m.User.UserName, (model.UserName ?? string.Empty).Trim(), StringComparison.OrdinalIgnoreCase));
+            if (target is null)
+            {
+                throw new NotFoundException("That person is not in this group.");
+            }
+
+            if (target.UserId == userId)
+            {
+                throw new BadRequestException("You are already the group owner.");
+            }
+
+            var affected = group.Members.Select(m => m.UserId).ToList();
+            var actor = DisplayNameOf(group.Members.First(m => m.UserId == userId).User);
+            var tracked = (await _groups.GetTrackedWithMembersAsync(groupId))!;
+            tracked.OwnerId = target.UserId;
+            tracked.Owner = null!;
+            await _groups.UpdateAsync(tracked);
+            var note = await AddSystemMessageAsync(groupId, userId, actor + " made " + DisplayNameOf(target.User) + " the group owner.");
+            var fresh = (await _groups.GetWithMembersAsync(groupId))!;
+            var change = Change(fresh, note);
+            change.UserIds = affected;
+            return change;
+        }
+
         public async Task<GroupChangeDto> LeaveAsync(string userId, int groupId)
         {
             var group = await EnsureMemberAsync(userId, groupId);
