@@ -1168,6 +1168,79 @@ namespace Repository.Migrations
                     b.ToTable("PostReposts");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Server", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IconUrl")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("InviteCode")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("OwnerId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InviteCode")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("Servers");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerMember", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("ServerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ServerId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("ServerMembers");
+                });
+
             modelBuilder.Entity("Domain.Entities.Story", b =>
                 {
                     b.Property<int>("Id")
@@ -1911,6 +1984,36 @@ namespace Repository.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Domain.Entities.Server", b =>
+                {
+                    b.HasOne("Domain.Entities.AppUser", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerMember", b =>
+                {
+                    b.HasOne("Domain.Entities.Server", "Server")
+                        .WithMany("Members")
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Server");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Domain.Entities.Story", b =>
                 {
                     b.HasOne("Domain.Entities.AppUser", "Author")
@@ -2130,6 +2233,11 @@ namespace Repository.Migrations
                     b.Navigation("Likes");
 
                     b.Navigation("Reposts");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Server", b =>
+                {
+                    b.Navigation("Members");
                 });
 
             modelBuilder.Entity("Domain.Entities.Story", b =>
