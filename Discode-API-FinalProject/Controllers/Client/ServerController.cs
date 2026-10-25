@@ -56,6 +56,22 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(change.Server);
         }
 
+        [HttpPut("{id:int}/preferences")]
+        public async Task<IActionResult> UpdatePreferences(int id, [FromBody] UpdateServerPreferencesDto model)
+        {
+            var server = await _serverService.UpdatePreferencesAsync(UserId, id, model);
+            await _hubContext.Clients.User(UserId).SendAsync("ServersChanged");
+            return Ok(server);
+        }
+
+        [HttpPut("order")]
+        public async Task<IActionResult> Reorder([FromBody] ReorderServersDto model)
+        {
+            await _serverService.ReorderAsync(UserId, model);
+            await _hubContext.Clients.User(UserId).SendAsync("ServersChanged");
+            return Ok();
+        }
+
         [HttpPost("{id:int}/leave")]
         public async Task<IActionResult> Leave(int id)
         {

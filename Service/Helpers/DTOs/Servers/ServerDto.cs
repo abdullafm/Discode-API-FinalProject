@@ -10,5 +10,10 @@ namespace Service.Helpers.DTOs.Servers
         public bool IsOwner { get; set; }
         public int MemberCount { get; set; }
         public DateTime CreatedAt { get; set; }
+        public int Position { get; set; }
+        public bool Muted { get; set; }
+        public string NotificationLevel { get; set; } = "mentions";
+        public bool HideMutedChannels { get; set; }
+        public bool ShowAllChannels { get; set; } = true;
     }
 }

@@ -10,5 +10,7 @@ namespace Service.Services.Interfaces
         Task<ServerDto> GetAsync(string userId, int serverId);
         Task<ServerInviteDto> GetInviteAsync(string userId, string invite);
         Task<ServerChangeDto> LeaveAsync(string userId, int serverId);
+        Task<ServerDto> UpdatePreferencesAsync(string userId, int serverId, UpdateServerPreferencesDto model);
+        Task ReorderAsync(string userId, ReorderServersDto model);
     }
 }

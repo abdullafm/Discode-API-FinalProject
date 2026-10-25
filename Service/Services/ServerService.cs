@@ -1,5 +1,6 @@
 using AutoMapper;
 using Domain.Entities;
+using Domain.Enums;
 using FluentValidation;
 using Repository.Repositories.Interfaces;
 using Service.Helpers.DTOs.Servers;
@@ -23,6 +24,8 @@ namespace Service.Services
         private readonly IPresenceService _presence;
         private readonly IValidator<CreateServerDto> _createValidator;
         private readonly IValidator<JoinServerDto> _joinValidator;
+        private readonly IValidator<UpdateServerPreferencesDto> _preferencesValidator;
+        private readonly IValidator<ReorderServersDto> _reorderValidator;
         private readonly IMapper _mapper;
 
         public ServerService(IServerRepository servers,
@@ -31,6 +34,8 @@ namespace Service.Services
                              IPresenceService presence,
                              IValidator<CreateServerDto> createValidator,
                              IValidator<JoinServerDto> joinValidator,
+                             IValidator<UpdateServerPreferencesDto> preferencesValidator,
+                             IValidator<ReorderServersDto> reorderValidator,
                              IMapper mapper)
         {
             _servers = servers;
@@ -39,6 +44,8 @@ namespace Service.Services
             _presence = presence;
             _createValidator = createValidator;
             _joinValidator = joinValidator;
+            _preferencesValidator = preferencesValidator;
+            _reorderValidator = reorderValidator;
             _mapper = mapper;
         }
 
@@ -56,7 +63,16 @@ namespace Service.Services
                 Name = model.Name.Trim(),
                 OwnerId = userId,
                 InviteCode = await NewInviteCodeAsync(),
-                Members = new List<ServerMember> { new ServerMember { UserId = userId, JoinedAt = DateTime.UtcNow } }
+                Members = new List<ServerMember>
+                {
+                    new ServerMember
+                    {
+                        UserId = userId,
+                        JoinedAt = DateTime.UtcNow,
+                        Position = await _members.NextPositionAsync(userId),
+                        NotificationLevel = ServerNotificationLevel.All
+                    }
+                }
             };
             await _servers.AddAsync(server);
 
@@ -79,7 +95,14 @@ namespace Service.Services
                 return Change(server, userId, false);
             }
 
-            await _members.AddAsync(new ServerMember { ServerId = server.Id, UserId = userId, JoinedAt = DateTime.UtcNow });
+            await _members.AddAsync(new ServerMember
+            {
+                ServerId = server.Id,
+                UserId = userId,
+                JoinedAt = DateTime.UtcNow,
+                Position = await _members.NextPositionAsync(userId),
+                NotificationLevel = ServerNotificationLevel.Mentions
+            });
             var fresh = (await _servers.GetWithMembersAsync(server.Id))!;
             return Change(fresh, userId, true);
         }
@@ -87,7 +110,7 @@ namespace Service.Services
         public async Task<IEnumerable<ServerDto>> GetMineAsync(string userId)
         {
             var servers = await _servers.GetForUserAsync(userId);
-            return _mapper.Map<List<ServerDto>>(servers, ForViewer(userId));
+            return servers.Select(server => ToDto(server, userId)).ToList();
         }
 
         public async Task<ServerDto> GetAsync(string userId, int serverId)
@@ -98,7 +121,7 @@ namespace Service.Services
                 throw new NotFoundException("Server not found.");
             }
 
-            return _mapper.Map<ServerDto>(server, ForViewer(userId));
+            return ToDto(server, userId);
         }
 
         public async Task<ServerChangeDto> LeaveAsync(string userId, int serverId)
@@ -153,11 +176,88 @@ namespace Service.Services
             };
         }
 
+        public async Task<ServerDto> UpdatePreferencesAsync(string userId, int serverId, UpdateServerPreferencesDto model)
+        {
+            await _preferencesValidator.EnsureValidAsync(model);
+
+            var membership = await _members.GetAsync(serverId, userId);
+            if (membership is null)
+            {
+                throw new NotFoundException("Server not found.");
+            }
+
+            if (model.MuteMinutes is not null)
+            {
+                membership.MutedIndefinitely = model.MuteMinutes == -1;
+                membership.MutedUntil = model.MuteMinutes > 0 ? DateTime.UtcNow.AddMinutes(model.MuteMinutes.Value) : null;
+            }
+
+            if (model.NotificationLevel is not null)
+            {
+                membership.NotificationLevel = model.NotificationLevel.Trim().ToLowerInvariant() switch
+                {
+                    "all" => ServerNotificationLevel.All,
+                    "nothing" => ServerNotificationLevel.Nothing,
+                    _ => ServerNotificationLevel.Mentions
+                };
+            }
+
+            if (model.HideMutedChannels is not null)
+            {
+                membership.HideMutedChannels = model.HideMutedChannels.Value;
+            }
+
+            if (model.ShowAllChannels is not null)
+            {
+                membership.ShowAllChannels = model.ShowAllChannels.Value;
+            }
+
+            await _members.UpdateAsync(membership);
+            return await GetAsync(userId, serverId);
+        }
+
+        public async Task ReorderAsync(string userId, ReorderServersDto model)
+        {
+            await _reorderValidator.EnsureValidAsync(model);
+
+            var memberships = (await _members.GetForUserAsync(userId)).ToList();
+            var order = model.ServerIds.Distinct().Where(id => memberships.Any(m => m.ServerId == id)).ToList();
+            var rest = memberships.Where(m => !order.Contains(m.ServerId)).OrderBy(m => m.Position).Select(m => m.ServerId);
+            var final = order.Concat(rest).ToList();
+            for (var index = 0; index < final.Count; index++)
+            {
+                var membership = memberships.First(m => m.ServerId == final[index]);
+                if (membership.Position == index)
+                {
+                    continue;
+                }
+
+                membership.Position = index;
+                await _members.UpdateAsync(membership);
+            }
+        }
+
+        private ServerDto ToDto(Server server, string viewerId)
+        {
+            var dto = _mapper.Map<ServerDto>(server, ForViewer(viewerId));
+            var membership = server.Members.FirstOrDefault(m => m.UserId == viewerId);
+            if (membership is not null)
+            {
+                dto.Position = membership.Position;
+                dto.Muted = membership.MutedIndefinitely || (membership.MutedUntil.HasValue && membership.MutedUntil.Value > DateTime.UtcNow);
+                dto.NotificationLevel = membership.NotificationLevel.ToString().ToLowerInvariant();
+                dto.HideMutedChannels = membership.HideMutedChannels;
+                dto.ShowAllChannels = membership.ShowAllChannels;
+            }
+
+            return dto;
+        }
+
         private ServerChangeDto Change(Server server, string viewerId, bool joined)
         {
             return new ServerChangeDto
             {
-                Server = _mapper.Map<ServerDto>(server, ForViewer(viewerId)),
+                Server = ToDto(server, viewerId),
                 MemberIds = server.Members.Select(m => m.UserId).ToList(),
                 Joined = joined
             };
