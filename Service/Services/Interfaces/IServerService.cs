@@ -9,5 +9,6 @@ namespace Service.Services.Interfaces
         Task<IEnumerable<ServerDto>> GetMineAsync(string userId);
         Task<ServerDto> GetAsync(string userId, int serverId);
         Task<ServerInviteDto> GetInviteAsync(string userId, string invite);
+        Task<ServerChangeDto> LeaveAsync(string userId, int serverId);
     }
 }

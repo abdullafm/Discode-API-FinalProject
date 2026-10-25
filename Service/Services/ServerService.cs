@@ -101,6 +101,28 @@ namespace Service.Services
             return _mapper.Map<ServerDto>(server, ForViewer(userId));
         }
 
+        public async Task<ServerChangeDto> LeaveAsync(string userId, int serverId)
+        {
+            var server = await _servers.GetWithMembersAsync(serverId);
+            var membership = server?.Members.FirstOrDefault(m => m.UserId == userId);
+            if (server is null || membership is null)
+            {
+                throw new NotFoundException("Server not found.");
+            }
+
+            if (server.OwnerId == userId)
+            {
+                throw new BadRequestException("The owner cannot leave the server.");
+            }
+
+            await _members.DeleteAsync(membership);
+
+            var fresh = (await _servers.GetWithMembersAsync(serverId))!;
+            var change = Change(fresh, userId, true);
+            change.MemberIds = fresh.Members.Select(m => m.UserId).ToList();
+            return change;
+        }
+
         public async Task<ServerInviteDto> GetInviteAsync(string userId, string invite)
         {
             var server = await _servers.GetByInviteCodeAsync(ExtractCode(invite ?? string.Empty));

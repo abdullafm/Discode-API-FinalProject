@@ -56,6 +56,15 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(change.Server);
         }
 
+        [HttpPost("{id:int}/leave")]
+        public async Task<IActionResult> Leave(int id)
+        {
+            var change = await _serverService.LeaveAsync(UserId, id);
+            await _hubContext.Clients.User(UserId).SendAsync("ServersChanged");
+            await _hubContext.Clients.Users(change.MemberIds).SendAsync("ServerUpdated", new { serverId = change.Server.Id, memberCount = change.Server.MemberCount });
+            return Ok();
+        }
+
         [HttpPost("join")]
         public async Task<IActionResult> Join([FromBody] JoinServerDto model)
         {
