@@ -15,5 +15,6 @@ namespace Service.Helpers.DTOs.Servers
         public string NotificationLevel { get; set; } = "mentions";
         public bool HideMutedChannels { get; set; }
         public bool ShowAllChannels { get; set; } = true;
+        public List<ServerMemberDto> Members { get; set; } = new();
     }
 }

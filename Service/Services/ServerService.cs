@@ -121,7 +121,23 @@ namespace Service.Services
                 throw new NotFoundException("Server not found.");
             }
 
-            return ToDto(server, userId);
+            var dto = ToDto(server, userId);
+            foreach (var member in server.Members.OrderBy(m => m.JoinedAt))
+            {
+                dto.Members.Add(new ServerMemberDto
+                {
+                    Id = member.UserId,
+                    UserName = member.User.UserName ?? string.Empty,
+                    DisplayName = string.IsNullOrWhiteSpace(member.User.DisplayName) ? member.User.UserName ?? string.Empty : member.User.DisplayName,
+                    AvatarUrl = member.User.AvatarUrl,
+                    CustomStatus = member.User.CustomStatus,
+                    Status = await _presence.ResolveAsync(member.User),
+                    IsOwner = member.UserId == server.OwnerId,
+                    IsSelf = member.UserId == userId
+                });
+            }
+
+            return dto;
         }
 
         public async Task<ServerChangeDto> LeaveAsync(string userId, int serverId)

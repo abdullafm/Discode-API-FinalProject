@@ -115,6 +115,7 @@ namespace Service.Helpers.Mappings
             CreateMap<Server, ServerDto>()
                 .ForMember(d => d.OwnerUserName, o => o.MapFrom(s => s.Owner.UserName ?? string.Empty))
                 .ForMember(d => d.MemberCount, o => o.MapFrom(s => s.Members.Count))
+                .ForMember(d => d.Members, o => o.Ignore())
                 .ForMember(d => d.IsOwner, o => o.MapFrom((s, d, m, context) =>
                     context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.OwnerId == (string?)viewer));
 
