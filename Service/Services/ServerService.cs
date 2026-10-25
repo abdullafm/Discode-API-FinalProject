@@ -20,6 +20,7 @@ namespace Service.Services
         private readonly IServerRepository _servers;
         private readonly IServerMemberRepository _members;
         private readonly IAccountRepository _accounts;
+        private readonly IPresenceService _presence;
         private readonly IValidator<CreateServerDto> _createValidator;
         private readonly IValidator<JoinServerDto> _joinValidator;
         private readonly IMapper _mapper;
@@ -27,6 +28,7 @@ namespace Service.Services
         public ServerService(IServerRepository servers,
                              IServerMemberRepository members,
                              IAccountRepository accounts,
+                             IPresenceService presence,
                              IValidator<CreateServerDto> createValidator,
                              IValidator<JoinServerDto> joinValidator,
                              IMapper mapper)
@@ -34,6 +36,7 @@ namespace Service.Services
             _servers = servers;
             _members = members;
             _accounts = accounts;
+            _presence = presence;
             _createValidator = createValidator;
             _joinValidator = joinValidator;
             _mapper = mapper;
@@ -96,6 +99,36 @@ namespace Service.Services
             }
 
             return _mapper.Map<ServerDto>(server, ForViewer(userId));
+        }
+
+        public async Task<ServerInviteDto> GetInviteAsync(string userId, string invite)
+        {
+            var server = await _servers.GetByInviteCodeAsync(ExtractCode(invite ?? string.Empty));
+            if (server is null)
+            {
+                throw new NotFoundException("That invite is invalid or has expired.");
+            }
+
+            var online = 0;
+            foreach (var member in server.Members)
+            {
+                if (await _presence.ResolveAsync(member.User) != "offline")
+                {
+                    online++;
+                }
+            }
+
+            return new ServerInviteDto
+            {
+                ServerId = server.Id,
+                Name = server.Name,
+                IconUrl = server.IconUrl,
+                InviteCode = server.InviteCode,
+                MemberCount = server.Members.Count,
+                OnlineCount = online,
+                IsMember = server.Members.Any(m => m.UserId == userId),
+                CreatedAt = server.CreatedAt
+            };
         }
 
         private ServerChangeDto Change(Server server, string viewerId, bool joined)

@@ -8,5 +8,6 @@ namespace Service.Services.Interfaces
         Task<ServerChangeDto> JoinAsync(string userId, JoinServerDto model);
         Task<IEnumerable<ServerDto>> GetMineAsync(string userId);
         Task<ServerDto> GetAsync(string userId, int serverId);
+        Task<ServerInviteDto> GetInviteAsync(string userId, string invite);
     }
 }

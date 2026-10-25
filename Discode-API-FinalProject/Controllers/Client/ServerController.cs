@@ -42,6 +42,12 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(await _serverService.GetAsync(UserId, id));
         }
 
+        [HttpGet("invite/{code}")]
+        public async Task<IActionResult> GetInvite(string code)
+        {
+            return Ok(await _serverService.GetInviteAsync(UserId, code));
+        }
+
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateServerDto model)
         {
