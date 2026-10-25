@@ -9,6 +9,7 @@ using Service.Helpers.DTOs.Notifications;
 using Service.Helpers.DTOs.Live;
 using Service.Helpers.DTOs.Posts;
 using Service.Helpers.DTOs.Presence;
+using Service.Helpers.DTOs.Servers;
 using Service.Helpers.DTOs.Stories;
 using Service.Helpers.Responses;
 using System;
@@ -110,6 +111,12 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.MemberCount, o => o.Ignore())
                 .ForMember(d => d.MaxMembers, o => o.Ignore())
                 .ForMember(d => d.Existing, o => o.Ignore());
+
+            CreateMap<Server, ServerDto>()
+                .ForMember(d => d.OwnerUserName, o => o.MapFrom(s => s.Owner.UserName ?? string.Empty))
+                .ForMember(d => d.MemberCount, o => o.MapFrom(s => s.Members.Count))
+                .ForMember(d => d.IsOwner, o => o.MapFrom((s, d, m, context) =>
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.OwnerId == (string?)viewer));
 
             CreateMap<MessageAttachment, MessageAttachmentDto>();
 
