@@ -10,14 +10,17 @@ namespace Service.Services
     public class GroupCallService : IGroupCallService
     {
         private static readonly SemaphoreSlim Gate = new(1, 1);
+        private static readonly TimeSpan RingWindow = TimeSpan.FromMinutes(3.5);
 
         private readonly IGroupCallRepository _calls;
         private readonly IGroupRepository _groups;
         private readonly IGroupMessageRepository _messages;
+        private readonly IGroupCallRingRepository _rings;
         private readonly IMapper _mapper;
 
-        public GroupCallService(IGroupCallRepository calls, IGroupRepository groups, IGroupMessageRepository messages, IMapper mapper)
+        public GroupCallService(IGroupCallRepository calls, IGroupRepository groups, IGroupMessageRepository messages, IGroupCallRingRepository rings, IMapper mapper)
         {
+            _rings = rings;
             _calls = calls;
             _groups = groups;
             _messages = messages;
@@ -40,6 +43,7 @@ namespace Service.Services
                 if (existing is not null)
                 {
                     await _calls.SetParticipantAsync(existing.Id, userId, true);
+                    await _rings.StopAsync(existing.Id, userId);
                     var joined = await BuildAsync(existing.Id, group, false, false, null);
                     joined.Left = left;
                     return joined;
@@ -59,6 +63,11 @@ namespace Service.Services
 
                 var change = await BuildAsync(call.Id, group, true, false, await LoadMessageAsync(message.Id));
                 change.Left = left;
+                foreach (var member in group.Members.Where(m => m.UserId != userId))
+                {
+                    await _rings.RingAsync(call.Id, member.UserId, RingWindow);
+                }
+
                 return change;
             }
             finally
@@ -86,6 +95,7 @@ namespace Service.Services
 
                 var left = await LeaveOthersAsync(userId, callId, null);
                 await _calls.SetParticipantAsync(callId, userId, true);
+                await _rings.StopAsync(callId, userId);
                 var change = await BuildAsync(callId, group, false, false, null);
                 change.Left = left;
                 return change;
@@ -94,6 +104,63 @@ namespace Service.Services
             {
                 Gate.Release();
             }
+        }
+
+        public async Task<GroupCallRingDto> RingAsync(string userId, int callId, string userName)
+        {
+            var (call, target) = await FindRingTargetAsync(userId, callId, userName);
+            await _rings.RingAsync(callId, target, RingWindow);
+            return new GroupCallRingDto { UserId = target, Call = ToDto(call) };
+        }
+
+        public async Task<string> StopRingingAsync(string userId, int callId, string userName)
+        {
+            var (_, target) = await FindRingTargetAsync(userId, callId, userName);
+            await _rings.StopAsync(callId, target);
+            return target;
+        }
+
+        public async Task<IEnumerable<string>> GetRingingAsync(string userId, int callId)
+        {
+            var call = await _calls.GetFullAsync(callId);
+            if (call is null || !call.Active || call.Participants.All(p => p.UserId != userId || p.LeftAt != null))
+            {
+                return new List<string>();
+            }
+
+            var group = await _groups.GetWithMembersAsync(call.GroupId);
+            var ringing = await _rings.GetRingingAsync(callId);
+            return group is null
+                ? new List<string>()
+                : group.Members.Where(m => ringing.Contains(m.UserId)).Select(m => m.User.UserName ?? string.Empty).ToList();
+        }
+
+        public async Task DeclineAsync(string userId, int callId)
+        {
+            await _rings.StopAsync(callId, userId);
+        }
+
+        private async Task<(GroupCall Call, string TargetId)> FindRingTargetAsync(string userId, int callId, string userName)
+        {
+            var call = await _calls.GetFullAsync(callId);
+            if (call is null || !call.Active || call.Participants.All(p => p.UserId != userId || p.LeftAt != null))
+            {
+                throw new NotFoundException("You are not in this call.");
+            }
+
+            var group = await _groups.GetWithMembersAsync(call.GroupId);
+            var target = group?.Members.FirstOrDefault(m => string.Equals(m.User.UserName, (userName ?? string.Empty).Trim(), StringComparison.OrdinalIgnoreCase));
+            if (target is null || target.UserId == userId)
+            {
+                throw new NotFoundException("That person is not in this group.");
+            }
+
+            if (call.Participants.Any(p => p.UserId == target.UserId && p.LeftAt == null))
+            {
+                throw new BadRequestException("That person is already in the call.");
+            }
+
+            return (call, target.UserId);
         }
 
         public async Task<GroupCallChangeDto?> LeaveAsync(string userId, int callId)

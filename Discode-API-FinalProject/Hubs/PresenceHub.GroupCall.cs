@@ -39,6 +39,50 @@ namespace Discode_API_FinalProject.Hubs
             }
         }
 
+        public async Task RingGroupCallMember(int callId, string userName)
+        {
+            try
+            {
+                var ring = await _groupCallService.RingAsync(UserId, callId, userName);
+                await Clients.User(ring.UserId).SendAsync("GroupCallIncoming", ring.Call);
+            }
+            catch (BadRequestException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+            catch (NotFoundException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+        }
+
+        public async Task StopRingingGroupCallMember(int callId, string userName)
+        {
+            try
+            {
+                var userId = await _groupCallService.StopRingingAsync(UserId, callId, userName);
+                await Clients.User(userId).SendAsync("GroupCallRingStopped", new { callId });
+            }
+            catch (BadRequestException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+            catch (NotFoundException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+        }
+
+        public Task<IEnumerable<string>> GetGroupCallRinging(int callId)
+        {
+            return _groupCallService.GetRingingAsync(UserId, callId);
+        }
+
+        public Task DeclineGroupCall(int callId)
+        {
+            return _groupCallService.DeclineAsync(UserId, callId);
+        }
+
         public async Task LeaveGroupCall(int callId)
         {
             var change = await _groupCallService.LeaveAsync(UserId, callId);

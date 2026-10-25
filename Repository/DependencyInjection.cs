@@ -30,6 +30,7 @@ namespace Repository
             services.AddScoped<IGroupCallRepository, GroupCallRepository>();
             services.AddScoped<IGroupMessageRepository, GroupMessageRepository>();
             services.AddSingleton<ILiveTrackerRepository, LiveTrackerRepository>();
+            services.AddSingleton<IGroupCallRingRepository, GroupCallRingRepository>();
             services.AddScoped<IPostLikeRepository, PostLikeRepository>();
             services.AddScoped<IPostRepostRepository, PostRepostRepository>();
             services.AddScoped<ICommentLikeRepository, CommentLikeRepository>();
