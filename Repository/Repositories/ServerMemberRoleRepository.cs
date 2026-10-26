@@ -29,6 +29,15 @@ namespace Repository.Repositories
                 .ToListAsync();
         }
 
+        public async Task<HashSet<int>> GetRoleIdsAsync(int serverId, string userId)
+        {
+            var ids = await _dbSet
+                .Where(x => x.ServerMember.ServerId == serverId && x.ServerMember.UserId == userId)
+                .Select(x => x.RoleId)
+                .ToListAsync();
+            return ids.ToHashSet();
+        }
+
         public async Task<ServerMemberRole?> GetAsync(int roleId, int serverMemberId)
         {
             return await _dbSet.FirstOrDefaultAsync(x => x.RoleId == roleId && x.ServerMemberId == serverMemberId);

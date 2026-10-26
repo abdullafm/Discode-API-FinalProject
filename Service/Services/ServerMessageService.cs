@@ -19,7 +19,7 @@ namespace Service.Services
         private readonly IServerMessageRepository _messages;
         private readonly IServerChannelRepository _channels;
         private readonly IServerMemberRepository _members;
-        private readonly IServerRoleRepository _roles;
+        private readonly IServerOverwriteRepository _overwrites;
         private readonly IServerPermissionService _permissions;
         private readonly IValidator<SendServerMessageDto> _sendValidator;
         private readonly IValidator<ToggleReactionDto> _reactionValidator;
@@ -28,7 +28,7 @@ namespace Service.Services
         public ServerMessageService(IServerMessageRepository messages,
                                     IServerChannelRepository channels,
                                     IServerMemberRepository members,
-                                    IServerRoleRepository roles,
+                                    IServerOverwriteRepository overwrites,
                                     IServerPermissionService permissions,
                                     IValidator<SendServerMessageDto> sendValidator,
                                     IValidator<ToggleReactionDto> reactionValidator,
@@ -37,7 +37,7 @@ namespace Service.Services
             _messages = messages;
             _channels = channels;
             _members = members;
-            _roles = roles;
+            _overwrites = overwrites;
             _permissions = permissions;
             _sendValidator = sendValidator;
             _reactionValidator = reactionValidator;
@@ -56,7 +56,7 @@ namespace Service.Services
             await _sendValidator.EnsureValidAsync(model);
             var (channel, perms) = await RequireViewAsync(userId, serverId, channelId);
 
-            var restricted = channel.Kind == ServerChannelKind.Announcement || channel.IsReadOnly;
+            var restricted = channel.Kind == ServerChannelKind.Announcement;
             var needed = restricted ? ServerPermission.ManageMessages : ServerPermission.SendMessages;
             if ((perms & needed) != needed)
             {
@@ -160,8 +160,8 @@ namespace Service.Services
                 throw new BadRequestException("Voice channels don't have text messages.");
             }
 
-            var perms = await _permissions.GetAsync(userId, serverId);
-            if (!await _permissions.CanViewChannelAsync(userId, serverId, channel))
+            var perms = await _permissions.GetInChannelAsync(userId, serverId, channel);
+            if ((perms & ServerPermission.ViewChannels) != ServerPermission.ViewChannels)
             {
                 throw new ForbiddenException("You can't view this channel.");
             }
@@ -172,19 +172,12 @@ namespace Service.Services
         private async Task<List<string>> ViewersAsync(int serverId, ServerChannel channel)
         {
             var ids = await _members.GetUserIdsAsync(serverId);
-            if (!IsPrivate(channel))
-            {
-                var everyone = await _roles.GetEveryoneAsync(serverId);
-                if (everyone is null || (everyone.Permissions & (long)ServerPermission.ViewChannels) != 0)
-                {
-                    return ids;
-                }
-            }
-
             var viewers = new List<string>();
+            var overwrites = await _overwrites.GetForServerAsync(serverId);
             foreach (var id in ids)
             {
-                if (await _permissions.CanViewChannelAsync(id, serverId, channel))
+                var context = await _permissions.GetContextAsync(id, serverId, overwrites);
+                if ((context.ForChannel(channel) & ServerPermission.ViewChannels) == ServerPermission.ViewChannels)
                 {
                     viewers.Add(id);
                 }
@@ -193,9 +186,5 @@ namespace Service.Services
             return viewers;
         }
 
-        private static bool IsPrivate(ServerChannel channel)
-        {
-            return channel.IsPrivate || (channel.Category?.IsPrivate ?? false);
-        }
     }
 }

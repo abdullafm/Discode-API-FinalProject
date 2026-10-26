@@ -3,6 +3,7 @@ using Domain.Enums;
 using FluentValidation;
 using Repository.Repositories.Interfaces;
 using AutoMapper;
+using Service.Helpers;
 using Service.Helpers.DTOs.ServerChannels;
 using Service.Helpers.DTOs.ServerRoles;
 using Service.Helpers.Exceptions;
@@ -20,7 +21,7 @@ namespace Service.Services
         private readonly IServerPermissionService _permissions;
         private readonly IServerAuditService _audit;
         private readonly IServerMessageRepository _messages;
-        private readonly IServerChannelAccessRepository _access;
+        private readonly IServerOverwriteRepository _overwrites;
         private readonly IServerRoleRepository _roles;
         private readonly IMapper _mapper;
         private readonly IValidator<UpdateServerCategoryDto> _updateCategoryValidator;
@@ -34,7 +35,7 @@ namespace Service.Services
                                     IServerPermissionService permissions,
                                     IServerAuditService audit,
                                     IServerMessageRepository messages,
-                                    IServerChannelAccessRepository access,
+                                    IServerOverwriteRepository overwrites,
                                     IServerRoleRepository roles,
                                     IMapper mapper,
                                     IValidator<UpdateServerCategoryDto> updateCategoryValidator,
@@ -48,7 +49,7 @@ namespace Service.Services
             _permissions = permissions;
             _audit = audit;
             _messages = messages;
-            _access = access;
+            _overwrites = overwrites;
             _roles = roles;
             _mapper = mapper;
             _updateCategoryValidator = updateCategoryValidator;
@@ -97,27 +98,19 @@ namespace Service.Services
             }
 
             await EnsureDefaultsAsync(serverId);
-            var sees = (await _permissions.GetAsync(userId, serverId) & ServerPermission.ManageChannels) == ServerPermission.ManageChannels;
-            var granted = sees ? new HashSet<int>() : await _access.GetChannelIdsForAsync(serverId, userId);
+            var context = await _permissions.GetContextAsync(userId, serverId);
 
             var result = new ServerChannelsDto();
             foreach (var channel in await _channels.GetLooseAsync(serverId))
             {
-                if (channel.IsPrivate && !sees && !granted.Contains(channel.Id))
+                if (CanView(context, channel))
                 {
-                    continue;
+                    result.Loose.Add(ToDto(channel));
                 }
-
-                result.Loose.Add(ToDto(channel));
             }
 
             foreach (var category in await _categories.GetForServerAsync(serverId))
             {
-                if (category.IsPrivate && !sees)
-                {
-                    continue;
-                }
-
                 var dto = new ServerCategoryDto
                 {
                     Id = category.Id,
@@ -127,18 +120,25 @@ namespace Service.Services
                 };
                 foreach (var channel in category.Channels.OrderBy(c => c.Position).ThenBy(c => c.Id))
                 {
-                    if (channel.IsPrivate && !sees && !granted.Contains(channel.Id))
+                    if (CanView(context, channel))
                     {
-                        continue;
+                        dto.Channels.Add(ToDto(channel));
                     }
-
-                    dto.Channels.Add(ToDto(channel));
                 }
 
-                result.Categories.Add(dto);
+                var categoryVisible = (context.ForCategory(category.Id) & ServerPermission.ViewChannels) == ServerPermission.ViewChannels;
+                if (categoryVisible || dto.Channels.Count > 0)
+                {
+                    result.Categories.Add(dto);
+                }
             }
 
             return result;
+        }
+
+        private static bool CanView(ChannelPermissionContext context, ServerChannel channel)
+        {
+            return (context.ForChannel(channel) & ServerPermission.ViewChannels) == ServerPermission.ViewChannels;
         }
 
         public async Task<ServerChannelDto> CreateChannelAsync(string userId, int serverId, CreateServerChannelDto model)
@@ -169,10 +169,25 @@ namespace Service.Services
                 CategoryId = category?.Id,
                 Name = name,
                 Kind = kind,
-                IsPrivate = model.IsPrivate || (category?.IsPrivate ?? false),
+                SyncWithCategory = category is not null && !model.IsPrivate,
                 Position = await _channels.NextPositionAsync(serverId, category?.Id)
             };
             await _channels.AddAsync(channel);
+
+            await _permissions.EnsureEveryoneAsync(serverId);
+            var everyoneId = (await _roles.GetEveryoneAsync(serverId))!.Id;
+            if (model.IsPrivate)
+            {
+                var own = new List<ServerOverwrite> { new ServerOverwrite { RoleId = everyoneId, Deny = (long)ServerPermission.ViewChannels } };
+                await _overwrites.ReplaceForChannelAsync(serverId, channel.Id, own);
+                SetFlags(channel, own, everyoneId);
+            }
+            else
+            {
+                SetFlags(channel, (await _overwrites.GetForServerAsync(serverId)).Where(o => o.CategoryId == category?.Id && category != null), everyoneId);
+            }
+
+            await _channels.UpdateAsync(channel);
             await _audit.LogAsync(serverId, userId, ServerAuditAction.ChannelCreate, "Channel", channel.Id.ToString(), channel.Name, DescribeCreate(channel, category));
             return ToDto(channel);
         }
@@ -190,6 +205,13 @@ namespace Service.Services
                 Position = await _categories.NextPositionAsync(serverId)
             };
             await _categories.AddAsync(category);
+            if (model.IsPrivate)
+            {
+                await _permissions.EnsureEveryoneAsync(serverId);
+                var everyoneId = (await _roles.GetEveryoneAsync(serverId))!.Id;
+                await _overwrites.ReplaceForCategoryAsync(serverId, category.Id, new List<ServerOverwrite> { new ServerOverwrite { RoleId = everyoneId, Deny = (long)ServerPermission.ViewChannels } });
+            }
+
             await _audit.LogAsync(serverId, userId, ServerAuditAction.CategoryCreate, "Category", category.Id.ToString(), category.Name, category.IsPrivate ? "Created a private category" : "Created a category");
             return new ServerCategoryDto { Id = category.Id, Name = category.Name, IsPrivate = category.IsPrivate, Position = category.Position };
         }
@@ -212,34 +234,15 @@ namespace Service.Services
                 changes.Add("Renamed the channel from \"" + channel.Name + "\" to \"" + name + "\"");
             }
 
-            if (channel.IsPrivate != model.IsPrivate)
-            {
-                changes.Add(model.IsPrivate ? "Made the channel private" : "Made the channel public");
-            }
-
-            if (channel.Kind != ServerChannelKind.Voice && channel.IsReadOnly != model.IsReadOnly)
-            {
-                changes.Add(model.IsReadOnly ? "Stopped members from sending messages" : "Let members send messages");
-            }
-
             channel.Name = name;
-            channel.IsPrivate = model.IsPrivate;
-            if (channel.Kind != ServerChannelKind.Voice)
+            var wasPrivate = channel.IsPrivate;
+            await ApplyChannelOverwritesAsync(serverId, channel, model.SyncWithCategory, model.Overwrites, changes);
+            if (wasPrivate != channel.IsPrivate)
             {
-                channel.IsReadOnly = model.IsReadOnly;
+                changes.Add(channel.IsPrivate ? "Made the channel private" : "Made the channel public");
             }
 
             await _channels.UpdateAsync(channel);
-
-            if (!model.IsPrivate)
-            {
-                await _access.DeleteForChannelAsync(channel.Id);
-            }
-            else if (model.AccessRoleIds is not null || model.AccessUserIds is not null)
-            {
-                await ReplaceAccessAsync(serverId, channel, model, changes);
-            }
-
             if (changes.Count > 0)
             {
                 await _audit.LogAsync(serverId, userId, ServerAuditAction.ChannelUpdate, "Channel", channel.Id.ToString(), channel.Name, string.Join("; ", changes));
@@ -248,38 +251,38 @@ namespace Service.Services
             return ToDto(channel);
         }
 
-        public async Task<ServerChannelAccessDto> GetAccessAsync(string userId, int serverId, int channelId)
+        public async Task<ServerPermissionSetDto> GetChannelPermissionsAsync(string userId, int serverId, int channelId)
         {
             await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageChannels);
-            await GetTrackedAsync(serverId, channelId);
+            var channel = await GetTrackedAsync(serverId, channelId);
+            await _permissions.EnsureEveryoneAsync(serverId);
 
-            var entries = await _access.GetForChannelAsync(channelId);
-            var roleIds = entries.Where(x => x.RoleId is not null).Select(x => x.RoleId!.Value).ToHashSet();
-            var userIds = entries.Where(x => x.UserId is not null).Select(x => x.UserId!).ToList();
-
-            var result = new ServerChannelAccessDto();
-            foreach (var role in await _roles.GetForServerAsync(serverId))
-            {
-                if (!role.IsEveryone && roleIds.Contains(role.Id))
-                {
-                    result.Roles.Add(_mapper.Map<ServerRoleRefDto>(role));
-                }
-            }
-
-            foreach (var member in await _members.GetByUserIdsAsync(serverId, userIds))
-            {
-                result.Members.Add(ToMember(member));
-            }
-
+            var all = await _overwrites.GetForServerAsync(serverId);
+            var canSync = channel.CategoryId is not null;
+            var synced = canSync && channel.SyncWithCategory;
+            var set = synced ? all.Where(o => o.CategoryId == channel.CategoryId) : all.Where(o => o.ChannelId == channel.Id);
+            var result = await DescribeAsync(serverId, set);
+            result.CanSync = canSync;
+            result.Synced = synced;
             return result;
         }
 
-        public async Task<ServerChannelAccessDto> SearchAccessAsync(string userId, int serverId, string? search)
+        public async Task<ServerPermissionSetDto> GetCategoryPermissionsAsync(string userId, int serverId, int categoryId)
+        {
+            await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageChannels);
+            var category = await _categories.GetTrackedAsync(serverId, categoryId) ?? throw new NotFoundException("That category was not found.");
+            await _permissions.EnsureEveryoneAsync(serverId);
+
+            var all = await _overwrites.GetForServerAsync(serverId);
+            return await DescribeAsync(serverId, all.Where(o => o.CategoryId == category.Id));
+        }
+
+        public async Task<ServerOverwriteTargetsDto> SearchTargetsAsync(string userId, int serverId, string? search)
         {
             await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageChannels);
 
             var term = (search ?? string.Empty).Trim();
-            var result = new ServerChannelAccessDto();
+            var result = new ServerOverwriteTargetsDto();
             foreach (var role in (await _roles.GetForServerAsync(serverId)).Where(r => !r.IsEveryone))
             {
                 if (term.Length == 0 || role.Name.Contains(term, StringComparison.OrdinalIgnoreCase))
@@ -297,31 +300,175 @@ namespace Service.Services
             return result;
         }
 
-        private async Task ReplaceAccessAsync(int serverId, ServerChannel channel, UpdateServerChannelDto model, List<string> changes)
+        private async Task<ServerPermissionSetDto> DescribeAsync(int serverId, IEnumerable<ServerOverwrite> set)
         {
-            var before = await _access.GetForChannelAsync(channel.Id);
-            var beforeRoles = before.Where(x => x.RoleId is not null).Select(x => x.RoleId!.Value).ToHashSet();
-            var beforeUsers = before.Where(x => x.UserId is not null).Select(x => x.UserId!).ToHashSet();
+            var items = set.ToList();
+            var roles = (await _roles.GetForServerAsync(serverId)).ToDictionary(r => r.Id);
+            var everyone = roles.Values.First(r => r.IsEveryone);
+            var members = (await _members.GetByUserIdsAsync(serverId, items.Where(o => o.UserId is not null).Select(o => o.UserId!).ToList())).ToDictionary(m => m.UserId);
 
-            var serverRoles = (await _roles.GetForServerAsync(serverId)).Where(r => !r.IsEveryone).Select(r => r.Id).ToHashSet();
-            var roleIds = (model.AccessRoleIds ?? beforeRoles.ToList()).Where(serverRoles.Contains).Distinct().ToList();
+            var result = new ServerPermissionSetDto { EveryoneRoleId = everyone.Id };
+            var own = items.FirstOrDefault(o => o.RoleId == everyone.Id);
+            result.Overwrites.Add(new ServerOverwriteDto
+            {
+                TargetType = "role",
+                TargetId = everyone.Id.ToString(),
+                Name = "@everyone",
+                Color = everyone.Color,
+                IsEveryone = true,
+                Allow = own?.Allow ?? 0,
+                Deny = own?.Deny ?? 0
+            });
 
-            var wantedUsers = (model.AccessUserIds ?? beforeUsers.ToList()).Distinct().ToList();
-            var userIds = (await _members.GetByUserIdsAsync(serverId, wantedUsers)).Select(m => m.UserId).ToList();
+            foreach (var item in items)
+            {
+                if (item.RoleId is not null && item.RoleId != everyone.Id && roles.TryGetValue(item.RoleId.Value, out var role))
+                {
+                    result.Overwrites.Add(new ServerOverwriteDto { TargetType = "role", TargetId = role.Id.ToString(), Name = role.Name, Color = role.Color, Allow = item.Allow, Deny = item.Deny });
+                }
+                else if (item.UserId is not null && members.TryGetValue(item.UserId, out var member))
+                {
+                    var user = ToMember(member);
+                    result.Overwrites.Add(new ServerOverwriteDto { TargetType = "member", TargetId = user.Id, Name = string.IsNullOrWhiteSpace(user.DisplayName) ? user.UserName : user.DisplayName, AvatarUrl = user.AvatarUrl, Allow = item.Allow, Deny = item.Deny });
+                }
+            }
 
-            if (beforeRoles.SetEquals(roleIds) && beforeUsers.SetEquals(userIds))
+            return result;
+        }
+
+        private async Task<List<ServerOverwrite>> BuildOverwritesAsync(int serverId, List<ServerOverwriteInputDto> input)
+        {
+            var roleIds = (await _roles.GetForServerAsync(serverId)).Select(r => r.Id).ToHashSet();
+            var wantedUsers = input.Where(i => i.UserId is not null).Select(i => i.UserId!).Distinct().ToList();
+            var memberIds = (await _members.GetByUserIdsAsync(serverId, wantedUsers)).Select(m => m.UserId).ToHashSet();
+            var mask = (long)ChannelPermissionContext.ChannelBits;
+
+            var items = new List<ServerOverwrite>();
+            var seen = new HashSet<string>();
+            foreach (var entry in input)
+            {
+                var hasRole = entry.RoleId is not null && roleIds.Contains(entry.RoleId.Value);
+                var hasUser = entry.UserId is not null && memberIds.Contains(entry.UserId);
+                if (hasRole == hasUser)
+                {
+                    continue;
+                }
+
+                var key = hasRole ? "r" + entry.RoleId : "u" + entry.UserId;
+                var deny = entry.Deny & mask;
+                var allow = entry.Allow & mask & ~deny;
+                if ((allow == 0 && deny == 0) || !seen.Add(key))
+                {
+                    continue;
+                }
+
+                items.Add(new ServerOverwrite { RoleId = hasRole ? entry.RoleId : null, UserId = hasUser ? entry.UserId : null, Allow = allow, Deny = deny });
+            }
+
+            return items;
+        }
+
+        private static string Signature(IEnumerable<ServerOverwrite> items)
+        {
+            return string.Join("|", items.Select(o => (o.RoleId is not null ? "r" + o.RoleId : "u" + o.UserId) + ":" + o.Allow + ":" + o.Deny).OrderBy(x => x));
+        }
+
+        private static void SetFlags(ServerChannel channel, IEnumerable<ServerOverwrite> set, int? everyoneId)
+        {
+            var everyone = set.FirstOrDefault(o => o.RoleId is not null && o.RoleId == everyoneId);
+            channel.IsPrivate = everyone is not null && (everyone.Deny & (long)ServerPermission.ViewChannels) != 0;
+            channel.IsReadOnly = channel.Kind != ServerChannelKind.Voice && everyone is not null && (everyone.Deny & (long)ServerPermission.SendMessages) != 0;
+        }
+
+        private async Task ApplyChannelOverwritesAsync(int serverId, ServerChannel channel, bool? sync, List<ServerOverwriteInputDto>? input, List<string> changes)
+        {
+            await _permissions.EnsureEveryoneAsync(serverId);
+            var everyoneId = (await _roles.GetEveryoneAsync(serverId))!.Id;
+            var all = await _overwrites.GetForServerAsync(serverId);
+            var own = all.Where(o => o.ChannelId == channel.Id).ToList();
+            var fromCategory = channel.CategoryId is null ? new List<ServerOverwrite>() : all.Where(o => o.CategoryId == channel.CategoryId).ToList();
+
+            var wantSync = channel.CategoryId is not null && (sync ?? channel.SyncWithCategory);
+            if (wantSync)
+            {
+                if (!channel.SyncWithCategory)
+                {
+                    changes.Add("Synced the channel with its category");
+                }
+
+                channel.SyncWithCategory = true;
+                await _overwrites.ReplaceForChannelAsync(serverId, channel.Id, new List<ServerOverwrite>());
+                SetFlags(channel, fromCategory, everyoneId);
+                return;
+            }
+
+            List<ServerOverwrite> items;
+            if (input is not null)
+            {
+                items = await BuildOverwritesAsync(serverId, input);
+            }
+            else if (channel.SyncWithCategory && channel.CategoryId is not null)
+            {
+                items = fromCategory.Select(o => new ServerOverwrite { RoleId = o.RoleId, UserId = o.UserId, Allow = o.Allow, Deny = o.Deny }).ToList();
+            }
+            else
+            {
+                SetFlags(channel, own, everyoneId);
+                return;
+            }
+
+            var before = channel.SyncWithCategory && channel.CategoryId is not null ? fromCategory : own;
+            if (channel.SyncWithCategory && channel.CategoryId is not null)
+            {
+                changes.Add("Stopped syncing the channel with its category");
+            }
+
+            if (Signature(before) != Signature(items))
+            {
+                changes.Add("Changed the channel permissions");
+            }
+
+            channel.SyncWithCategory = false;
+            await _overwrites.ReplaceForChannelAsync(serverId, channel.Id, items);
+            SetFlags(channel, items, everyoneId);
+        }
+
+        private async Task ApplyCategoryOverwritesAsync(int serverId, ServerCategory category, List<ServerOverwriteInputDto> input, List<string> changes)
+        {
+            await _permissions.EnsureEveryoneAsync(serverId);
+            var everyoneId = (await _roles.GetEveryoneAsync(serverId))!.Id;
+            var before = (await _overwrites.GetForServerAsync(serverId)).Where(o => o.CategoryId == category.Id).ToList();
+            var items = await BuildOverwritesAsync(serverId, input);
+            if (Signature(before) == Signature(items))
             {
                 return;
             }
 
-            await _access.ReplaceAsync(channel.Id, roleIds, userIds);
-            changes.Add("Changed who can access the channel (" + roleIds.Count + " roles, " + userIds.Count + " members)");
+            await _overwrites.ReplaceForCategoryAsync(serverId, category.Id, items);
+            changes.Add("Changed the category permissions");
+
+            var everyone = items.FirstOrDefault(o => o.RoleId == everyoneId);
+            var nowPrivate = everyone is not null && (everyone.Deny & (long)ServerPermission.ViewChannels) != 0;
+            if (nowPrivate != category.IsPrivate)
+            {
+                changes.Add(nowPrivate ? "Made the category private" : "Made the category public");
+            }
+
+            category.IsPrivate = nowPrivate;
+            foreach (var channel in await _channels.GetByCategoryAsync(category.Id))
+            {
+                if (channel.SyncWithCategory)
+                {
+                    SetFlags(channel, items, everyoneId);
+                    await _channels.UpdateAsync(channel);
+                }
+            }
         }
 
-        private static ServerChannelAccessMemberDto ToMember(ServerMember member)
+        private static ServerOverwriteMemberDto ToMember(ServerMember member)
         {
             var userName = member.User.UserName ?? string.Empty;
-            return new ServerChannelAccessMemberDto
+            return new ServerOverwriteMemberDto
             {
                 Id = member.UserId,
                 UserName = userName,
@@ -369,13 +516,12 @@ namespace Service.Services
                 changes.Add("Renamed the category from \"" + category.Name + "\" to \"" + name + "\"");
             }
 
-            if (category.IsPrivate != model.IsPrivate)
+            category.Name = name;
+            if (model.Overwrites is not null)
             {
-                changes.Add(model.IsPrivate ? "Made the category private" : "Made the category public");
+                await ApplyCategoryOverwritesAsync(serverId, category, model.Overwrites, changes);
             }
 
-            category.Name = name;
-            category.IsPrivate = model.IsPrivate;
             await _categories.UpdateAsync(category);
             if (changes.Count > 0)
             {
@@ -395,6 +541,7 @@ namespace Service.Services
                 throw new NotFoundException("That category was not found.");
             }
 
+            await _overwrites.DeleteForCategoryAsync(categoryId);
             var channelIds = await _channels.GetIdsInCategoryAsync(categoryId);
             if (channelIds.Count > 0)
             {

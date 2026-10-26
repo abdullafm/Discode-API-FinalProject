@@ -13,6 +13,7 @@ namespace Domain.Entities
         public ServerChannelKind Kind { get; set; }
         public bool IsPrivate { get; set; }
         public bool IsReadOnly { get; set; }
+        public bool SyncWithCategory { get; set; } = true;
         public int Position { get; set; }
     }
 }

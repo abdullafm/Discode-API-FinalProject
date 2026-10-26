@@ -52,16 +52,22 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(channel);
         }
 
-        [HttpGet("channels/{channelId:int}/access")]
-        public async Task<IActionResult> GetAccess(int serverId, int channelId)
+        [HttpGet("channels/{channelId:int}/permissions")]
+        public async Task<IActionResult> GetChannelPermissions(int serverId, int channelId)
         {
-            return Ok(await _channelService.GetAccessAsync(UserId, serverId, channelId));
+            return Ok(await _channelService.GetChannelPermissionsAsync(UserId, serverId, channelId));
         }
 
-        [HttpGet("channel-access/search")]
-        public async Task<IActionResult> SearchAccess(int serverId, [FromQuery] string? search)
+        [HttpGet("categories/{categoryId:int}/permissions")]
+        public async Task<IActionResult> GetCategoryPermissions(int serverId, int categoryId)
         {
-            return Ok(await _channelService.SearchAccessAsync(UserId, serverId, search));
+            return Ok(await _channelService.GetCategoryPermissionsAsync(UserId, serverId, categoryId));
+        }
+
+        [HttpGet("permission-targets")]
+        public async Task<IActionResult> SearchTargets(int serverId, [FromQuery] string? search)
+        {
+            return Ok(await _channelService.SearchTargetsAsync(UserId, serverId, search));
         }
 
         [HttpDelete("channels/{channelId:int}")]

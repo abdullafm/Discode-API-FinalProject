@@ -9,8 +9,9 @@ namespace Service.Services.Interfaces
         Task<ServerChannelDto> CreateChannelAsync(string userId, int serverId, CreateServerChannelDto model);
         Task<ServerCategoryDto> CreateCategoryAsync(string userId, int serverId, CreateServerCategoryDto model);
         Task<ServerChannelDto> UpdateChannelAsync(string userId, int serverId, int channelId, UpdateServerChannelDto model);
-        Task<ServerChannelAccessDto> GetAccessAsync(string userId, int serverId, int channelId);
-        Task<ServerChannelAccessDto> SearchAccessAsync(string userId, int serverId, string? search);
+        Task<ServerPermissionSetDto> GetChannelPermissionsAsync(string userId, int serverId, int channelId);
+        Task<ServerPermissionSetDto> GetCategoryPermissionsAsync(string userId, int serverId, int categoryId);
+        Task<ServerOverwriteTargetsDto> SearchTargetsAsync(string userId, int serverId, string? search);
         Task DeleteChannelAsync(string userId, int serverId, int channelId);
         Task<ServerCategoryDto> UpdateCategoryAsync(string userId, int serverId, int categoryId, UpdateServerCategoryDto model);
         Task DeleteCategoryAsync(string userId, int serverId, int categoryId);

@@ -16,7 +16,7 @@ namespace Service.Services
     {
         private readonly IServerRoleRepository _roles;
         private readonly IServerMemberRoleRepository _memberRoles;
-        private readonly IServerChannelAccessRepository _access;
+        private readonly IServerOverwriteRepository _overwrites;
         private readonly IServerMemberRepository _members;
         private readonly IServerPermissionService _permissions;
         private readonly IServerService _serverService;
@@ -28,7 +28,7 @@ namespace Service.Services
 
         public ServerRoleService(IServerRoleRepository roles,
                                  IServerMemberRoleRepository memberRoles,
-                                 IServerChannelAccessRepository access,
+                                 IServerOverwriteRepository overwrites,
                                  IServerMemberRepository members,
                                  IServerPermissionService permissions,
                                  IServerService serverService,
@@ -40,7 +40,7 @@ namespace Service.Services
         {
             _roles = roles;
             _memberRoles = memberRoles;
-            _access = access;
+            _overwrites = overwrites;
             _members = members;
             _permissions = permissions;
             _serverService = serverService;
@@ -167,7 +167,7 @@ namespace Service.Services
             }
 
             await _memberRoles.DeleteForRoleAsync(roleId);
-            await _access.DeleteForRoleAsync(roleId);
+            await _overwrites.DeleteForRoleAsync(roleId);
             await _roles.DeleteAsync(role);
             await _audit.LogAsync(serverId, userId, ServerAuditAction.RoleDelete, "Role", roleId.ToString(), role.Name, "Deleted the role " + role.Name);
         }

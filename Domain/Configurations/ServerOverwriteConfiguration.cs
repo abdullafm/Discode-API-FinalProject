@@ -4,10 +4,12 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Domain.Configurations
 {
-    public class ServerChannelAccessConfiguration : IEntityTypeConfiguration<ServerChannelAccess>
+    public class ServerOverwriteConfiguration : IEntityTypeConfiguration<ServerOverwrite>
     {
-        public void Configure(EntityTypeBuilder<ServerChannelAccess> builder)
+        public void Configure(EntityTypeBuilder<ServerOverwrite> builder)
         {
+            builder.ToTable("ServerOverwrites");
+
             builder.Property(x => x.UserId)
                 .HasMaxLength(450);
 
@@ -16,9 +18,10 @@ namespace Domain.Configurations
                 .HasForeignKey(x => x.ChannelId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.HasIndex(x => x.ServerId);
             builder.HasIndex(x => x.ChannelId);
+            builder.HasIndex(x => x.CategoryId);
             builder.HasIndex(x => x.RoleId);
-            builder.HasIndex(x => x.UserId);
         }
     }
 }

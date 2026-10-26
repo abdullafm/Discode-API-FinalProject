@@ -1,6 +1,7 @@
 using Domain.Entities;
 using Domain.Enums;
 using Repository.Repositories.Interfaces;
+using Service.Helpers;
 using Service.Helpers.Exceptions;
 using Service.Services.Interfaces;
 
@@ -17,19 +18,19 @@ namespace Service.Services
         private readonly IServerMemberRepository _members;
         private readonly IServerRoleRepository _roles;
         private readonly IServerMemberRoleRepository _memberRoles;
-        private readonly IServerChannelAccessRepository _access;
+        private readonly IServerOverwriteRepository _overwrites;
 
         public ServerPermissionService(IServerRepository servers,
                                        IServerMemberRepository members,
                                        IServerRoleRepository roles,
                                        IServerMemberRoleRepository memberRoles,
-                                       IServerChannelAccessRepository access)
+                                       IServerOverwriteRepository overwrites)
         {
             _servers = servers;
             _members = members;
             _roles = roles;
             _memberRoles = memberRoles;
-            _access = access;
+            _overwrites = overwrites;
         }
 
         public async Task<ServerPermission> GetAsync(string userId, int serverId)
@@ -65,26 +66,36 @@ namespace Service.Services
             return (ServerPermission)bits & ServerPermission.All;
         }
 
+        public async Task<ChannelPermissionContext> GetContextAsync(string userId, int serverId, List<ServerOverwrite>? overwrites = null)
+        {
+            var server = await _servers.GetByIdAsync(serverId);
+            var everyone = await _roles.GetEveryoneAsync(serverId);
+            return new ChannelPermissionContext
+            {
+                UserId = userId,
+                IsOwner = server is not null && server.OwnerId == userId,
+                Base = await GetAsync(userId, serverId),
+                RoleIds = await _memberRoles.GetRoleIdsAsync(serverId, userId),
+                EveryoneRoleId = everyone?.Id,
+                Overwrites = overwrites ?? await _overwrites.GetForServerAsync(serverId)
+            };
+        }
+
+        public async Task<ServerPermission> GetInChannelAsync(string userId, int serverId, ServerChannel channel)
+        {
+            var context = await GetContextAsync(userId, serverId);
+            if (context.Base == ServerPermission.None && !context.IsOwner)
+            {
+                return ServerPermission.None;
+            }
+
+            return context.ForChannel(channel);
+        }
+
         public async Task<bool> CanViewChannelAsync(string userId, int serverId, ServerChannel channel)
         {
-            var perms = await GetAsync(userId, serverId);
-            if ((perms & ServerPermission.ViewChannels) != ServerPermission.ViewChannels)
-            {
-                return false;
-            }
-
-            var categoryPrivate = channel.Category?.IsPrivate ?? false;
-            if (!channel.IsPrivate && !categoryPrivate)
-            {
-                return true;
-            }
-
-            if ((perms & ServerPermission.ManageChannels) == ServerPermission.ManageChannels)
-            {
-                return true;
-            }
-
-            return !categoryPrivate && await _access.HasAccessAsync(serverId, channel.Id, userId);
+            var perms = await GetInChannelAsync(userId, serverId, channel);
+            return (perms & ServerPermission.ViewChannels) == ServerPermission.ViewChannels;
         }
 
         public async Task EnsureAsync(string userId, int serverId, ServerPermission needed)

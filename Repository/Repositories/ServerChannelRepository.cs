@@ -40,6 +40,11 @@ namespace Repository.Repositories
             return await _dbSet.AsNoTracking().Where(x => x.CategoryId == categoryId).Select(x => x.Id).ToListAsync();
         }
 
+        public async Task<List<ServerChannel>> GetByCategoryAsync(int categoryId)
+        {
+            return await _dbSet.Where(x => x.CategoryId == categoryId).ToListAsync();
+        }
+
         public async Task DeleteInCategoryAsync(int categoryId)
         {
             await _dbSet.Where(x => x.CategoryId == categoryId).ExecuteDeleteAsync();

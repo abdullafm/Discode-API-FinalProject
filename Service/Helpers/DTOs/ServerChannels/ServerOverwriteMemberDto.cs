@@ -1,6 +1,6 @@
 namespace Service.Helpers.DTOs.ServerChannels
 {
-    public class ServerChannelAccessMemberDto
+    public class ServerOverwriteMemberDto
     {
         public string Id { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;

@@ -6,6 +6,7 @@ namespace Repository.Repositories.Interfaces
     {
         Task<IEnumerable<ServerMemberRole>> GetForServerAsync(int serverId);
         Task<IEnumerable<long>> GetPermissionBitsAsync(int serverId, string userId);
+        Task<HashSet<int>> GetRoleIdsAsync(int serverId, string userId);
         Task<ServerMemberRole?> GetAsync(int roleId, int serverMemberId);
         Task DeleteForRoleAsync(int roleId);
     }

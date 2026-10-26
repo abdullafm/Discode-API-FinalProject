@@ -28,6 +28,7 @@ namespace Service.Services
         private readonly IServerBanRepository _bans;
         private readonly IServerChannelService _channelService;
         private readonly IValidator<DeleteServerDto> _deleteValidator;
+        private readonly IServerOverwriteRepository _overwrites;
         private readonly IPresenceService _presence;
         private readonly IValidator<CreateServerDto> _createValidator;
         private readonly IValidator<JoinServerDto> _joinValidator;
@@ -46,6 +47,7 @@ namespace Service.Services
                              IServerAuditService audit,
                              IServerBanRepository bans,
                              IServerChannelService channelService,
+                             IServerOverwriteRepository overwrites,
                              IValidator<DeleteServerDto> deleteValidator,
                              IPresenceService presence,
                              IValidator<CreateServerDto> createValidator,
@@ -66,6 +68,7 @@ namespace Service.Services
             _bans = bans;
             _channelService = channelService;
             _deleteValidator = deleteValidator;
+            _overwrites = overwrites;
             _presence = presence;
             _createValidator = createValidator;
             _joinValidator = joinValidator;
@@ -351,6 +354,7 @@ namespace Service.Services
             }
 
             var memberIds = await _members.GetUserIdsAsync(serverId);
+            await _overwrites.DeleteForServerAsync(serverId);
             await _servers.DeleteAsync(server);
             return memberIds;
         }
