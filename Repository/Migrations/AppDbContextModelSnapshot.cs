@@ -1245,6 +1245,13 @@ namespace Repository.Migrations
                     b.Property<bool>("HideMutedChannels")
                         .HasColumnType("bit");
 
+                    b.Property<string>("JoinMethod")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)")
+                        .HasDefaultValue("");
+
                     b.Property<DateTime>("JoinedAt")
                         .HasColumnType("datetime2");
 

@@ -11,6 +11,7 @@ namespace Domain.Entities
         public AppUser User { get; set; } = null!;
         public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
         public int Position { get; set; }
+        public string JoinMethod { get; set; } = string.Empty;
         public DateTime? MutedUntil { get; set; }
         public bool MutedIndefinitely { get; set; }
         public ServerNotificationLevel NotificationLevel { get; set; } = ServerNotificationLevel.Mentions;

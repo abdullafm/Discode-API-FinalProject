@@ -12,6 +12,11 @@ namespace Domain.Configurations
                 .IsRequired()
                 .HasMaxLength(450);
 
+            builder.Property(x => x.JoinMethod)
+                .IsRequired()
+                .HasMaxLength(32)
+                .HasDefaultValue(string.Empty);
+
             builder.HasOne(x => x.Server)
                 .WithMany(s => s.Members)
                 .HasForeignKey(x => x.ServerId)
