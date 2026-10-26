@@ -7,6 +7,8 @@ namespace Repository.Repositories.Interfaces
         Task<List<ServerChannel>> GetLooseAsync(int serverId);
         Task<int> NextPositionAsync(int serverId, int? categoryId);
         Task<ServerChannel?> GetInServerAsync(int serverId, int channelId);
+        Task<List<int>> GetIdsInCategoryAsync(int categoryId);
+        Task DeleteInCategoryAsync(int categoryId);
         Task<bool> AnyAsync(int serverId);
     }
 }

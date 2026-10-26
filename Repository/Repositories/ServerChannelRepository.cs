@@ -35,6 +35,16 @@ namespace Repository.Repositories
                 .FirstOrDefaultAsync(x => x.ServerId == serverId && x.Id == channelId);
         }
 
+        public async Task<List<int>> GetIdsInCategoryAsync(int categoryId)
+        {
+            return await _dbSet.AsNoTracking().Where(x => x.CategoryId == categoryId).Select(x => x.Id).ToListAsync();
+        }
+
+        public async Task DeleteInCategoryAsync(int categoryId)
+        {
+            await _dbSet.Where(x => x.CategoryId == categoryId).ExecuteDeleteAsync();
+        }
+
         public async Task<bool> AnyAsync(int serverId)
         {
             return await _dbSet.AnyAsync(x => x.ServerId == serverId);

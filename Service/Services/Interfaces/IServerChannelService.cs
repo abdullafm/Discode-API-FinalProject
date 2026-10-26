@@ -8,6 +8,8 @@ namespace Service.Services.Interfaces
         Task<ServerChannelsDto> GetAsync(string userId, int serverId);
         Task<ServerChannelDto> CreateChannelAsync(string userId, int serverId, CreateServerChannelDto model);
         Task<ServerCategoryDto> CreateCategoryAsync(string userId, int serverId, CreateServerCategoryDto model);
+        Task<ServerCategoryDto> UpdateCategoryAsync(string userId, int serverId, int categoryId, UpdateServerCategoryDto model);
+        Task DeleteCategoryAsync(string userId, int serverId, int categoryId);
         Task<List<string>> GetMemberIdsAsync(int serverId);
     }
 }

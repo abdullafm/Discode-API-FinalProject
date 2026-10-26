@@ -6,6 +6,7 @@ namespace Repository.Repositories.Interfaces
     {
         Task<List<ServerCategory>> GetForServerAsync(int serverId);
         Task<ServerCategory?> GetInServerAsync(int serverId, int categoryId);
+        Task<ServerCategory?> GetTrackedAsync(int serverId, int categoryId);
         Task<int> NextPositionAsync(int serverId);
     }
 }

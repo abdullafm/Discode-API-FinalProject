@@ -45,6 +45,11 @@ namespace Repository.Repositories
             await _dbSet.Where(x => x.ReplyToMessageId == messageId).ExecuteUpdateAsync(s => s.SetProperty(x => x.ReplyToMessageId, (int?)null));
         }
 
+        public async Task DeleteForChannelsAsync(IReadOnlyCollection<int> channelIds)
+        {
+            await _dbSet.Where(x => channelIds.Contains(x.ChannelId)).ExecuteDeleteAsync();
+        }
+
         public async Task ToggleReactionAsync(int messageId, string userId, string emoji)
         {
             var existing = await _dbContext.Set<ServerMessageReaction>()

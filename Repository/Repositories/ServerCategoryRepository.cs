@@ -27,6 +27,11 @@ namespace Repository.Repositories
             return await _dbSet.AsNoTracking().FirstOrDefaultAsync(x => x.ServerId == serverId && x.Id == categoryId);
         }
 
+        public async Task<ServerCategory?> GetTrackedAsync(int serverId, int categoryId)
+        {
+            return await _dbSet.FirstOrDefaultAsync(x => x.ServerId == serverId && x.Id == categoryId);
+        }
+
         public async Task<int> NextPositionAsync(int serverId)
         {
             var positions = await _dbSet.Where(x => x.ServerId == serverId).Select(x => x.Position).ToListAsync();

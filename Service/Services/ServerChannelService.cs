@@ -17,6 +17,8 @@ namespace Service.Services
         private readonly IServerMemberRepository _members;
         private readonly IServerPermissionService _permissions;
         private readonly IServerAuditService _audit;
+        private readonly IServerMessageRepository _messages;
+        private readonly IValidator<UpdateServerCategoryDto> _updateCategoryValidator;
         private readonly IValidator<CreateServerChannelDto> _channelValidator;
         private readonly IValidator<CreateServerCategoryDto> _categoryValidator;
 
@@ -25,6 +27,8 @@ namespace Service.Services
                                     IServerMemberRepository members,
                                     IServerPermissionService permissions,
                                     IServerAuditService audit,
+                                    IServerMessageRepository messages,
+                                    IValidator<UpdateServerCategoryDto> updateCategoryValidator,
                                     IValidator<CreateServerChannelDto> channelValidator,
                                     IValidator<CreateServerCategoryDto> categoryValidator)
         {
@@ -33,6 +37,8 @@ namespace Service.Services
             _members = members;
             _permissions = permissions;
             _audit = audit;
+            _messages = messages;
+            _updateCategoryValidator = updateCategoryValidator;
             _channelValidator = channelValidator;
             _categoryValidator = categoryValidator;
         }
@@ -171,6 +177,61 @@ namespace Service.Services
             await _categories.AddAsync(category);
             await _audit.LogAsync(serverId, userId, ServerAuditAction.CategoryCreate, "Category", category.Id.ToString(), category.Name, category.IsPrivate ? "Created a private category" : "Created a category");
             return new ServerCategoryDto { Id = category.Id, Name = category.Name, IsPrivate = category.IsPrivate, Position = category.Position };
+        }
+
+        public async Task<ServerCategoryDto> UpdateCategoryAsync(string userId, int serverId, int categoryId, UpdateServerCategoryDto model)
+        {
+            await _updateCategoryValidator.EnsureValidAsync(model);
+            await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageChannels);
+
+            var category = await _categories.GetTrackedAsync(serverId, categoryId);
+            if (category is null)
+            {
+                throw new NotFoundException("That category was not found.");
+            }
+
+            var changes = new List<string>();
+            var name = model.Name.Trim();
+            if (category.Name != name)
+            {
+                changes.Add("Renamed the category from \"" + category.Name + "\" to \"" + name + "\"");
+            }
+
+            if (category.IsPrivate != model.IsPrivate)
+            {
+                changes.Add(model.IsPrivate ? "Made the category private" : "Made the category public");
+            }
+
+            category.Name = name;
+            category.IsPrivate = model.IsPrivate;
+            await _categories.UpdateAsync(category);
+            if (changes.Count > 0)
+            {
+                await _audit.LogAsync(serverId, userId, ServerAuditAction.CategoryUpdate, "Category", category.Id.ToString(), category.Name, string.Join("; ", changes));
+            }
+
+            return new ServerCategoryDto { Id = category.Id, Name = category.Name, IsPrivate = category.IsPrivate, Position = category.Position };
+        }
+
+        public async Task DeleteCategoryAsync(string userId, int serverId, int categoryId)
+        {
+            await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageChannels);
+
+            var category = await _categories.GetTrackedAsync(serverId, categoryId);
+            if (category is null)
+            {
+                throw new NotFoundException("That category was not found.");
+            }
+
+            var channelIds = await _channels.GetIdsInCategoryAsync(categoryId);
+            if (channelIds.Count > 0)
+            {
+                await _messages.DeleteForChannelsAsync(channelIds);
+                await _channels.DeleteInCategoryAsync(categoryId);
+            }
+
+            await _categories.DeleteAsync(category);
+            await _audit.LogAsync(serverId, userId, ServerAuditAction.CategoryDelete, "Category", categoryId.ToString(), category.Name, channelIds.Count == 0 ? "Deleted the category" : "Deleted the category and its " + channelIds.Count + (channelIds.Count == 1 ? " channel" : " channels"));
         }
 
         public async Task<List<string>> GetMemberIdsAsync(int serverId)

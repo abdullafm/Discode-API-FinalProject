@@ -52,6 +52,22 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(category);
         }
 
+        [HttpPut("categories/{categoryId:int}")]
+        public async Task<IActionResult> UpdateCategory(int serverId, int categoryId, [FromBody] UpdateServerCategoryDto model)
+        {
+            var category = await _channelService.UpdateCategoryAsync(UserId, serverId, categoryId, model);
+            await NotifyAsync(serverId);
+            return Ok(category);
+        }
+
+        [HttpDelete("categories/{categoryId:int}")]
+        public async Task<IActionResult> DeleteCategory(int serverId, int categoryId)
+        {
+            await _channelService.DeleteCategoryAsync(UserId, serverId, categoryId);
+            await NotifyAsync(serverId);
+            return Ok();
+        }
+
         private async Task NotifyAsync(int serverId)
         {
             var memberIds = await _channelService.GetMemberIdsAsync(serverId);
