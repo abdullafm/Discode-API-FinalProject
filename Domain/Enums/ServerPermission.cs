@@ -18,6 +18,8 @@ namespace Domain.Enums
         Connect = 1L << 11,
         Speak = 1L << 12,
         MuteMembers = 1L << 13,
-        All = (1L << 14) - 1
+        KickMembers = 1L << 14,
+        BanMembers = 1L << 15,
+        All = (1L << 16) - 1
     }
 }

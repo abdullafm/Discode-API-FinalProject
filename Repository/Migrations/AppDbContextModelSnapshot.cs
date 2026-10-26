@@ -1282,6 +1282,49 @@ namespace Repository.Migrations
                     b.ToTable("ServerAuditLogs");
                 });
 
+            modelBuilder.Entity("Domain.Entities.ServerBan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BannedById")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<int>("ServerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BannedById");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ServerId", "Id");
+
+                    b.HasIndex("ServerId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("ServerBans");
+                });
+
             modelBuilder.Entity("Domain.Entities.ServerMember", b =>
                 {
                     b.Property<int>("Id")
@@ -2183,6 +2226,33 @@ namespace Repository.Migrations
                     b.Navigation("Actor");
 
                     b.Navigation("Server");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerBan", b =>
+                {
+                    b.HasOne("Domain.Entities.AppUser", "BannedBy")
+                        .WithMany()
+                        .HasForeignKey("BannedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Server", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BannedBy");
+
+                    b.Navigation("Server");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.Entities.ServerMember", b =>

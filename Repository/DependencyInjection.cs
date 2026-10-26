@@ -16,6 +16,7 @@ namespace Repository
             services.AddScoped<IServerMemberRepository, ServerMemberRepository>();
             services.AddScoped<IServerRoleRepository, ServerRoleRepository>();
             services.AddScoped<IServerAuditLogRepository, ServerAuditLogRepository>();
+            services.AddScoped<IServerBanRepository, ServerBanRepository>();
             services.AddScoped<IServerMemberRoleRepository, ServerMemberRoleRepository>();
             services.AddScoped<IPostRepository, PostRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();

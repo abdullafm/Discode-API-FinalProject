@@ -14,6 +14,7 @@ namespace Repository.Data
         public DbSet<ServerMember> ServerMembers { get; set; }
         public DbSet<ServerRole> ServerRoles { get; set; }
         public DbSet<ServerAuditLog> ServerAuditLogs { get; set; }
+        public DbSet<ServerBan> ServerBans { get; set; }
         public DbSet<ServerMemberRole> ServerMemberRoles { get; set; }
         public DbSet<Post> Posts { get; set; }
         public DbSet<Comment> Comments { get; set; }
