@@ -14,5 +14,6 @@ namespace Domain.Entities
         public string OwnerId { get; set; } = string.Empty;
         public AppUser Owner { get; set; } = null!;
         public ICollection<ServerMember> Members { get; set; } = new List<ServerMember>();
+        public ICollection<ServerRole> Roles { get; set; } = new List<ServerRole>();
     }
 }

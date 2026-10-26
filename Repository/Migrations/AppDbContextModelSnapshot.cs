@@ -1288,6 +1288,79 @@ namespace Repository.Migrations
                     b.ToTable("ServerMembers");
                 });
 
+            modelBuilder.Entity("Domain.Entities.ServerMemberRole", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ServerMemberId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
+
+                    b.HasIndex("ServerMemberId", "RoleId")
+                        .IsUnique();
+
+                    b.ToTable("ServerMemberRoles");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerRole", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(16)
+                        .HasColumnType("nvarchar(16)")
+                        .HasDefaultValue("gray");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("DisplaySeparately")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsEveryone")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<long>("Permissions")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ServerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServerId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("ServerRoles");
+                });
+
             modelBuilder.Entity("Domain.Entities.Story", b =>
                 {
                     b.Property<int>("Id")
@@ -2061,6 +2134,36 @@ namespace Repository.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Domain.Entities.ServerMemberRole", b =>
+                {
+                    b.HasOne("Domain.Entities.ServerRole", "Role")
+                        .WithMany("MemberRoles")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.ServerMember", "ServerMember")
+                        .WithMany()
+                        .HasForeignKey("ServerMemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+
+                    b.Navigation("ServerMember");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerRole", b =>
+                {
+                    b.HasOne("Domain.Entities.Server", "Server")
+                        .WithMany("Roles")
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Server");
+                });
+
             modelBuilder.Entity("Domain.Entities.Story", b =>
                 {
                     b.HasOne("Domain.Entities.AppUser", "Author")
@@ -2285,6 +2388,13 @@ namespace Repository.Migrations
             modelBuilder.Entity("Domain.Entities.Server", b =>
                 {
                     b.Navigation("Members");
+
+                    b.Navigation("Roles");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerRole", b =>
+                {
+                    b.Navigation("MemberRoles");
                 });
 
             modelBuilder.Entity("Domain.Entities.Story", b =>

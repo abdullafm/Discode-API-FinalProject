@@ -7,5 +7,6 @@ namespace Repository.Repositories.Interfaces
         Task<ServerMember?> GetAsync(int serverId, string userId);
         Task<IEnumerable<ServerMember>> GetForUserAsync(string userId);
         Task<int> NextPositionAsync(string userId);
+        Task<List<string>> GetUserIdsAsync(int serverId);
     }
 }

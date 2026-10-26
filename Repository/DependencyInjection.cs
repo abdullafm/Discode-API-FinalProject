@@ -14,6 +14,8 @@ namespace Repository
             services.AddScoped<IUserIgnoreRepository, UserIgnoreRepository>();
             services.AddScoped<IServerRepository, ServerRepository>();
             services.AddScoped<IServerMemberRepository, ServerMemberRepository>();
+            services.AddScoped<IServerRoleRepository, ServerRoleRepository>();
+            services.AddScoped<IServerMemberRoleRepository, ServerMemberRoleRepository>();
             services.AddScoped<IPostRepository, PostRepository>();
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<IStoryRepository, StoryRepository>();

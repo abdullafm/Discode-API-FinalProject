@@ -22,6 +22,11 @@ namespace Repository.Repositories
             return positions.Count == 0 ? 0 : positions.Max() + 1;
         }
 
+        public async Task<List<string>> GetUserIdsAsync(int serverId)
+        {
+            return await _dbSet.AsNoTracking().Where(x => x.ServerId == serverId).Select(x => x.UserId).ToListAsync();
+        }
+
         public async Task<ServerMember?> GetAsync(int serverId, string userId)
         {
             return await _dbSet.AsNoTracking().FirstOrDefaultAsync(x => x.ServerId == serverId && x.UserId == userId);
