@@ -171,19 +171,7 @@ namespace Service.Services
 
         private async Task<List<string>> ViewersAsync(int serverId, ServerChannel channel)
         {
-            var ids = await _members.GetUserIdsAsync(serverId);
-            var viewers = new List<string>();
-            var overwrites = await _overwrites.GetForServerAsync(serverId);
-            foreach (var id in ids)
-            {
-                var context = await _permissions.GetContextAsync(id, serverId, overwrites);
-                if ((context.ForChannel(channel) & ServerPermission.ViewChannels) == ServerPermission.ViewChannels)
-                {
-                    viewers.Add(id);
-                }
-            }
-
-            return viewers;
+            return await _permissions.GetChannelViewerIdsAsync(serverId, channel);
         }
 
     }

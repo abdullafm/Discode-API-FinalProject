@@ -64,6 +64,12 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(await _channelService.GetCategoryPermissionsAsync(UserId, serverId, categoryId));
         }
 
+        [HttpGet("channels/{channelId:int}/viewers")]
+        public async Task<IActionResult> GetViewers(int serverId, int channelId)
+        {
+            return Ok(await _channelService.GetViewerIdsAsync(UserId, serverId, channelId));
+        }
+
         [HttpGet("permission-targets")]
         public async Task<IActionResult> SearchTargets(int serverId, [FromQuery] string? search)
         {

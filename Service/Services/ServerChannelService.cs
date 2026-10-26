@@ -477,6 +477,23 @@ namespace Service.Services
             };
         }
 
+        public async Task<List<string>> GetViewerIdsAsync(string userId, int serverId, int channelId)
+        {
+            if (await _members.GetAsync(serverId, userId) is null)
+            {
+                throw new NotFoundException("Server not found.");
+            }
+
+            var channel = await _channels.GetInServerAsync(serverId, channelId) ?? throw new NotFoundException("That channel was not found.");
+            var viewers = await _permissions.GetChannelViewerIdsAsync(serverId, channel);
+            if (!viewers.Contains(userId))
+            {
+                throw new ForbiddenException("You can't view this channel.");
+            }
+
+            return viewers;
+        }
+
         public async Task DeleteChannelAsync(string userId, int serverId, int channelId)
         {
             await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageChannels);

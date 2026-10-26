@@ -12,6 +12,7 @@ namespace Service.Services.Interfaces
         Task<ServerPermissionSetDto> GetChannelPermissionsAsync(string userId, int serverId, int channelId);
         Task<ServerPermissionSetDto> GetCategoryPermissionsAsync(string userId, int serverId, int categoryId);
         Task<ServerOverwriteTargetsDto> SearchTargetsAsync(string userId, int serverId, string? search);
+        Task<List<string>> GetViewerIdsAsync(string userId, int serverId, int channelId);
         Task DeleteChannelAsync(string userId, int serverId, int channelId);
         Task<ServerCategoryDto> UpdateCategoryAsync(string userId, int serverId, int categoryId, UpdateServerCategoryDto model);
         Task DeleteCategoryAsync(string userId, int serverId, int categoryId);

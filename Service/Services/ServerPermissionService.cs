@@ -81,6 +81,48 @@ namespace Service.Services
             };
         }
 
+        public async Task<List<string>> GetChannelViewerIdsAsync(int serverId, ServerChannel channel)
+        {
+            var viewers = new List<string>();
+            var server = await _servers.GetByIdAsync(serverId);
+            if (server is null)
+            {
+                return viewers;
+            }
+
+            var everyone = await _roles.GetEveryoneAsync(serverId);
+            var overwrites = await _overwrites.GetForServerAsync(serverId);
+            var links = (await _memberRoles.GetForServerAsync(serverId))
+                .GroupBy(link => link.ServerMember.UserId)
+                .ToDictionary(group => group.Key, group => group.ToList());
+
+            foreach (var id in await _members.GetUserIdsAsync(serverId))
+            {
+                var held = links.TryGetValue(id, out var list) ? list : new List<ServerMemberRole>();
+                var bits = everyone?.Permissions ?? (long)EveryoneDefault;
+                foreach (var link in held)
+                {
+                    bits |= link.Role.Permissions;
+                }
+
+                var context = new ChannelPermissionContext
+                {
+                    UserId = id,
+                    IsOwner = id == server.OwnerId,
+                    Base = (ServerPermission)bits & ServerPermission.All,
+                    RoleIds = held.Select(link => link.RoleId).ToHashSet(),
+                    EveryoneRoleId = everyone?.Id,
+                    Overwrites = overwrites
+                };
+                if ((context.ForChannel(channel) & ServerPermission.ViewChannels) == ServerPermission.ViewChannels)
+                {
+                    viewers.Add(id);
+                }
+            }
+
+            return viewers;
+        }
+
         public async Task<ServerPermission> GetInChannelAsync(string userId, int serverId, ServerChannel channel)
         {
             var context = await GetContextAsync(userId, serverId);
