@@ -110,6 +110,7 @@ namespace Service.Services
                 UserId = userId,
                 JoinedAt = DateTime.UtcNow,
                 Position = await _members.NextPositionAsync(userId),
+                JoinMethod = server.InviteCode,
                 NotificationLevel = ServerNotificationLevel.Mentions
             });
             var fresh = (await _servers.GetWithMembersAsync(server.Id))!;
@@ -131,9 +132,28 @@ namespace Service.Services
             }
 
             var dto = ToDto(server, userId);
-            foreach (var member in server.Members.OrderBy(m => m.JoinedAt))
+            dto.Members = (await BuildMembersAsync(server, userId)).OrderBy(m => m.JoinedAt).ToList();
+            dto.OnlineCount = dto.Members.Count(m => m.Status != "offline");
+            return dto;
+        }
+
+        public async Task<IEnumerable<ServerMemberDto>> GetMembersAsync(string userId, int serverId)
+        {
+            var server = await _servers.GetWithMembersAsync(serverId);
+            if (server is null || server.Members.All(m => m.UserId != userId))
             {
-                dto.Members.Add(new ServerMemberDto
+                throw new NotFoundException("Server not found.");
+            }
+
+            return (await BuildMembersAsync(server, userId)).OrderByDescending(m => m.JoinedAt).ToList();
+        }
+
+        private async Task<List<ServerMemberDto>> BuildMembersAsync(Server server, string viewerId)
+        {
+            var members = new List<ServerMemberDto>();
+            foreach (var member in server.Members)
+            {
+                members.Add(new ServerMemberDto
                 {
                     Id = member.UserId,
                     UserName = member.User.UserName ?? string.Empty,
@@ -142,12 +162,14 @@ namespace Service.Services
                     CustomStatus = member.User.CustomStatus,
                     Status = await _presence.ResolveAsync(member.User),
                     IsOwner = member.UserId == server.OwnerId,
-                    IsSelf = member.UserId == userId
+                    IsSelf = member.UserId == viewerId,
+                    JoinedAt = DateTime.SpecifyKind(member.JoinedAt, DateTimeKind.Utc),
+                    AccountCreatedAt = DateTime.SpecifyKind(member.User.CreatedAt, DateTimeKind.Utc),
+                    JoinMethod = member.JoinMethod
                 });
             }
 
-            dto.OnlineCount = dto.Members.Count(m => m.Status != "offline");
-            return dto;
+            return members;
         }
 
         public async Task<ServerChangeDto> UpdateProfileAsync(string userId, int serverId, UpdateServerProfileDto model)

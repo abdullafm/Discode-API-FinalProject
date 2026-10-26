@@ -64,6 +64,12 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(server);
         }
 
+        [HttpGet("{id:int}/members")]
+        public async Task<IActionResult> GetMembers(int id)
+        {
+            return Ok(await _serverService.GetMembersAsync(UserId, id));
+        }
+
         [HttpPut("{id:int}/profile")]
         public async Task<IActionResult> UpdateProfile(int id, [FromBody] UpdateServerProfileDto model)
         {

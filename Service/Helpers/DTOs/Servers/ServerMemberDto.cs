@@ -9,6 +9,9 @@ namespace Service.Helpers.DTOs.Servers
         public string CustomStatus { get; set; } = string.Empty;
         public string Status { get; set; } = "offline";
         public bool IsOwner { get; set; }
+        public DateTime JoinedAt { get; set; }
+        public DateTime AccountCreatedAt { get; set; }
+        public string JoinMethod { get; set; } = string.Empty;
         public bool IsSelf { get; set; }
     }
 }
