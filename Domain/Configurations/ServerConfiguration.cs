@@ -18,7 +18,12 @@ namespace Domain.Configurations
 
             builder.Property(x => x.InviteCode)
                 .IsRequired()
-                .HasMaxLength(16);
+                .HasMaxLength(32);
+
+            builder.Property(x => x.BannerUrl)
+                .IsRequired()
+                .HasMaxLength(200)
+                .HasDefaultValue(string.Empty);
 
             builder.Property(x => x.Description)
                 .IsRequired()

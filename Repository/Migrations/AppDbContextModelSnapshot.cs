@@ -1183,6 +1183,13 @@ namespace Repository.Migrations
                         .HasColumnType("nvarchar(16)")
                         .HasDefaultValue("ink");
 
+                    b.Property<string>("BannerUrl")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)")
+                        .HasDefaultValue("");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -1198,8 +1205,8 @@ namespace Repository.Migrations
 
                     b.Property<string>("InviteCode")
                         .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
 
                     b.Property<bool>("IsPrivate")
                         .HasColumnType("bit");
