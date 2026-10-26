@@ -17,16 +17,19 @@ namespace Service.Services
         private readonly IServerMemberRepository _members;
         private readonly IServerRoleRepository _roles;
         private readonly IServerMemberRoleRepository _memberRoles;
+        private readonly IServerChannelAccessRepository _access;
 
         public ServerPermissionService(IServerRepository servers,
                                        IServerMemberRepository members,
                                        IServerRoleRepository roles,
-                                       IServerMemberRoleRepository memberRoles)
+                                       IServerMemberRoleRepository memberRoles,
+                                       IServerChannelAccessRepository access)
         {
             _servers = servers;
             _members = members;
             _roles = roles;
             _memberRoles = memberRoles;
+            _access = access;
         }
 
         public async Task<ServerPermission> GetAsync(string userId, int serverId)
@@ -60,6 +63,28 @@ namespace Service.Services
             }
 
             return (ServerPermission)bits & ServerPermission.All;
+        }
+
+        public async Task<bool> CanViewChannelAsync(string userId, int serverId, ServerChannel channel)
+        {
+            var perms = await GetAsync(userId, serverId);
+            if ((perms & ServerPermission.ViewChannels) != ServerPermission.ViewChannels)
+            {
+                return false;
+            }
+
+            var categoryPrivate = channel.Category?.IsPrivate ?? false;
+            if (!channel.IsPrivate && !categoryPrivate)
+            {
+                return true;
+            }
+
+            if ((perms & ServerPermission.ManageChannels) == ServerPermission.ManageChannels)
+            {
+                return true;
+            }
+
+            return !categoryPrivate && await _access.HasAccessAsync(serverId, channel.Id, userId);
         }
 
         public async Task EnsureAsync(string userId, int serverId, ServerPermission needed)

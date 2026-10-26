@@ -1400,6 +1400,38 @@ namespace Repository.Migrations
                     b.ToTable("ServerChannels");
                 });
 
+            modelBuilder.Entity("Domain.Entities.ServerChannelAccess", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ChannelId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("RoleId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChannelId");
+
+                    b.HasIndex("RoleId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ServerChannelAccesses");
+                });
+
             modelBuilder.Entity("Domain.Entities.ServerMember", b =>
                 {
                     b.Property<int>("Id")
@@ -2473,6 +2505,17 @@ namespace Repository.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("Server");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerChannelAccess", b =>
+                {
+                    b.HasOne("Domain.Entities.ServerChannel", "Channel")
+                        .WithMany()
+                        .HasForeignKey("ChannelId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Channel");
                 });
 
             modelBuilder.Entity("Domain.Entities.ServerMember", b =>

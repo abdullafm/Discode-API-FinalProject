@@ -27,6 +27,23 @@ namespace Repository.Repositories
             return await _dbSet.AsNoTracking().Where(x => x.ServerId == serverId).Select(x => x.UserId).ToListAsync();
         }
 
+        public async Task<List<ServerMember>> GetByUserIdsAsync(int serverId, List<string> userIds)
+        {
+            return await _dbSet.AsNoTracking().Include(x => x.User).Where(x => x.ServerId == serverId && userIds.Contains(x.UserId)).ToListAsync();
+        }
+
+        public async Task<List<ServerMember>> SearchAsync(int serverId, string? search, int take)
+        {
+            var query = _dbSet.AsNoTracking().Include(x => x.User).Where(x => x.ServerId == serverId);
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(x => (x.User.UserName != null && x.User.UserName.Contains(term)) || x.User.DisplayName.Contains(term));
+            }
+
+            return await query.OrderBy(x => x.User.UserName).Take(take).ToListAsync();
+        }
+
         public async Task<ServerMember?> GetAsync(int serverId, string userId)
         {
             return await _dbSet.AsNoTracking().FirstOrDefaultAsync(x => x.ServerId == serverId && x.UserId == userId);

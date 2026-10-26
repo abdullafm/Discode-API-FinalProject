@@ -52,6 +52,18 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(channel);
         }
 
+        [HttpGet("channels/{channelId:int}/access")]
+        public async Task<IActionResult> GetAccess(int serverId, int channelId)
+        {
+            return Ok(await _channelService.GetAccessAsync(UserId, serverId, channelId));
+        }
+
+        [HttpGet("channel-access/search")]
+        public async Task<IActionResult> SearchAccess(int serverId, [FromQuery] string? search)
+        {
+            return Ok(await _channelService.SearchAccessAsync(UserId, serverId, search));
+        }
+
         [HttpDelete("channels/{channelId:int}")]
         public async Task<IActionResult> DeleteChannel(int serverId, int channelId)
         {

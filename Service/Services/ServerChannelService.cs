@@ -2,7 +2,9 @@ using Domain.Entities;
 using Domain.Enums;
 using FluentValidation;
 using Repository.Repositories.Interfaces;
+using AutoMapper;
 using Service.Helpers.DTOs.ServerChannels;
+using Service.Helpers.DTOs.ServerRoles;
 using Service.Helpers.Exceptions;
 using Service.Helpers.Validators;
 using Service.Services.Interfaces;
@@ -18,6 +20,9 @@ namespace Service.Services
         private readonly IServerPermissionService _permissions;
         private readonly IServerAuditService _audit;
         private readonly IServerMessageRepository _messages;
+        private readonly IServerChannelAccessRepository _access;
+        private readonly IServerRoleRepository _roles;
+        private readonly IMapper _mapper;
         private readonly IValidator<UpdateServerCategoryDto> _updateCategoryValidator;
         private readonly IValidator<UpdateServerChannelDto> _updateChannelValidator;
         private readonly IValidator<CreateServerChannelDto> _channelValidator;
@@ -29,6 +34,9 @@ namespace Service.Services
                                     IServerPermissionService permissions,
                                     IServerAuditService audit,
                                     IServerMessageRepository messages,
+                                    IServerChannelAccessRepository access,
+                                    IServerRoleRepository roles,
+                                    IMapper mapper,
                                     IValidator<UpdateServerCategoryDto> updateCategoryValidator,
                                     IValidator<UpdateServerChannelDto> updateChannelValidator,
                                     IValidator<CreateServerChannelDto> channelValidator,
@@ -40,6 +48,9 @@ namespace Service.Services
             _permissions = permissions;
             _audit = audit;
             _messages = messages;
+            _access = access;
+            _roles = roles;
+            _mapper = mapper;
             _updateCategoryValidator = updateCategoryValidator;
             _updateChannelValidator = updateChannelValidator;
             _channelValidator = channelValidator;
@@ -87,11 +98,12 @@ namespace Service.Services
 
             await EnsureDefaultsAsync(serverId);
             var sees = (await _permissions.GetAsync(userId, serverId) & ServerPermission.ManageChannels) == ServerPermission.ManageChannels;
+            var granted = sees ? new HashSet<int>() : await _access.GetChannelIdsForAsync(serverId, userId);
 
             var result = new ServerChannelsDto();
             foreach (var channel in await _channels.GetLooseAsync(serverId))
             {
-                if (channel.IsPrivate && !sees)
+                if (channel.IsPrivate && !sees && !granted.Contains(channel.Id))
                 {
                     continue;
                 }
@@ -115,7 +127,7 @@ namespace Service.Services
                 };
                 foreach (var channel in category.Channels.OrderBy(c => c.Position).ThenBy(c => c.Id))
                 {
-                    if (channel.IsPrivate && !sees)
+                    if (channel.IsPrivate && !sees && !granted.Contains(channel.Id))
                     {
                         continue;
                     }
@@ -218,12 +230,104 @@ namespace Service.Services
             }
 
             await _channels.UpdateAsync(channel);
+
+            if (!model.IsPrivate)
+            {
+                await _access.DeleteForChannelAsync(channel.Id);
+            }
+            else if (model.AccessRoleIds is not null || model.AccessUserIds is not null)
+            {
+                await ReplaceAccessAsync(serverId, channel, model, changes);
+            }
+
             if (changes.Count > 0)
             {
                 await _audit.LogAsync(serverId, userId, ServerAuditAction.ChannelUpdate, "Channel", channel.Id.ToString(), channel.Name, string.Join("; ", changes));
             }
 
             return ToDto(channel);
+        }
+
+        public async Task<ServerChannelAccessDto> GetAccessAsync(string userId, int serverId, int channelId)
+        {
+            await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageChannels);
+            await GetTrackedAsync(serverId, channelId);
+
+            var entries = await _access.GetForChannelAsync(channelId);
+            var roleIds = entries.Where(x => x.RoleId is not null).Select(x => x.RoleId!.Value).ToHashSet();
+            var userIds = entries.Where(x => x.UserId is not null).Select(x => x.UserId!).ToList();
+
+            var result = new ServerChannelAccessDto();
+            foreach (var role in await _roles.GetForServerAsync(serverId))
+            {
+                if (!role.IsEveryone && roleIds.Contains(role.Id))
+                {
+                    result.Roles.Add(_mapper.Map<ServerRoleRefDto>(role));
+                }
+            }
+
+            foreach (var member in await _members.GetByUserIdsAsync(serverId, userIds))
+            {
+                result.Members.Add(ToMember(member));
+            }
+
+            return result;
+        }
+
+        public async Task<ServerChannelAccessDto> SearchAccessAsync(string userId, int serverId, string? search)
+        {
+            await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageChannels);
+
+            var term = (search ?? string.Empty).Trim();
+            var result = new ServerChannelAccessDto();
+            foreach (var role in (await _roles.GetForServerAsync(serverId)).Where(r => !r.IsEveryone))
+            {
+                if (term.Length == 0 || role.Name.Contains(term, StringComparison.OrdinalIgnoreCase))
+                {
+                    result.Roles.Add(_mapper.Map<ServerRoleRefDto>(role));
+                }
+            }
+
+            result.Roles = result.Roles.Take(10).ToList();
+            foreach (var member in await _members.SearchAsync(serverId, term, 10))
+            {
+                result.Members.Add(ToMember(member));
+            }
+
+            return result;
+        }
+
+        private async Task ReplaceAccessAsync(int serverId, ServerChannel channel, UpdateServerChannelDto model, List<string> changes)
+        {
+            var before = await _access.GetForChannelAsync(channel.Id);
+            var beforeRoles = before.Where(x => x.RoleId is not null).Select(x => x.RoleId!.Value).ToHashSet();
+            var beforeUsers = before.Where(x => x.UserId is not null).Select(x => x.UserId!).ToHashSet();
+
+            var serverRoles = (await _roles.GetForServerAsync(serverId)).Where(r => !r.IsEveryone).Select(r => r.Id).ToHashSet();
+            var roleIds = (model.AccessRoleIds ?? beforeRoles.ToList()).Where(serverRoles.Contains).Distinct().ToList();
+
+            var wantedUsers = (model.AccessUserIds ?? beforeUsers.ToList()).Distinct().ToList();
+            var userIds = (await _members.GetByUserIdsAsync(serverId, wantedUsers)).Select(m => m.UserId).ToList();
+
+            if (beforeRoles.SetEquals(roleIds) && beforeUsers.SetEquals(userIds))
+            {
+                return;
+            }
+
+            await _access.ReplaceAsync(channel.Id, roleIds, userIds);
+            changes.Add("Changed who can access the channel (" + roleIds.Count + " roles, " + userIds.Count + " members)");
+        }
+
+        private static ServerChannelAccessMemberDto ToMember(ServerMember member)
+        {
+            var userName = member.User.UserName ?? string.Empty;
+            return new ServerChannelAccessMemberDto
+            {
+                Id = member.UserId,
+                UserName = userName,
+                DisplayName = string.IsNullOrWhiteSpace(member.User.DisplayName) ? userName : member.User.DisplayName,
+                AvatarUrl = member.User.AvatarUrl
+            };
         }
 
         public async Task DeleteChannelAsync(string userId, int serverId, int channelId)

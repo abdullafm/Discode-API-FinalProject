@@ -161,13 +161,7 @@ namespace Service.Services
             }
 
             var perms = await _permissions.GetAsync(userId, serverId);
-            var allowed = (perms & ServerPermission.ViewChannels) == ServerPermission.ViewChannels;
-            if (allowed && IsPrivate(channel))
-            {
-                allowed = (perms & ServerPermission.ManageChannels) == ServerPermission.ManageChannels;
-            }
-
-            if (!allowed)
+            if (!await _permissions.CanViewChannelAsync(userId, serverId, channel))
             {
                 throw new ForbiddenException("You can't view this channel.");
             }
@@ -190,18 +184,10 @@ namespace Service.Services
             var viewers = new List<string>();
             foreach (var id in ids)
             {
-                var perms = await _permissions.GetAsync(id, serverId);
-                if ((perms & ServerPermission.ViewChannels) != ServerPermission.ViewChannels)
+                if (await _permissions.CanViewChannelAsync(id, serverId, channel))
                 {
-                    continue;
+                    viewers.Add(id);
                 }
-
-                if (IsPrivate(channel) && (perms & ServerPermission.ManageChannels) != ServerPermission.ManageChannels)
-                {
-                    continue;
-                }
-
-                viewers.Add(id);
             }
 
             return viewers;
