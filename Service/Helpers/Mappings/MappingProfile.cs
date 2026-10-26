@@ -11,6 +11,7 @@ using Service.Helpers.DTOs.Posts;
 using Service.Helpers.DTOs.Presence;
 using Service.Helpers.DTOs.Servers;
 using Service.Helpers.DTOs.ServerRoles;
+using Service.Helpers.DTOs.ServerMessages;
 using Service.Helpers.DTOs.Stories;
 using Service.Helpers.Responses;
 using System;
@@ -92,6 +93,32 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.Poll, o => o.MapFrom((s, d, m, context) => s.Poll == null
                     ? null
                     : BuildPoll(s.Poll, context.Items.TryGetValue(ViewerIdKey, out var voter) ? (string?)voter : null)))
+                .ForMember(d => d.Reactions, o => o.MapFrom((s, d, m, context) => s.Reactions
+                    .OrderBy(r => r.CreatedAt)
+                    .ThenBy(r => r.Id)
+                    .GroupBy(r => r.Emoji)
+                    .Select(g => new ReactionDto
+                    {
+                        Emoji = g.Key,
+                        Count = g.Count(),
+                        Reacted = context.Items.TryGetValue(ViewerIdKey, out var viewer) && g.Any(r => r.UserId == (string?)viewer)
+                    })
+                    .ToList()))
+                .ForMember(d => d.SenderUserName, o => o.MapFrom(s => s.Sender.UserName ?? string.Empty))
+                .ForMember(d => d.SenderDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Sender.DisplayName) ? s.Sender.UserName ?? string.Empty : s.Sender.DisplayName))
+                .ForMember(d => d.SenderAvatarUrl, o => o.MapFrom(s => s.Sender.AvatarUrl ?? string.Empty));
+
+            CreateMap<ServerMessageAttachment, MessageAttachmentDto>();
+
+            CreateMap<ServerMessage, ServerMessageDto>()
+                .ForMember(d => d.ReplyTo, o => o.MapFrom(s => s.ReplyTo == null ? null : new ReplyDto
+                {
+                    MessageId = s.ReplyTo.Id,
+                    SenderUserName = s.ReplyTo.Sender.UserName ?? string.Empty,
+                    SenderDisplayName = string.IsNullOrWhiteSpace(s.ReplyTo.Sender.DisplayName) ? s.ReplyTo.Sender.UserName ?? string.Empty : s.ReplyTo.Sender.DisplayName,
+                    SenderAvatarUrl = s.ReplyTo.Sender.AvatarUrl ?? string.Empty,
+                    Text = s.ReplyTo.Text
+                }))
                 .ForMember(d => d.Reactions, o => o.MapFrom((s, d, m, context) => s.Reactions
                     .OrderBy(r => r.CreatedAt)
                     .ThenBy(r => r.Id)
