@@ -1325,6 +1325,78 @@ namespace Repository.Migrations
                     b.ToTable("ServerBans");
                 });
 
+            modelBuilder.Entity("Domain.Entities.ServerCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsPrivate")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ServerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServerId", "Position");
+
+                    b.ToTable("ServerCategories");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerChannel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsPrivate")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ServerId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("ServerId", "CategoryId", "Position");
+
+                    b.ToTable("ServerChannels");
+                });
+
             modelBuilder.Entity("Domain.Entities.ServerMember", b =>
                 {
                     b.Property<int>("Id")
@@ -2255,6 +2327,35 @@ namespace Repository.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Domain.Entities.ServerCategory", b =>
+                {
+                    b.HasOne("Domain.Entities.Server", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Server");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerChannel", b =>
+                {
+                    b.HasOne("Domain.Entities.ServerCategory", "Category")
+                        .WithMany("Channels")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Domain.Entities.Server", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Server");
+                });
+
             modelBuilder.Entity("Domain.Entities.ServerMember", b =>
                 {
                     b.HasOne("Domain.Entities.Server", "Server")
@@ -2530,6 +2631,11 @@ namespace Repository.Migrations
                     b.Navigation("Members");
 
                     b.Navigation("Roles");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerCategory", b =>
+                {
+                    b.Navigation("Channels");
                 });
 
             modelBuilder.Entity("Domain.Entities.ServerRole", b =>

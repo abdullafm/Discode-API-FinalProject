@@ -1,0 +1,17 @@
+using Domain.Common;
+using Domain.Enums;
+
+namespace Domain.Entities
+{
+    public class ServerChannel : BaseEntity
+    {
+        public int ServerId { get; set; }
+        public Server Server { get; set; } = null!;
+        public int? CategoryId { get; set; }
+        public ServerCategory? Category { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public ServerChannelKind Kind { get; set; }
+        public bool IsPrivate { get; set; }
+        public int Position { get; set; }
+    }
+}
