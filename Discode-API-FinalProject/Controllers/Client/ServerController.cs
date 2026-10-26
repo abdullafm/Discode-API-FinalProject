@@ -2,6 +2,7 @@ using Discode_API_FinalProject.Hubs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Service.Helpers.DTOs.ServerAudit;
 using Service.Helpers.DTOs.Servers;
 using Service.Services.Interfaces;
 using System.Security.Claims;
@@ -14,11 +15,13 @@ namespace Discode_API_FinalProject.Controllers.Client
     public class ServerController : ControllerBase
     {
         private readonly IServerService _serverService;
+        private readonly IServerAuditService _auditService;
         private readonly IHubContext<PresenceHub> _hubContext;
 
-        public ServerController(IServerService serverService, IHubContext<PresenceHub> hubContext)
+        public ServerController(IServerService serverService, IServerAuditService auditService, IHubContext<PresenceHub> hubContext)
         {
             _serverService = serverService;
+            _auditService = auditService;
             _hubContext = hubContext;
         }
 
@@ -64,6 +67,12 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(server);
         }
 
+        [HttpGet("{id:int}/audit")]
+        public async Task<IActionResult> GetAudit(int id, [FromQuery] ServerAuditFilterDto filter)
+        {
+            return Ok(await _auditService.GetAsync(UserId, id, filter));
+        }
+
         [HttpGet("{id:int}/members")]
         public async Task<IActionResult> GetMembers(int id)
         {
@@ -76,6 +85,7 @@ namespace Discode_API_FinalProject.Controllers.Client
             var change = await _serverService.UpdateProfileAsync(UserId, id, model);
             await _hubContext.Clients.Users(change.MemberIds).SendAsync("ServersChanged");
             await _hubContext.Clients.All.SendAsync("ServerUpdated", new { serverId = change.Server.Id, memberCount = change.Server.MemberCount });
+            await _hubContext.Clients.All.SendAsync("ServerAuditChanged", new { serverId = change.Server.Id });
             return Ok(change.Server);
         }
 
@@ -84,6 +94,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         {
             var change = await _serverService.UpdateBannerAsync(UserId, id, model);
             await _hubContext.Clients.All.SendAsync("ServerUpdated", new { serverId = change.Server.Id, memberCount = change.Server.MemberCount });
+            await _hubContext.Clients.All.SendAsync("ServerAuditChanged", new { serverId = change.Server.Id });
             return Ok(change.Server);
         }
 
@@ -92,6 +103,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         {
             var change = await _serverService.UpdateInviteAsync(UserId, id, model);
             await _hubContext.Clients.All.SendAsync("ServerUpdated", new { serverId = change.Server.Id, memberCount = change.Server.MemberCount });
+            await _hubContext.Clients.All.SendAsync("ServerAuditChanged", new { serverId = change.Server.Id });
             return Ok(change.Server);
         }
 
@@ -109,6 +121,7 @@ namespace Discode_API_FinalProject.Controllers.Client
             var change = await _serverService.LeaveAsync(UserId, id);
             await _hubContext.Clients.User(UserId).SendAsync("ServersChanged");
             await _hubContext.Clients.Users(change.MemberIds).SendAsync("ServerUpdated", new { serverId = change.Server.Id, memberCount = change.Server.MemberCount });
+            await _hubContext.Clients.Users(change.MemberIds).SendAsync("ServerAuditChanged", new { serverId = change.Server.Id });
             return Ok();
         }
 
@@ -128,6 +141,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         {
             await _hubContext.Clients.User(UserId).SendAsync("ServersChanged");
             await _hubContext.Clients.Users(change.MemberIds).SendAsync("ServerUpdated", new { serverId = change.Server.Id, memberCount = change.Server.MemberCount });
+            await _hubContext.Clients.Users(change.MemberIds).SendAsync("ServerAuditChanged", new { serverId = change.Server.Id });
         }
     }
 }

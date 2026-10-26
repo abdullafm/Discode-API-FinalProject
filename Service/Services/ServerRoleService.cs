@@ -4,6 +4,7 @@ using Domain.Enums;
 using FluentValidation;
 using Repository.Repositories.Interfaces;
 using Service.Helpers.DTOs.ServerRoles;
+using System.Text.RegularExpressions;
 using Service.Helpers.DTOs.Servers;
 using Service.Helpers.Exceptions;
 using Service.Helpers.Validators;
@@ -18,6 +19,8 @@ namespace Service.Services
         private readonly IServerMemberRepository _members;
         private readonly IServerPermissionService _permissions;
         private readonly IServerService _serverService;
+        private readonly IServerAuditService _audit;
+        private readonly IAccountRepository _accounts;
         private readonly IValidator<CreateServerRoleDto> _createValidator;
         private readonly IValidator<UpdateServerRoleDto> _updateValidator;
         private readonly IMapper _mapper;
@@ -27,6 +30,8 @@ namespace Service.Services
                                  IServerMemberRepository members,
                                  IServerPermissionService permissions,
                                  IServerService serverService,
+                                 IServerAuditService audit,
+                                 IAccountRepository accounts,
                                  IValidator<CreateServerRoleDto> createValidator,
                                  IValidator<UpdateServerRoleDto> updateValidator,
                                  IMapper mapper)
@@ -36,6 +41,8 @@ namespace Service.Services
             _members = members;
             _permissions = permissions;
             _serverService = serverService;
+            _audit = audit;
+            _accounts = accounts;
             _createValidator = createValidator;
             _updateValidator = updateValidator;
             _mapper = mapper;
@@ -80,6 +87,7 @@ namespace Service.Services
                 Position = await _roles.NextPositionAsync(serverId)
             };
             await _roles.AddAsync(role);
+            await _audit.LogAsync(serverId, userId, ServerAuditAction.RoleCreate, "Role", role.Id.ToString(), role.Name, "Created the role " + role.Name);
             return _mapper.Map<ServerRoleDto>(role);
         }
 
@@ -89,6 +97,10 @@ namespace Service.Services
             await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageRoles);
 
             var role = await GetRoleAsync(serverId, roleId);
+            var oldName = role.Name;
+            var oldColor = role.Color;
+            var oldBits = role.Permissions;
+            var oldSeparate = role.DisplaySeparately;
             if (!role.IsEveryone)
             {
                 var name = model.Name.Trim();
@@ -104,6 +116,40 @@ namespace Service.Services
             role.Permissions = model.Permissions & (long)ServerPermission.All;
             role.DisplaySeparately = model.DisplaySeparately;
             await _roles.UpdateAsync(role);
+
+            var changes = new List<string>();
+            if (oldName != role.Name)
+            {
+                changes.Add("Renamed the role from \"" + oldName + "\" to \"" + role.Name + "\"");
+            }
+
+            if (oldColor != role.Color)
+            {
+                changes.Add("Changed the color from " + oldColor + " to " + role.Color);
+            }
+
+            var added = role.Permissions & ~oldBits;
+            var removed = oldBits & ~role.Permissions;
+            if (added != 0)
+            {
+                changes.Add("Allowed " + DescribePermissions(added));
+            }
+
+            if (removed != 0)
+            {
+                changes.Add("Removed " + DescribePermissions(removed));
+            }
+
+            if (oldSeparate != role.DisplaySeparately)
+            {
+                changes.Add(role.DisplaySeparately ? "Turned on showing role members separately" : "Turned off showing role members separately");
+            }
+
+            if (changes.Count > 0)
+            {
+                await _audit.LogAsync(serverId, userId, ServerAuditAction.RoleUpdate, "Role", role.Id.ToString(), role.Name, string.Join("; ", changes));
+            }
+
             return _mapper.Map<ServerRoleDto>(role);
         }
 
@@ -119,6 +165,7 @@ namespace Service.Services
 
             await _memberRoles.DeleteForRoleAsync(roleId);
             await _roles.DeleteAsync(role);
+            await _audit.LogAsync(serverId, userId, ServerAuditAction.RoleDelete, "Role", roleId.ToString(), role.Name, "Deleted the role " + role.Name);
         }
 
         public async Task<IEnumerable<ServerMemberDto>> GetRoleMembersAsync(string userId, int serverId, int roleId)
@@ -148,6 +195,8 @@ namespace Service.Services
             if (await _memberRoles.GetAsync(roleId, target.Id) is null)
             {
                 await _memberRoles.AddAsync(new ServerMemberRole { RoleId = roleId, ServerMemberId = target.Id });
+                var person = await _accounts.GetByIdAsync(targetUserId);
+                await _audit.LogAsync(serverId, userId, ServerAuditAction.MemberRoleUpdate, "Member", targetUserId, person?.DisplayName ?? string.Empty, "Added the role " + role.Name);
             }
         }
 
@@ -155,7 +204,7 @@ namespace Service.Services
         {
             await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageRoles);
 
-            await GetRoleAsync(serverId, roleId);
+            var removedRole = await GetRoleAsync(serverId, roleId);
             var target = await _members.GetAsync(serverId, targetUserId);
             if (target is null)
             {
@@ -166,12 +215,30 @@ namespace Service.Services
             if (link is not null)
             {
                 await _memberRoles.DeleteAsync(link);
+                var person = await _accounts.GetByIdAsync(targetUserId);
+                await _audit.LogAsync(serverId, userId, ServerAuditAction.MemberRoleUpdate, "Member", targetUserId, person?.DisplayName ?? string.Empty, "Removed the role " + removedRole.Name);
             }
         }
 
         public async Task<List<string>> GetMemberIdsAsync(int serverId)
         {
             return await _members.GetUserIdsAsync(serverId);
+        }
+
+        private static string DescribePermissions(long bits)
+        {
+            var names = new List<string>();
+            foreach (ServerPermission permission in Enum.GetValues(typeof(ServerPermission)))
+            {
+                if (permission == ServerPermission.None || permission == ServerPermission.All || (bits & (long)permission) == 0)
+                {
+                    continue;
+                }
+
+                names.Add(Regex.Replace(permission.ToString(), "(?<!^)([A-Z])", " $1"));
+            }
+
+            return string.Join(", ", names);
         }
 
         private async Task EnsureMemberAsync(string userId, int serverId)

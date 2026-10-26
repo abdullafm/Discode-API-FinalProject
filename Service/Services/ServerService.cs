@@ -24,6 +24,7 @@ namespace Service.Services
         private readonly IAccountRepository _accounts;
         private readonly IServerMemberRoleRepository _memberRoles;
         private readonly IServerPermissionService _permissions;
+        private readonly IServerAuditService _audit;
         private readonly IPresenceService _presence;
         private readonly IValidator<CreateServerDto> _createValidator;
         private readonly IValidator<JoinServerDto> _joinValidator;
@@ -39,6 +40,7 @@ namespace Service.Services
                              IAccountRepository accounts,
                              IServerMemberRoleRepository memberRoles,
                              IServerPermissionService permissions,
+                             IServerAuditService audit,
                              IPresenceService presence,
                              IValidator<CreateServerDto> createValidator,
                              IValidator<JoinServerDto> joinValidator,
@@ -54,6 +56,7 @@ namespace Service.Services
             _accounts = accounts;
             _memberRoles = memberRoles;
             _permissions = permissions;
+            _audit = audit;
             _presence = presence;
             _createValidator = createValidator;
             _joinValidator = joinValidator;
@@ -102,6 +105,7 @@ namespace Service.Services
                 }
             };
             await _servers.AddAsync(server);
+            await _audit.LogAsync(server.Id, userId, ServerAuditAction.ServerUpdate, "Server", server.Id.ToString(), server.Name, "Created the server");
 
             var fresh = (await _servers.GetWithMembersAsync(server.Id))!;
             return Change(fresh, userId, true);
@@ -131,6 +135,9 @@ namespace Service.Services
                 JoinMethod = server.InviteCode,
                 NotificationLevel = ServerNotificationLevel.Mentions
             });
+            var joiner = await _accounts.GetByIdAsync(userId);
+            await _audit.LogAsync(server.Id, userId, ServerAuditAction.MemberJoin, "Member", userId, joiner?.DisplayName ?? string.Empty, "Joined using the invite link " + server.InviteCode);
+
             var fresh = (await _servers.GetWithMembersAsync(server.Id))!;
             return Change(fresh, userId, true);
         }
@@ -207,9 +214,38 @@ namespace Service.Services
 
             await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageServer);
 
-            server.Name = model.Name.Trim();
-            server.Description = model.Description?.Trim() ?? string.Empty;
-            server.BannerColor = model.BannerColor.Trim().ToLowerInvariant();
+            var changes = new List<string>();
+            var name = model.Name.Trim();
+            var description = model.Description?.Trim() ?? string.Empty;
+            var banner = model.BannerColor.Trim().ToLowerInvariant();
+            if (server.Name != name)
+            {
+                changes.Add("Changed the server name from \"" + server.Name + "\" to \"" + name + "\"");
+            }
+
+            if (server.Description != description)
+            {
+                changes.Add("Changed the server description");
+            }
+
+            if (server.BannerColor != banner)
+            {
+                changes.Add("Changed the banner color from " + server.BannerColor + " to " + banner);
+            }
+
+            if (server.IsPrivate != model.IsPrivate)
+            {
+                changes.Add(model.IsPrivate ? "Made the server profile private" : "Made the server profile public");
+            }
+
+            if (model.IconUrl is not null && server.IconUrl != model.IconUrl.Trim())
+            {
+                changes.Add("Changed the server icon");
+            }
+
+            server.Name = name;
+            server.Description = description;
+            server.BannerColor = banner;
             server.IsPrivate = model.IsPrivate;
             if (model.IconUrl is not null)
             {
@@ -217,6 +253,11 @@ namespace Service.Services
             }
 
             await _servers.UpdateAsync(server);
+            if (changes.Count > 0)
+            {
+                await _audit.LogAsync(serverId, userId, ServerAuditAction.ServerUpdate, "Server", serverId.ToString(), server.Name, string.Join("; ", changes));
+            }
+
             var fresh = (await _servers.GetWithMembersAsync(serverId))!;
             return Change(fresh, userId, false);
         }
@@ -226,8 +267,16 @@ namespace Service.Services
             await _bannerValidator.EnsureValidAsync(model);
 
             var server = await GetOwnedAsync(userId, serverId);
-            server.BannerUrl = model.BannerUrl.Trim();
+            var bannerUrl = model.BannerUrl.Trim();
+            var bannerChanged = server.BannerUrl != bannerUrl;
+            var bannerRemoved = string.IsNullOrEmpty(bannerUrl);
+            server.BannerUrl = bannerUrl;
             await _servers.UpdateAsync(server);
+            if (bannerChanged)
+            {
+                await _audit.LogAsync(serverId, userId, ServerAuditAction.ServerUpdate, "Server", serverId.ToString(), server.Name, bannerRemoved ? "Removed the server banner image" : "Changed the server banner image");
+            }
+
             return Change((await _servers.GetWithMembersAsync(serverId))!, userId, false);
         }
 
@@ -243,8 +292,14 @@ namespace Service.Services
                 throw new BadRequestException("That link is already taken.");
             }
 
+            var oldCode = server.InviteCode;
             server.InviteCode = code;
             await _servers.UpdateAsync(server);
+            if (oldCode != code)
+            {
+                await _audit.LogAsync(serverId, userId, ServerAuditAction.InviteUpdate, "Server", serverId.ToString(), server.Name, "Changed the invite link from " + oldCode + " to " + code);
+            }
+
             return Change((await _servers.GetWithMembersAsync(serverId))!, userId, false);
         }
 
@@ -275,6 +330,8 @@ namespace Service.Services
             }
 
             await _members.DeleteAsync(membership);
+            var leaver = await _accounts.GetByIdAsync(userId);
+            await _audit.LogAsync(serverId, userId, ServerAuditAction.MemberLeave, "Member", userId, leaver?.DisplayName ?? string.Empty, "Left the server");
 
             var fresh = (await _servers.GetWithMembersAsync(serverId))!;
             var change = Change(fresh, userId, true);

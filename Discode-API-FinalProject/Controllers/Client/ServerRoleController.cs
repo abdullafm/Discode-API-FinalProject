@@ -86,6 +86,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         {
             var memberIds = await _roleService.GetMemberIdsAsync(serverId);
             await _hubContext.Clients.Users(memberIds).SendAsync("ServerRolesChanged", new { serverId });
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServerAuditChanged", new { serverId });
         }
     }
 }
