@@ -3,6 +3,7 @@ using Domain.Entities;
 using Domain.Enums;
 using FluentValidation;
 using Repository.Repositories.Interfaces;
+using Service.Helpers.DTOs.ServerRoles;
 using Service.Helpers.DTOs.Servers;
 using Service.Helpers.Exceptions;
 using Service.Helpers.Mappings;
@@ -21,6 +22,8 @@ namespace Service.Services
         private readonly IServerRepository _servers;
         private readonly IServerMemberRepository _members;
         private readonly IAccountRepository _accounts;
+        private readonly IServerMemberRoleRepository _memberRoles;
+        private readonly IServerPermissionService _permissions;
         private readonly IPresenceService _presence;
         private readonly IValidator<CreateServerDto> _createValidator;
         private readonly IValidator<JoinServerDto> _joinValidator;
@@ -34,6 +37,8 @@ namespace Service.Services
         public ServerService(IServerRepository servers,
                              IServerMemberRepository members,
                              IAccountRepository accounts,
+                             IServerMemberRoleRepository memberRoles,
+                             IServerPermissionService permissions,
                              IPresenceService presence,
                              IValidator<CreateServerDto> createValidator,
                              IValidator<JoinServerDto> joinValidator,
@@ -47,6 +52,8 @@ namespace Service.Services
             _servers = servers;
             _members = members;
             _accounts = accounts;
+            _memberRoles = memberRoles;
+            _permissions = permissions;
             _presence = presence;
             _createValidator = createValidator;
             _joinValidator = joinValidator;
@@ -80,6 +87,17 @@ namespace Service.Services
                         JoinedAt = DateTime.UtcNow,
                         Position = await _members.NextPositionAsync(userId),
                         NotificationLevel = ServerNotificationLevel.All
+                    }
+                },
+                Roles = new List<ServerRole>
+                {
+                    new ServerRole
+                    {
+                        Name = "@everyone",
+                        Color = "gray",
+                        Permissions = (long)ServerPermissionService.EveryoneDefault,
+                        Position = 0,
+                        IsEveryone = true
                     }
                 }
             };
@@ -133,6 +151,7 @@ namespace Service.Services
 
             var dto = ToDto(server, userId);
             dto.Members = (await BuildMembersAsync(server, userId)).OrderBy(m => m.JoinedAt).ToList();
+            dto.Permissions = (long)await _permissions.GetAsync(userId, serverId);
             dto.OnlineCount = dto.Members.Count(m => m.Status != "offline");
             return dto;
         }
@@ -151,6 +170,9 @@ namespace Service.Services
         private async Task<List<ServerMemberDto>> BuildMembersAsync(Server server, string viewerId)
         {
             var members = new List<ServerMemberDto>();
+            var roleLinks = (await _memberRoles.GetForServerAsync(server.Id))
+                .GroupBy(link => link.ServerMember.UserId)
+                .ToDictionary(group => group.Key, group => group.Select(link => link.Role).OrderByDescending(role => role.Position).ToList());
             foreach (var member in server.Members)
             {
                 members.Add(new ServerMemberDto
@@ -165,7 +187,8 @@ namespace Service.Services
                     IsSelf = member.UserId == viewerId,
                     JoinedAt = DateTime.SpecifyKind(member.JoinedAt, DateTimeKind.Utc),
                     AccountCreatedAt = DateTime.SpecifyKind(member.User.CreatedAt, DateTimeKind.Utc),
-                    JoinMethod = member.JoinMethod
+                    JoinMethod = member.JoinMethod,
+                    Roles = roleLinks.TryGetValue(member.UserId, out var held) ? _mapper.Map<List<ServerRoleRefDto>>(held) : new List<ServerRoleRefDto>()
                 });
             }
 
@@ -182,10 +205,7 @@ namespace Service.Services
                 throw new NotFoundException("Server not found.");
             }
 
-            if (server.OwnerId != userId)
-            {
-                throw new BadRequestException("Only the server owner can change the server profile.");
-            }
+            await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageServer);
 
             server.Name = model.Name.Trim();
             server.Description = model.Description?.Trim() ?? string.Empty;
@@ -236,11 +256,7 @@ namespace Service.Services
                 throw new NotFoundException("Server not found.");
             }
 
-            if (server.OwnerId != userId)
-            {
-                throw new BadRequestException("Only the server owner can change this.");
-            }
-
+            await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageServer);
             return server;
         }
 

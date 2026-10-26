@@ -11,6 +11,7 @@ namespace Service.Helpers.DTOs.Servers
         public string BannerColor { get; set; } = "ink";
         public bool IsPrivate { get; set; }
         public int OnlineCount { get; set; }
+        public long Permissions { get; set; }
         public string OwnerUserName { get; set; } = string.Empty;
         public bool IsOwner { get; set; }
         public int MemberCount { get; set; }

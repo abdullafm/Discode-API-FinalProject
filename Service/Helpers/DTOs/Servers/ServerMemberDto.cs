@@ -1,3 +1,5 @@
+using Service.Helpers.DTOs.ServerRoles;
+
 namespace Service.Helpers.DTOs.Servers
 {
     public class ServerMemberDto
@@ -12,6 +14,7 @@ namespace Service.Helpers.DTOs.Servers
         public DateTime JoinedAt { get; set; }
         public DateTime AccountCreatedAt { get; set; }
         public string JoinMethod { get; set; } = string.Empty;
+        public List<ServerRoleRefDto> Roles { get; set; } = new();
         public bool IsSelf { get; set; }
     }
 }

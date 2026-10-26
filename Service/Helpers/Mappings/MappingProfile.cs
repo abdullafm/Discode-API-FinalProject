@@ -10,6 +10,7 @@ using Service.Helpers.DTOs.Live;
 using Service.Helpers.DTOs.Posts;
 using Service.Helpers.DTOs.Presence;
 using Service.Helpers.DTOs.Servers;
+using Service.Helpers.DTOs.ServerRoles;
 using Service.Helpers.DTOs.Stories;
 using Service.Helpers.Responses;
 using System;
@@ -116,8 +117,14 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.OwnerUserName, o => o.MapFrom(s => s.Owner.UserName ?? string.Empty))
                 .ForMember(d => d.MemberCount, o => o.MapFrom(s => s.Members.Count))
                 .ForMember(d => d.Members, o => o.Ignore())
+                .ForMember(d => d.Permissions, o => o.Ignore())
                 .ForMember(d => d.IsOwner, o => o.MapFrom((s, d, m, context) =>
                     context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.OwnerId == (string?)viewer));
+
+            CreateMap<ServerRole, ServerRoleDto>()
+                .ForMember(d => d.MemberCount, o => o.MapFrom(s => s.MemberRoles.Count));
+
+            CreateMap<ServerRole, ServerRoleRefDto>();
 
             CreateMap<MessageAttachment, MessageAttachmentDto>();
 

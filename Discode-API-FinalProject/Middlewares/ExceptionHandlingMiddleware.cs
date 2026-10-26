@@ -23,6 +23,10 @@ namespace Discode_API_FinalProject.Middlewares
             {
                 await WriteAsync(context, StatusCodes.Status404NotFound, ex.Message);
             }
+            catch (ForbiddenException ex)
+            {
+                await WriteAsync(context, StatusCodes.Status403Forbidden, ex.Message);
+            }
             catch (BadRequestException ex)
             {
                 await WriteAsync(context, StatusCodes.Status400BadRequest, ex.Errors);

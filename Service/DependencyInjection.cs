@@ -36,6 +36,8 @@ namespace Service
             services.AddScoped<IUserBlockService, UserBlockService>();
             services.AddScoped<IUserIgnoreService, UserIgnoreService>();
             services.AddScoped<IServerService, ServerService>();
+            services.AddScoped<IServerPermissionService, ServerPermissionService>();
+            services.AddScoped<IServerRoleService, ServerRoleService>();
             services.AddScoped<IPresenceService, PresenceService>();
             services.AddScoped<IPresenceTrackerService, PresenceTrackerService>();
             services.AddScoped<IEmailService, EmailService>();
