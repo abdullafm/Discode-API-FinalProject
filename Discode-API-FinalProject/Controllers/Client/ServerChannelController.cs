@@ -1,0 +1,62 @@
+using Discode_API_FinalProject.Hubs;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Service.Helpers.DTOs.ServerChannels;
+using Service.Services.Interfaces;
+using System.Security.Claims;
+
+namespace Discode_API_FinalProject.Controllers.Client
+{
+    [Route("api/server/{serverId:int}")]
+    [ApiController]
+    [Authorize]
+    public class ServerChannelController : ControllerBase
+    {
+        private readonly IServerChannelService _channelService;
+        private readonly IHubContext<PresenceHub> _hubContext;
+
+        public ServerChannelController(IServerChannelService channelService, IHubContext<PresenceHub> hubContext)
+        {
+            _channelService = channelService;
+            _hubContext = hubContext;
+        }
+
+        private string UserId
+        {
+            get
+            {
+                return User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+            }
+        }
+
+        [HttpGet("channels")]
+        public async Task<IActionResult> GetAll(int serverId)
+        {
+            return Ok(await _channelService.GetAsync(UserId, serverId));
+        }
+
+        [HttpPost("channels")]
+        public async Task<IActionResult> CreateChannel(int serverId, [FromBody] CreateServerChannelDto model)
+        {
+            var channel = await _channelService.CreateChannelAsync(UserId, serverId, model);
+            await NotifyAsync(serverId);
+            return Ok(channel);
+        }
+
+        [HttpPost("categories")]
+        public async Task<IActionResult> CreateCategory(int serverId, [FromBody] CreateServerCategoryDto model)
+        {
+            var category = await _channelService.CreateCategoryAsync(UserId, serverId, model);
+            await NotifyAsync(serverId);
+            return Ok(category);
+        }
+
+        private async Task NotifyAsync(int serverId)
+        {
+            var memberIds = await _channelService.GetMemberIdsAsync(serverId);
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServerChannelsChanged", new { serverId });
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServerAuditChanged", new { serverId });
+        }
+    }
+}

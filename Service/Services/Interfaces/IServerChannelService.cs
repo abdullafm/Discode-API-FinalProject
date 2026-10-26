@@ -1,0 +1,13 @@
+using Service.Helpers.DTOs.ServerChannels;
+
+namespace Service.Services.Interfaces
+{
+    public interface IServerChannelService
+    {
+        Task EnsureDefaultsAsync(int serverId);
+        Task<ServerChannelsDto> GetAsync(string userId, int serverId);
+        Task<ServerChannelDto> CreateChannelAsync(string userId, int serverId, CreateServerChannelDto model);
+        Task<ServerCategoryDto> CreateCategoryAsync(string userId, int serverId, CreateServerCategoryDto model);
+        Task<List<string>> GetMemberIdsAsync(int serverId);
+    }
+}

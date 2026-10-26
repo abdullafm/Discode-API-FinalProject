@@ -40,6 +40,7 @@ namespace Service
             services.AddScoped<IServerRoleService, ServerRoleService>();
             services.AddScoped<IServerAuditService, ServerAuditService>();
             services.AddScoped<IServerBanService, ServerBanService>();
+            services.AddScoped<IServerChannelService, ServerChannelService>();
             services.AddScoped<IPresenceService, PresenceService>();
             services.AddScoped<IPresenceTrackerService, PresenceTrackerService>();
             services.AddScoped<IEmailService, EmailService>();

@@ -26,6 +26,7 @@ namespace Service.Services
         private readonly IServerPermissionService _permissions;
         private readonly IServerAuditService _audit;
         private readonly IServerBanRepository _bans;
+        private readonly IServerChannelService _channelService;
         private readonly IValidator<DeleteServerDto> _deleteValidator;
         private readonly IPresenceService _presence;
         private readonly IValidator<CreateServerDto> _createValidator;
@@ -44,6 +45,7 @@ namespace Service.Services
                              IServerPermissionService permissions,
                              IServerAuditService audit,
                              IServerBanRepository bans,
+                             IServerChannelService channelService,
                              IValidator<DeleteServerDto> deleteValidator,
                              IPresenceService presence,
                              IValidator<CreateServerDto> createValidator,
@@ -62,6 +64,7 @@ namespace Service.Services
             _permissions = permissions;
             _audit = audit;
             _bans = bans;
+            _channelService = channelService;
             _deleteValidator = deleteValidator;
             _presence = presence;
             _createValidator = createValidator;
@@ -111,6 +114,7 @@ namespace Service.Services
                 }
             };
             await _servers.AddAsync(server);
+            await _channelService.EnsureDefaultsAsync(server.Id);
             await _audit.LogAsync(server.Id, userId, ServerAuditAction.ServerUpdate, "Server", server.Id.ToString(), server.Name, "Created the server");
 
             var fresh = (await _servers.GetWithMembersAsync(server.Id))!;
