@@ -20,6 +20,15 @@ namespace Domain.Configurations
                 .IsRequired()
                 .HasMaxLength(16);
 
+            builder.Property(x => x.Description)
+                .IsRequired()
+                .HasMaxLength(300);
+
+            builder.Property(x => x.BannerColor)
+                .IsRequired()
+                .HasMaxLength(16)
+                .HasDefaultValue("ink");
+
             builder.Property(x => x.OwnerId)
                 .IsRequired()
                 .HasMaxLength(450);
