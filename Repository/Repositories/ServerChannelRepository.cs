@@ -27,6 +27,14 @@ namespace Repository.Repositories
             return positions.Count == 0 ? 0 : positions.Max() + 1;
         }
 
+        public async Task<ServerChannel?> GetInServerAsync(int serverId, int channelId)
+        {
+            return await _dbSet
+                .AsNoTracking()
+                .Include(x => x.Category)
+                .FirstOrDefaultAsync(x => x.ServerId == serverId && x.Id == channelId);
+        }
+
         public async Task<bool> AnyAsync(int serverId)
         {
             return await _dbSet.AnyAsync(x => x.ServerId == serverId);

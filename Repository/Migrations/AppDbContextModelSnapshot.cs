@@ -1481,6 +1481,122 @@ namespace Repository.Migrations
                     b.ToTable("ServerMemberRoles");
                 });
 
+            modelBuilder.Entity("Domain.Entities.ServerMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ChannelId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ReplyToMessageId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SenderId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("ServerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReplyToMessageId");
+
+                    b.HasIndex("SenderId");
+
+                    b.HasIndex("ServerId");
+
+                    b.HasIndex("ChannelId", "Id");
+
+                    b.ToTable("ServerMessages");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerMessageAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("ServerMessageId")
+                        .HasColumnType("int");
+
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServerMessageId");
+
+                    b.ToTable("ServerMessageAttachments");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerMessageReaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Emoji")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<int>("ServerMessageId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("ServerMessageId", "UserId", "Emoji")
+                        .IsUnique();
+
+                    b.ToTable("ServerMessageReactions");
+                });
+
             modelBuilder.Entity("Domain.Entities.ServerRole", b =>
                 {
                     b.Property<int>("Id")
@@ -2394,6 +2510,70 @@ namespace Repository.Migrations
                     b.Navigation("ServerMember");
                 });
 
+            modelBuilder.Entity("Domain.Entities.ServerMessage", b =>
+                {
+                    b.HasOne("Domain.Entities.ServerChannel", "Channel")
+                        .WithMany()
+                        .HasForeignKey("ChannelId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.ServerMessage", "ReplyTo")
+                        .WithMany()
+                        .HasForeignKey("ReplyToMessageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Domain.Entities.AppUser", "Sender")
+                        .WithMany()
+                        .HasForeignKey("SenderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.Server", "Server")
+                        .WithMany()
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Channel");
+
+                    b.Navigation("ReplyTo");
+
+                    b.Navigation("Sender");
+
+                    b.Navigation("Server");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerMessageAttachment", b =>
+                {
+                    b.HasOne("Domain.Entities.ServerMessage", "ServerMessage")
+                        .WithMany("Attachments")
+                        .HasForeignKey("ServerMessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ServerMessage");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerMessageReaction", b =>
+                {
+                    b.HasOne("Domain.Entities.ServerMessage", "ServerMessage")
+                        .WithMany("Reactions")
+                        .HasForeignKey("ServerMessageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ServerMessage");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Domain.Entities.ServerRole", b =>
                 {
                     b.HasOne("Domain.Entities.Server", "Server")
@@ -2636,6 +2816,13 @@ namespace Repository.Migrations
             modelBuilder.Entity("Domain.Entities.ServerCategory", b =>
                 {
                     b.Navigation("Channels");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerMessage", b =>
+                {
+                    b.Navigation("Attachments");
+
+                    b.Navigation("Reactions");
                 });
 
             modelBuilder.Entity("Domain.Entities.ServerRole", b =>
