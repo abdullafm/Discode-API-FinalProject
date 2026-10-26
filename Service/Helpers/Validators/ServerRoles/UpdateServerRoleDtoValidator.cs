@@ -1,6 +1,7 @@
 using Domain.Enums;
 using FluentValidation;
 using Service.Helpers.DTOs.ServerRoles;
+using System.Text.RegularExpressions;
 
 namespace Service.Helpers.Validators.ServerRoles
 {
@@ -15,7 +16,8 @@ namespace Service.Helpers.Validators.ServerRoles
                 .MaximumLength(100).WithMessage("The role name can be at most 100 characters.");
 
             RuleFor(x => x.Color)
-                .Must(color => !string.IsNullOrWhiteSpace(color) && Colors.Contains(color.Trim().ToLowerInvariant())).WithMessage("Pick a valid role color.");
+                .Must(color => !string.IsNullOrWhiteSpace(color)
+                    && (Colors.Contains(color.Trim().ToLowerInvariant()) || Regex.IsMatch(color.Trim(), "^#[0-9a-fA-F]{6}$"))).WithMessage("Pick a valid role color.");
 
             RuleFor(x => x.Permissions)
                 .Must(bits => bits >= 0 && (bits & ~(long)ServerPermission.All) == 0).WithMessage("Those permissions are not valid.");
