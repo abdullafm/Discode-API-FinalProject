@@ -73,6 +73,22 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(change.Server);
         }
 
+        [HttpPut("{id:int}/banner")]
+        public async Task<IActionResult> UpdateBanner(int id, [FromBody] UpdateServerBannerDto model)
+        {
+            var change = await _serverService.UpdateBannerAsync(UserId, id, model);
+            await _hubContext.Clients.All.SendAsync("ServerUpdated", new { serverId = change.Server.Id, memberCount = change.Server.MemberCount });
+            return Ok(change.Server);
+        }
+
+        [HttpPut("{id:int}/invite")]
+        public async Task<IActionResult> UpdateInvite(int id, [FromBody] UpdateServerInviteDto model)
+        {
+            var change = await _serverService.UpdateInviteAsync(UserId, id, model);
+            await _hubContext.Clients.All.SendAsync("ServerUpdated", new { serverId = change.Server.Id, memberCount = change.Server.MemberCount });
+            return Ok(change.Server);
+        }
+
         [HttpPut("order")]
         public async Task<IActionResult> Reorder([FromBody] ReorderServersDto model)
         {

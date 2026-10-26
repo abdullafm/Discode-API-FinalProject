@@ -7,6 +7,7 @@ namespace Service.Helpers.DTOs.Servers
         public string IconUrl { get; set; } = string.Empty;
         public string InviteCode { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
+        public string BannerUrl { get; set; } = string.Empty;
         public string BannerColor { get; set; } = "ink";
         public bool IsPrivate { get; set; }
         public int MemberCount { get; set; }

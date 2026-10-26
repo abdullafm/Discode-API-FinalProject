@@ -27,6 +27,8 @@ namespace Service.Services
         private readonly IValidator<UpdateServerPreferencesDto> _preferencesValidator;
         private readonly IValidator<ReorderServersDto> _reorderValidator;
         private readonly IValidator<UpdateServerProfileDto> _profileValidator;
+        private readonly IValidator<UpdateServerBannerDto> _bannerValidator;
+        private readonly IValidator<UpdateServerInviteDto> _inviteValidator;
         private readonly IMapper _mapper;
 
         public ServerService(IServerRepository servers,
@@ -38,6 +40,8 @@ namespace Service.Services
                              IValidator<UpdateServerPreferencesDto> preferencesValidator,
                              IValidator<ReorderServersDto> reorderValidator,
                              IValidator<UpdateServerProfileDto> profileValidator,
+                             IValidator<UpdateServerBannerDto> bannerValidator,
+                             IValidator<UpdateServerInviteDto> inviteValidator,
                              IMapper mapper)
         {
             _servers = servers;
@@ -49,6 +53,8 @@ namespace Service.Services
             _preferencesValidator = preferencesValidator;
             _reorderValidator = reorderValidator;
             _profileValidator = profileValidator;
+            _bannerValidator = bannerValidator;
+            _inviteValidator = inviteValidator;
             _mapper = mapper;
         }
 
@@ -173,6 +179,49 @@ namespace Service.Services
             return Change(fresh, userId, false);
         }
 
+        public async Task<ServerChangeDto> UpdateBannerAsync(string userId, int serverId, UpdateServerBannerDto model)
+        {
+            await _bannerValidator.EnsureValidAsync(model);
+
+            var server = await GetOwnedAsync(userId, serverId);
+            server.BannerUrl = model.BannerUrl.Trim();
+            await _servers.UpdateAsync(server);
+            return Change((await _servers.GetWithMembersAsync(serverId))!, userId, false);
+        }
+
+        public async Task<ServerChangeDto> UpdateInviteAsync(string userId, int serverId, UpdateServerInviteDto model)
+        {
+            await _inviteValidator.EnsureValidAsync(model);
+
+            var server = await GetOwnedAsync(userId, serverId);
+            var code = model.InviteCode.Trim();
+            var taken = await _servers.GetByInviteCodeAsync(code);
+            if (taken is not null && taken.Id != serverId)
+            {
+                throw new BadRequestException("That link is already taken.");
+            }
+
+            server.InviteCode = code;
+            await _servers.UpdateAsync(server);
+            return Change((await _servers.GetWithMembersAsync(serverId))!, userId, false);
+        }
+
+        private async Task<Server> GetOwnedAsync(string userId, int serverId)
+        {
+            var server = await _servers.GetByIdAsync(serverId);
+            if (server is null)
+            {
+                throw new NotFoundException("Server not found.");
+            }
+
+            if (server.OwnerId != userId)
+            {
+                throw new BadRequestException("Only the server owner can change this.");
+            }
+
+            return server;
+        }
+
         public async Task<ServerChangeDto> LeaveAsync(string userId, int serverId)
         {
             var server = await _servers.GetWithMembersAsync(serverId);
@@ -219,6 +268,7 @@ namespace Service.Services
                 IconUrl = server.IconUrl,
                 InviteCode = server.InviteCode,
                 Description = server.Description,
+                BannerUrl = server.BannerUrl,
                 BannerColor = server.BannerColor,
                 IsPrivate = server.IsPrivate,
                 MemberCount = server.Members.Count,
