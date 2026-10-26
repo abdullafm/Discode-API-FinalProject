@@ -15,6 +15,7 @@ namespace Service.Services.Interfaces
         Task<ServerChangeDto> UpdateProfileAsync(string userId, int serverId, UpdateServerProfileDto model);
         Task<ServerChangeDto> UpdateBannerAsync(string userId, int serverId, UpdateServerBannerDto model);
         Task<ServerChangeDto> UpdateInviteAsync(string userId, int serverId, UpdateServerInviteDto model);
+        Task<List<string>> DeleteAsync(string userId, int serverId, DeleteServerDto model);
         Task ReorderAsync(string userId, ReorderServersDto model);
     }
 }

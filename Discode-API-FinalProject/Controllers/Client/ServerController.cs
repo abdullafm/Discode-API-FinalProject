@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Service.Helpers.DTOs.ServerAudit;
+using Service.Helpers.DTOs.ServerBans;
 using Service.Helpers.DTOs.Servers;
 using Service.Services.Interfaces;
 using System.Security.Claims;
@@ -16,12 +17,14 @@ namespace Discode_API_FinalProject.Controllers.Client
     {
         private readonly IServerService _serverService;
         private readonly IServerAuditService _auditService;
+        private readonly IServerBanService _banService;
         private readonly IHubContext<PresenceHub> _hubContext;
 
-        public ServerController(IServerService serverService, IServerAuditService auditService, IHubContext<PresenceHub> hubContext)
+        public ServerController(IServerService serverService, IServerAuditService auditService, IServerBanService banService, IHubContext<PresenceHub> hubContext)
         {
             _serverService = serverService;
             _auditService = auditService;
+            _banService = banService;
             _hubContext = hubContext;
         }
 
@@ -71,6 +74,45 @@ namespace Discode_API_FinalProject.Controllers.Client
         public async Task<IActionResult> GetAudit(int id, [FromQuery] ServerAuditFilterDto filter)
         {
             return Ok(await _auditService.GetAsync(UserId, id, filter));
+        }
+
+        [HttpGet("{id:int}/bans")]
+        public async Task<IActionResult> GetBans(int id, [FromQuery] ServerBanFilterDto filter)
+        {
+            return Ok(await _banService.GetBansAsync(UserId, id, filter));
+        }
+
+        [HttpPost("{id:int}/bans")]
+        public async Task<IActionResult> Ban(int id, [FromBody] BanServerMemberDto model)
+        {
+            var ban = await _banService.BanAsync(UserId, id, model);
+            await RemovedAsync(id, ban.UserId, "banned");
+            return Ok(ban);
+        }
+
+        [HttpDelete("{id:int}/bans/{userId}")]
+        public async Task<IActionResult> Unban(int id, string userId)
+        {
+            await _banService.UnbanAsync(UserId, id, userId);
+            await NotifyBansAsync(id);
+            return Ok();
+        }
+
+        [HttpDelete("{id:int}/members/{userId}")]
+        public async Task<IActionResult> Kick(int id, string userId)
+        {
+            await _banService.KickAsync(UserId, id, userId);
+            await RemovedAsync(id, userId, "kicked");
+            return Ok();
+        }
+
+        [HttpPost("{id:int}/delete")]
+        public async Task<IActionResult> Delete(int id, [FromBody] DeleteServerDto model)
+        {
+            var memberIds = await _serverService.DeleteAsync(UserId, id, model);
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServersChanged");
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServerRemoved", new { serverId = id, reason = "deleted" });
+            return Ok();
         }
 
         [HttpGet("{id:int}/members")]
@@ -135,6 +177,23 @@ namespace Discode_API_FinalProject.Controllers.Client
             }
 
             return Ok(change.Server);
+        }
+
+        private async Task RemovedAsync(int serverId, string targetUserId, string reason)
+        {
+            var memberIds = await _banService.GetMemberIdsAsync(serverId);
+            await _hubContext.Clients.User(targetUserId).SendAsync("ServersChanged");
+            await _hubContext.Clients.User(targetUserId).SendAsync("ServerRemoved", new { serverId, reason });
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServerUpdated", new { serverId, memberCount = memberIds.Count });
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServerAuditChanged", new { serverId });
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServerBansChanged", new { serverId });
+        }
+
+        private async Task NotifyBansAsync(int serverId)
+        {
+            var memberIds = await _banService.GetMemberIdsAsync(serverId);
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServerAuditChanged", new { serverId });
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServerBansChanged", new { serverId });
         }
 
         private async Task PublishAsync(ServerChangeDto change)

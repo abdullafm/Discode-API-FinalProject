@@ -25,6 +25,8 @@ namespace Service.Services
         private readonly IServerMemberRoleRepository _memberRoles;
         private readonly IServerPermissionService _permissions;
         private readonly IServerAuditService _audit;
+        private readonly IServerBanRepository _bans;
+        private readonly IValidator<DeleteServerDto> _deleteValidator;
         private readonly IPresenceService _presence;
         private readonly IValidator<CreateServerDto> _createValidator;
         private readonly IValidator<JoinServerDto> _joinValidator;
@@ -41,6 +43,8 @@ namespace Service.Services
                              IServerMemberRoleRepository memberRoles,
                              IServerPermissionService permissions,
                              IServerAuditService audit,
+                             IServerBanRepository bans,
+                             IValidator<DeleteServerDto> deleteValidator,
                              IPresenceService presence,
                              IValidator<CreateServerDto> createValidator,
                              IValidator<JoinServerDto> joinValidator,
@@ -57,6 +61,8 @@ namespace Service.Services
             _memberRoles = memberRoles;
             _permissions = permissions;
             _audit = audit;
+            _bans = bans;
+            _deleteValidator = deleteValidator;
             _presence = presence;
             _createValidator = createValidator;
             _joinValidator = joinValidator;
@@ -124,6 +130,11 @@ namespace Service.Services
             if (server.Members.Any(m => m.UserId == userId))
             {
                 return Change(server, userId, false);
+            }
+
+            if (await _bans.IsBannedAsync(server.Id, userId))
+            {
+                throw new BadRequestException("You are banned from this server.");
             }
 
             await _members.AddAsync(new ServerMember
@@ -313,6 +324,31 @@ namespace Service.Services
 
             await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageServer);
             return server;
+        }
+
+        public async Task<List<string>> DeleteAsync(string userId, int serverId, DeleteServerDto model)
+        {
+            await _deleteValidator.EnsureValidAsync(model);
+
+            var server = await _servers.GetByIdAsync(serverId);
+            if (server is null)
+            {
+                throw new NotFoundException("Server not found.");
+            }
+
+            if (server.OwnerId != userId)
+            {
+                throw new ForbiddenException("Only the server owner can delete the server.");
+            }
+
+            if (model.Name.Trim() != server.Name)
+            {
+                throw new BadRequestException("The name you typed doesn't match the server name.");
+            }
+
+            var memberIds = await _members.GetUserIdsAsync(serverId);
+            await _servers.DeleteAsync(server);
+            return memberIds;
         }
 
         public async Task<ServerChangeDto> LeaveAsync(string userId, int serverId)
