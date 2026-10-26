@@ -64,6 +64,15 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(server);
         }
 
+        [HttpPut("{id:int}/profile")]
+        public async Task<IActionResult> UpdateProfile(int id, [FromBody] UpdateServerProfileDto model)
+        {
+            var change = await _serverService.UpdateProfileAsync(UserId, id, model);
+            await _hubContext.Clients.Users(change.MemberIds).SendAsync("ServersChanged");
+            await _hubContext.Clients.All.SendAsync("ServerUpdated", new { serverId = change.Server.Id, memberCount = change.Server.MemberCount });
+            return Ok(change.Server);
+        }
+
         [HttpPut("order")]
         public async Task<IActionResult> Reorder([FromBody] ReorderServersDto model)
         {

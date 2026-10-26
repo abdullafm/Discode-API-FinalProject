@@ -26,6 +26,7 @@ namespace Service.Services
         private readonly IValidator<JoinServerDto> _joinValidator;
         private readonly IValidator<UpdateServerPreferencesDto> _preferencesValidator;
         private readonly IValidator<ReorderServersDto> _reorderValidator;
+        private readonly IValidator<UpdateServerProfileDto> _profileValidator;
         private readonly IMapper _mapper;
 
         public ServerService(IServerRepository servers,
@@ -36,6 +37,7 @@ namespace Service.Services
                              IValidator<JoinServerDto> joinValidator,
                              IValidator<UpdateServerPreferencesDto> preferencesValidator,
                              IValidator<ReorderServersDto> reorderValidator,
+                             IValidator<UpdateServerProfileDto> profileValidator,
                              IMapper mapper)
         {
             _servers = servers;
@@ -46,6 +48,7 @@ namespace Service.Services
             _joinValidator = joinValidator;
             _preferencesValidator = preferencesValidator;
             _reorderValidator = reorderValidator;
+            _profileValidator = profileValidator;
             _mapper = mapper;
         }
 
@@ -137,7 +140,37 @@ namespace Service.Services
                 });
             }
 
+            dto.OnlineCount = dto.Members.Count(m => m.Status != "offline");
             return dto;
+        }
+
+        public async Task<ServerChangeDto> UpdateProfileAsync(string userId, int serverId, UpdateServerProfileDto model)
+        {
+            await _profileValidator.EnsureValidAsync(model);
+
+            var server = await _servers.GetByIdAsync(serverId);
+            if (server is null)
+            {
+                throw new NotFoundException("Server not found.");
+            }
+
+            if (server.OwnerId != userId)
+            {
+                throw new BadRequestException("Only the server owner can change the server profile.");
+            }
+
+            server.Name = model.Name.Trim();
+            server.Description = model.Description?.Trim() ?? string.Empty;
+            server.BannerColor = model.BannerColor.Trim().ToLowerInvariant();
+            server.IsPrivate = model.IsPrivate;
+            if (model.IconUrl is not null)
+            {
+                server.IconUrl = model.IconUrl.Trim();
+            }
+
+            await _servers.UpdateAsync(server);
+            var fresh = (await _servers.GetWithMembersAsync(serverId))!;
+            return Change(fresh, userId, false);
         }
 
         public async Task<ServerChangeDto> LeaveAsync(string userId, int serverId)
@@ -185,6 +218,9 @@ namespace Service.Services
                 Name = server.Name,
                 IconUrl = server.IconUrl,
                 InviteCode = server.InviteCode,
+                Description = server.Description,
+                BannerColor = server.BannerColor,
+                IsPrivate = server.IsPrivate,
                 MemberCount = server.Members.Count,
                 OnlineCount = online,
                 IsMember = server.Members.Any(m => m.UserId == userId),
