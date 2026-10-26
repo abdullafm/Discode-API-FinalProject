@@ -1374,6 +1374,9 @@ namespace Repository.Migrations
                     b.Property<bool>("IsPrivate")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsReadOnly")
+                        .HasColumnType("bit");
+
                     b.Property<int>("Kind")
                         .HasColumnType("int");
 

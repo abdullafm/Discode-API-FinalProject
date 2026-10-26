@@ -12,6 +12,7 @@ namespace Domain.Entities
         public string Name { get; set; } = string.Empty;
         public ServerChannelKind Kind { get; set; }
         public bool IsPrivate { get; set; }
+        public bool IsReadOnly { get; set; }
         public int Position { get; set; }
     }
 }
