@@ -19,6 +19,7 @@ namespace Service.Services
         private readonly IServerAuditService _audit;
         private readonly IServerMessageRepository _messages;
         private readonly IValidator<UpdateServerCategoryDto> _updateCategoryValidator;
+        private readonly IValidator<UpdateServerChannelDto> _updateChannelValidator;
         private readonly IValidator<CreateServerChannelDto> _channelValidator;
         private readonly IValidator<CreateServerCategoryDto> _categoryValidator;
 
@@ -29,6 +30,7 @@ namespace Service.Services
                                     IServerAuditService audit,
                                     IServerMessageRepository messages,
                                     IValidator<UpdateServerCategoryDto> updateCategoryValidator,
+                                    IValidator<UpdateServerChannelDto> updateChannelValidator,
                                     IValidator<CreateServerChannelDto> channelValidator,
                                     IValidator<CreateServerCategoryDto> categoryValidator)
         {
@@ -39,6 +41,7 @@ namespace Service.Services
             _audit = audit;
             _messages = messages;
             _updateCategoryValidator = updateCategoryValidator;
+            _updateChannelValidator = updateChannelValidator;
             _channelValidator = channelValidator;
             _categoryValidator = categoryValidator;
         }
@@ -179,6 +182,71 @@ namespace Service.Services
             return new ServerCategoryDto { Id = category.Id, Name = category.Name, IsPrivate = category.IsPrivate, Position = category.Position };
         }
 
+        public async Task<ServerChannelDto> UpdateChannelAsync(string userId, int serverId, int channelId, UpdateServerChannelDto model)
+        {
+            await _updateChannelValidator.EnsureValidAsync(model);
+            await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageChannels);
+
+            var channel = await GetTrackedAsync(serverId, channelId);
+            var changes = new List<string>();
+            var name = Clean(channel.Kind, model.Name);
+            if (string.IsNullOrEmpty(name))
+            {
+                throw new BadRequestException("Enter a channel name.");
+            }
+
+            if (channel.Name != name)
+            {
+                changes.Add("Renamed the channel from \"" + channel.Name + "\" to \"" + name + "\"");
+            }
+
+            if (channel.IsPrivate != model.IsPrivate)
+            {
+                changes.Add(model.IsPrivate ? "Made the channel private" : "Made the channel public");
+            }
+
+            if (channel.Kind != ServerChannelKind.Voice && channel.IsReadOnly != model.IsReadOnly)
+            {
+                changes.Add(model.IsReadOnly ? "Stopped members from sending messages" : "Let members send messages");
+            }
+
+            channel.Name = name;
+            channel.IsPrivate = model.IsPrivate;
+            if (channel.Kind != ServerChannelKind.Voice)
+            {
+                channel.IsReadOnly = model.IsReadOnly;
+            }
+
+            await _channels.UpdateAsync(channel);
+            if (changes.Count > 0)
+            {
+                await _audit.LogAsync(serverId, userId, ServerAuditAction.ChannelUpdate, "Channel", channel.Id.ToString(), channel.Name, string.Join("; ", changes));
+            }
+
+            return ToDto(channel);
+        }
+
+        public async Task DeleteChannelAsync(string userId, int serverId, int channelId)
+        {
+            await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageChannels);
+
+            var channel = await GetTrackedAsync(serverId, channelId);
+            await _messages.DeleteForChannelsAsync(new[] { channelId });
+            await _channels.DeleteAsync(channel);
+            await _audit.LogAsync(serverId, userId, ServerAuditAction.ChannelDelete, "Channel", channelId.ToString(), channel.Name, "Deleted the channel");
+        }
+
+        private async Task<ServerChannel> GetTrackedAsync(int serverId, int channelId)
+        {
+            var channel = await _channels.GetByIdAsync(channelId);
+            if (channel is null || channel.ServerId != serverId)
+            {
+                throw new NotFoundException("That channel was not found.");
+            }
+
+            return channel;
+        }
+
         public async Task<ServerCategoryDto> UpdateCategoryAsync(string userId, int serverId, int categoryId, UpdateServerCategoryDto model)
         {
             await _updateCategoryValidator.EnsureValidAsync(model);
@@ -277,6 +345,7 @@ namespace Service.Services
                 Name = channel.Name,
                 Kind = channel.Kind == ServerChannelKind.Voice ? "voice" : channel.Kind == ServerChannelKind.Announcement ? "announce" : "text",
                 IsPrivate = channel.IsPrivate,
+                IsReadOnly = channel.IsReadOnly,
                 Position = channel.Position
             };
         }

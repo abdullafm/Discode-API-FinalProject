@@ -1,0 +1,15 @@
+using FluentValidation;
+using Service.Helpers.DTOs.ServerChannels;
+
+namespace Service.Helpers.Validators.ServerChannels
+{
+    public class UpdateServerChannelDtoValidator : AbstractValidator<UpdateServerChannelDto>
+    {
+        public UpdateServerChannelDtoValidator()
+        {
+            RuleFor(x => x.Name)
+                .Must(name => !string.IsNullOrWhiteSpace(name)).WithMessage("Enter a channel name.")
+                .MaximumLength(100).WithMessage("The channel name can be at most 100 characters.");
+        }
+    }
+}

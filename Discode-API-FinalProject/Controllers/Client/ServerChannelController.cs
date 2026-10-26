@@ -44,6 +44,22 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(channel);
         }
 
+        [HttpPut("channels/{channelId:int}")]
+        public async Task<IActionResult> UpdateChannel(int serverId, int channelId, [FromBody] UpdateServerChannelDto model)
+        {
+            var channel = await _channelService.UpdateChannelAsync(UserId, serverId, channelId, model);
+            await NotifyAsync(serverId);
+            return Ok(channel);
+        }
+
+        [HttpDelete("channels/{channelId:int}")]
+        public async Task<IActionResult> DeleteChannel(int serverId, int channelId)
+        {
+            await _channelService.DeleteChannelAsync(UserId, serverId, channelId);
+            await NotifyAsync(serverId);
+            return Ok();
+        }
+
         [HttpPost("categories")]
         public async Task<IActionResult> CreateCategory(int serverId, [FromBody] CreateServerCategoryDto model)
         {

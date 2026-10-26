@@ -56,11 +56,12 @@ namespace Service.Services
             await _sendValidator.EnsureValidAsync(model);
             var (channel, perms) = await RequireViewAsync(userId, serverId, channelId);
 
-            var needed = channel.Kind == ServerChannelKind.Announcement ? ServerPermission.ManageMessages : ServerPermission.SendMessages;
+            var restricted = channel.Kind == ServerChannelKind.Announcement || channel.IsReadOnly;
+            var needed = restricted ? ServerPermission.ManageMessages : ServerPermission.SendMessages;
             if ((perms & needed) != needed)
             {
-                throw new ForbiddenException(channel.Kind == ServerChannelKind.Announcement
-                    ? "Only people who manage messages can post in an announcement channel."
+                throw new ForbiddenException(restricted
+                    ? "Only people who manage messages can post in this channel."
                     : "You don't have permission to send messages here.");
             }
 
