@@ -395,6 +395,11 @@ namespace Service.Services
                 throw new NotFoundException("That invite is invalid or has expired.");
             }
 
+            if (await _bans.IsBannedAsync(server.Id, userId))
+            {
+                return new ServerInviteDto { ServerId = server.Id, InviteCode = server.InviteCode, IsBanned = true };
+            }
+
             var online = 0;
             foreach (var member in server.Members)
             {

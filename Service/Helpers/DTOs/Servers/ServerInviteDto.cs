@@ -13,6 +13,7 @@ namespace Service.Helpers.DTOs.Servers
         public int MemberCount { get; set; }
         public int OnlineCount { get; set; }
         public bool IsMember { get; set; }
+        public bool IsBanned { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }
