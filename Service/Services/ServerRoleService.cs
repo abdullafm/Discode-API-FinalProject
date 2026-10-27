@@ -62,6 +62,12 @@ namespace Service.Services
                 .ThenByDescending(r => r.Position)
                 .ToList();
             var dtos = _mapper.Map<List<ServerRoleDto>>(roles);
+            var top = await _permissions.GetTopPositionAsync(userId, serverId);
+            foreach (var dto in dtos)
+            {
+                dto.CanManage = dto.IsEveryone || dto.Position < top;
+            }
+
             foreach (var dto in dtos.Where(d => d.IsEveryone))
             {
                 dto.MemberCount = memberCount;
@@ -87,8 +93,9 @@ namespace Service.Services
                 Name = name,
                 Color = "gray",
                 Permissions = 0,
-                Position = await _roles.NextPositionAsync(serverId)
+                Position = 1
             };
+            await _roles.ShiftAboveEveryoneAsync(serverId);
             await _roles.AddAsync(role);
             await _audit.LogAsync(serverId, userId, ServerAuditAction.RoleCreate, "Role", role.Id.ToString(), role.Name, "Created the role " + role.Name);
             return _mapper.Map<ServerRoleDto>(role);
@@ -100,6 +107,18 @@ namespace Service.Services
             await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageRoles);
 
             var role = await GetRoleAsync(serverId, roleId);
+            if (!role.IsEveryone)
+            {
+                await _permissions.EnsureRoleBelowAsync(userId, serverId, role);
+            }
+
+            var wanted = model.Permissions & (long)ServerPermission.All;
+            var actorBits = (long)await _permissions.GetAsync(userId, serverId);
+            if ((wanted & ~role.Permissions & ~actorBits) != 0)
+            {
+                throw new ForbiddenException("You can't give a role permissions you don't have yourself.");
+            }
+
             var oldName = role.Name;
             var oldColor = role.Color;
             var oldBits = role.Permissions;
@@ -166,6 +185,7 @@ namespace Service.Services
                 throw new BadRequestException("The @everyone role can't be deleted.");
             }
 
+            await _permissions.EnsureRoleBelowAsync(userId, serverId, role);
             await _memberRoles.DeleteForRoleAsync(roleId);
             await _overwrites.DeleteForRoleAsync(roleId);
             await _roles.DeleteAsync(role);
@@ -190,6 +210,8 @@ namespace Service.Services
                 throw new BadRequestException("Everyone already has the @everyone role.");
             }
 
+            await _permissions.EnsureRoleBelowAsync(userId, serverId, role);
+
             var target = await _members.GetAsync(serverId, targetUserId);
             if (target is null)
             {
@@ -209,6 +231,7 @@ namespace Service.Services
             await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageRoles);
 
             var removedRole = await GetRoleAsync(serverId, roleId);
+            await _permissions.EnsureRoleBelowAsync(userId, serverId, removedRole);
             var target = await _members.GetAsync(serverId, targetUserId);
             if (target is null)
             {
@@ -222,6 +245,45 @@ namespace Service.Services
                 var person = await _accounts.GetByIdAsync(targetUserId);
                 await _audit.LogAsync(serverId, userId, ServerAuditAction.MemberRoleUpdate, "Member", targetUserId, person?.DisplayName ?? string.Empty, "Removed the role " + removedRole.Name);
             }
+        }
+
+        public async Task ReorderAsync(string userId, int serverId, ReorderServerRolesDto model)
+        {
+            await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageRoles);
+
+            var roles = (await _roles.GetForServerAsync(serverId))
+                .Where(r => !r.IsEveryone)
+                .OrderByDescending(r => r.Position)
+                .ThenBy(r => r.Id)
+                .ToList();
+            var wanted = model.RoleIds.Distinct().ToList();
+            if (wanted.Count != roles.Count || !roles.All(r => wanted.Contains(r.Id)))
+            {
+                throw new BadRequestException("The role order is out of date. Reload and try again.");
+            }
+
+            var top = await _permissions.GetTopPositionAsync(userId, serverId);
+            var locked = roles.Where(r => r.Position >= top).Select(r => r.Id).ToList();
+            if (!locked.SequenceEqual(wanted.Take(locked.Count)))
+            {
+                throw new ForbiddenException("You can only move roles that are below your highest role.");
+            }
+
+            var next = wanted.Count;
+            var byId = roles.ToDictionary(r => r.Id);
+            foreach (var id in wanted)
+            {
+                var tracked = await _roles.GetInServerAsync(serverId, id);
+                if (tracked is not null && tracked.Position != next)
+                {
+                    tracked.Position = next;
+                    await _roles.UpdateAsync(tracked);
+                }
+
+                next--;
+            }
+
+            await _audit.LogAsync(serverId, userId, ServerAuditAction.RoleUpdate, "Role", "0", "Roles", "Changed the order of the roles");
         }
 
         public async Task<List<string>> GetMemberIdsAsync(int serverId)

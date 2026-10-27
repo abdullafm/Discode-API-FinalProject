@@ -44,6 +44,14 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(role);
         }
 
+        [HttpPut("order")]
+        public async Task<IActionResult> Reorder(int serverId, [FromBody] ReorderServerRolesDto model)
+        {
+            await _roleService.ReorderAsync(UserId, serverId, model);
+            await NotifyAsync(serverId);
+            return Ok();
+        }
+
         [HttpPut("{roleId:int}")]
         public async Task<IActionResult> Update(int serverId, int roleId, [FromBody] UpdateServerRoleDto model)
         {

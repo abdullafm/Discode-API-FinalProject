@@ -163,17 +163,7 @@ namespace Service.Services
 
         private async Task EnsureCanActOnAsync(string userId, Server server, string targetId, string verb)
         {
-            if (server.OwnerId == userId)
-            {
-                return;
-            }
-
-            var theirs = await _permissions.GetAsync(targetId, server.Id);
-            var staff = ServerPermission.KickMembers | ServerPermission.BanMembers | ServerPermission.ManageServer | ServerPermission.ManageRoles;
-            if ((theirs & staff) != 0)
-            {
-                throw new ForbiddenException("You can't " + verb + " someone who manages the server.");
-            }
+            await _permissions.EnsureCanActOnAsync(userId, server.Id, targetId, verb);
         }
 
         private static string DisplayOf(AppUser user)

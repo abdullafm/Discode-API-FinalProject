@@ -36,6 +36,12 @@ namespace Repository.Repositories
             return await _dbSet.AnyAsync(x => x.ServerId == serverId && x.Name == name && (exceptId == null || x.Id != exceptId));
         }
 
+        public async Task ShiftAboveEveryoneAsync(int serverId)
+        {
+            await _dbSet.Where(x => x.ServerId == serverId && !x.IsEveryone)
+                .ExecuteUpdateAsync(s => s.SetProperty(x => x.Position, x => x.Position + 1));
+        }
+
         public async Task<int> NextPositionAsync(int serverId)
         {
             var positions = await _dbSet.Where(x => x.ServerId == serverId).Select(x => x.Position).ToListAsync();

@@ -21,6 +21,8 @@ namespace Domain.Enums
         MemberRoleUpdate = 17,
         MemberMute = 18,
         MemberUnmute = 19,
-        MemberVoiceDisconnect = 20
+        MemberVoiceDisconnect = 20,
+        MemberTimeout = 21,
+        MemberTimeoutRemove = 22
     }
 }

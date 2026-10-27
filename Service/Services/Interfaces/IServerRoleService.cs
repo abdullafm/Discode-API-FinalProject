@@ -12,6 +12,7 @@ namespace Service.Services.Interfaces
         Task<IEnumerable<ServerMemberDto>> GetRoleMembersAsync(string userId, int serverId, int roleId);
         Task AssignAsync(string userId, int serverId, int roleId, string targetUserId);
         Task RemoveAsync(string userId, int serverId, int roleId, string targetUserId);
+        Task ReorderAsync(string userId, int serverId, ReorderServerRolesDto model);
         Task<List<string>> GetMemberIdsAsync(int serverId);
     }
 }

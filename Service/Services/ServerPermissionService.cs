@@ -81,6 +81,49 @@ namespace Service.Services
             };
         }
 
+        public async Task<int> GetTopPositionAsync(string userId, int serverId)
+        {
+            var server = await _servers.GetByIdAsync(serverId);
+            if (server is not null && server.OwnerId == userId)
+            {
+                return int.MaxValue;
+            }
+
+            return await _memberRoles.GetMaxPositionAsync(serverId, userId);
+        }
+
+        public async Task EnsureCanActOnAsync(string actorId, int serverId, string targetId, string verb)
+        {
+            var server = await _servers.GetByIdAsync(serverId);
+            if (server is null)
+            {
+                throw new ForbiddenException("You don't have permission to do that.");
+            }
+
+            if (targetId == server.OwnerId)
+            {
+                throw new ForbiddenException("You can't " + verb + " the server owner.");
+            }
+
+            if (actorId == server.OwnerId)
+            {
+                return;
+            }
+
+            if (await GetTopPositionAsync(actorId, serverId) <= await GetTopPositionAsync(targetId, serverId))
+            {
+                throw new ForbiddenException("You can only " + verb + " members whose highest role is below yours.");
+            }
+        }
+
+        public async Task EnsureRoleBelowAsync(string actorId, int serverId, ServerRole role)
+        {
+            if (await GetTopPositionAsync(actorId, serverId) <= role.Position)
+            {
+                throw new ForbiddenException("You can only manage roles that are below your highest role.");
+            }
+        }
+
         public async Task<List<string>> GetChannelViewerIdsAsync(int serverId, ServerChannel channel)
         {
             var viewers = new List<string>();

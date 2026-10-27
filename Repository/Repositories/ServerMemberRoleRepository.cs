@@ -38,6 +38,15 @@ namespace Repository.Repositories
             return ids.ToHashSet();
         }
 
+        public async Task<int> GetMaxPositionAsync(int serverId, string userId)
+        {
+            var positions = await _dbSet
+                .Where(x => x.ServerMember.ServerId == serverId && x.ServerMember.UserId == userId)
+                .Select(x => x.Role.Position)
+                .ToListAsync();
+            return positions.Count == 0 ? 0 : positions.Max();
+        }
+
         public async Task<ServerMemberRole?> GetAsync(int roleId, int serverMemberId)
         {
             return await _dbSet.FirstOrDefaultAsync(x => x.RoleId == roleId && x.ServerMemberId == serverMemberId);

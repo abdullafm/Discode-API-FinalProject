@@ -55,6 +55,7 @@ namespace Service.Services
         {
             await _sendValidator.EnsureValidAsync(model);
             var (channel, perms) = await RequireViewAsync(userId, serverId, channelId);
+            await EnsureNotTimedOutAsync(userId, serverId);
 
             var restricted = channel.Kind == ServerChannelKind.Announcement;
             var needed = restricted ? ServerPermission.ManageMessages : ServerPermission.SendMessages;
@@ -125,6 +126,7 @@ namespace Service.Services
         {
             await _reactionValidator.EnsureValidAsync(model);
             var (channel, _) = await RequireViewAsync(userId, serverId, channelId);
+            await EnsureNotTimedOutAsync(userId, serverId);
             var message = await _messages.GetWithSenderAsync(messageId);
             if (message is null || message.ChannelId != channelId)
             {
@@ -167,6 +169,15 @@ namespace Service.Services
             }
 
             return (channel, perms);
+        }
+
+        private async Task EnsureNotTimedOutAsync(string userId, int serverId)
+        {
+            var membership = await _members.GetAsync(serverId, userId);
+            if (membership?.TimeoutUntil is not null && membership.TimeoutUntil > DateTime.UtcNow)
+            {
+                throw new ForbiddenException("You are timed out and can't send messages or react right now.");
+            }
         }
 
         private async Task<List<string>> ViewersAsync(int serverId, ServerChannel channel)

@@ -11,5 +11,6 @@ namespace Service.Helpers.DTOs.ServerRoles
         public bool IsEveryone { get; set; }
         public bool DisplaySeparately { get; set; }
         public int MemberCount { get; set; }
+        public bool CanManage { get; set; }
     }
 }

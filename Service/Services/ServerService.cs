@@ -198,10 +198,14 @@ namespace Service.Services
             var roleLinks = (await _memberRoles.GetForServerAsync(server.Id))
                 .GroupBy(link => link.ServerMember.UserId)
                 .ToDictionary(group => group.Key, group => group.Select(link => link.Role).OrderByDescending(role => role.Position).ToList());
+            var viewerTop = await _permissions.GetTopPositionAsync(viewerId, server.Id);
             foreach (var member in server.Members)
             {
+                var memberTop = member.UserId == server.OwnerId ? int.MaxValue : roleLinks.TryGetValue(member.UserId, out var tops) && tops.Count > 0 ? tops.Max(r => r.Position) : 0;
                 members.Add(new ServerMemberDto
                 {
+                    CanModerate = member.UserId != viewerId && member.UserId != server.OwnerId && viewerTop > memberTop,
+                    TimeoutUntil = member.TimeoutUntil is not null && member.TimeoutUntil > DateTime.UtcNow ? DateTime.SpecifyKind(member.TimeoutUntil.Value, DateTimeKind.Utc) : null,
                     Id = member.UserId,
                     UserName = member.User.UserName ?? string.Empty,
                     DisplayName = string.IsNullOrWhiteSpace(member.User.DisplayName) ? member.User.UserName ?? string.Empty : member.User.DisplayName,

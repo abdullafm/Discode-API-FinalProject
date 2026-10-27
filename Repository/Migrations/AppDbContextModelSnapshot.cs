@@ -1445,6 +1445,9 @@ namespace Repository.Migrations
                     b.Property<bool>("ShowAllChannels")
                         .HasColumnType("bit");
 
+                    b.Property<DateTime?>("TimeoutUntil")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasMaxLength(450)

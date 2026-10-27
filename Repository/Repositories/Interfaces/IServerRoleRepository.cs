@@ -9,5 +9,6 @@ namespace Repository.Repositories.Interfaces
         Task<ServerRole?> GetInServerAsync(int serverId, int roleId);
         Task<bool> NameExistsAsync(int serverId, string name, int? exceptId);
         Task<int> NextPositionAsync(int serverId);
+        Task ShiftAboveEveryoneAsync(int serverId);
     }
 }

@@ -16,5 +16,7 @@ namespace Service.Helpers.DTOs.Servers
         public string JoinMethod { get; set; } = string.Empty;
         public List<ServerRoleRefDto> Roles { get; set; } = new();
         public bool IsSelf { get; set; }
+        public bool CanModerate { get; set; }
+        public DateTime? TimeoutUntil { get; set; }
     }
 }

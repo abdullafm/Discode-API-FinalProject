@@ -18,13 +18,15 @@ namespace Discode_API_FinalProject.Controllers.Client
         private readonly IServerService _serverService;
         private readonly IServerAuditService _auditService;
         private readonly IServerBanService _banService;
+        private readonly IServerTimeoutService _timeoutService;
         private readonly IHubContext<PresenceHub> _hubContext;
 
-        public ServerController(IServerService serverService, IServerAuditService auditService, IServerBanService banService, IHubContext<PresenceHub> hubContext)
+        public ServerController(IServerService serverService, IServerAuditService auditService, IServerBanService banService, IServerTimeoutService timeoutService, IHubContext<PresenceHub> hubContext)
         {
             _serverService = serverService;
             _auditService = auditService;
             _banService = banService;
+            _timeoutService = timeoutService;
             _hubContext = hubContext;
         }
 
@@ -95,6 +97,16 @@ namespace Discode_API_FinalProject.Controllers.Client
         {
             await _banService.UnbanAsync(UserId, id, userId);
             await NotifyBansAsync(id);
+            return Ok();
+        }
+
+        [HttpPut("{id:int}/members/{userId}/timeout")]
+        public async Task<IActionResult> Timeout(int id, string userId, [FromBody] TimeoutServerMemberDto model)
+        {
+            await _timeoutService.SetAsync(UserId, id, userId, model);
+            var memberIds = await _timeoutService.GetMemberIdsAsync(id);
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServerRolesChanged", new { serverId = id });
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServerAuditChanged", new { serverId = id });
             return Ok();
         }
 

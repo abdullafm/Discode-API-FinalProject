@@ -14,6 +14,7 @@ namespace Domain.Entities
         public string JoinMethod { get; set; } = string.Empty;
         public DateTime? MutedUntil { get; set; }
         public bool MutedIndefinitely { get; set; }
+        public DateTime? TimeoutUntil { get; set; }
         public ServerNotificationLevel NotificationLevel { get; set; } = ServerNotificationLevel.Mentions;
         public bool HideMutedChannels { get; set; }
         public bool ShowAllChannels { get; set; } = true;
