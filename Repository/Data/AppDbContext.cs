@@ -18,6 +18,7 @@ namespace Repository.Data
         public DbSet<ServerCategory> ServerCategories { get; set; }
         public DbSet<ServerChannel> ServerChannels { get; set; }
         public DbSet<ServerOverwrite> ServerOverwrites { get; set; }
+        public DbSet<ServerVoiceState> ServerVoiceStates { get; set; }
         public DbSet<ServerMessage> ServerMessages { get; set; }
         public DbSet<ServerMessageAttachment> ServerMessageAttachments { get; set; }
         public DbSet<ServerMessageReaction> ServerMessageReactions { get; set; }

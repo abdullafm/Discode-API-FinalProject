@@ -42,6 +42,7 @@ namespace Service
             services.AddScoped<IServerBanService, ServerBanService>();
             services.AddScoped<IServerChannelService, ServerChannelService>();
             services.AddScoped<IServerTimeoutService, ServerTimeoutService>();
+            services.AddScoped<IServerVoiceService, ServerVoiceService>();
             services.AddScoped<IServerMessageService, ServerMessageService>();
             services.AddScoped<IPresenceService, PresenceService>();
             services.AddScoped<IPresenceTrackerService, PresenceTrackerService>();

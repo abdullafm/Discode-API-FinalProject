@@ -199,6 +199,7 @@ namespace Discode_API_FinalProject.Controllers.Client
             await _hubContext.Clients.Users(memberIds).SendAsync("ServerUpdated", new { serverId, memberCount = memberIds.Count });
             await _hubContext.Clients.Users(memberIds).SendAsync("ServerAuditChanged", new { serverId });
             await _hubContext.Clients.Users(memberIds).SendAsync("ServerBansChanged", new { serverId });
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServerVoiceChanged", new { serverId });
         }
 
         private async Task NotifyBansAsync(int serverId)

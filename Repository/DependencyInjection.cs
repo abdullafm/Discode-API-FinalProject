@@ -20,6 +20,7 @@ namespace Repository
             services.AddScoped<IServerCategoryRepository, ServerCategoryRepository>();
             services.AddScoped<IServerChannelRepository, ServerChannelRepository>();
             services.AddScoped<IServerOverwriteRepository, ServerOverwriteRepository>();
+            services.AddScoped<IServerVoiceStateRepository, ServerVoiceStateRepository>();
             services.AddScoped<IServerMessageRepository, ServerMessageRepository>();
             services.AddScoped<IServerMemberRoleRepository, ServerMemberRoleRepository>();
             services.AddScoped<IPostRepository, PostRepository>();

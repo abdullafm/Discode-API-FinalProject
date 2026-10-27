@@ -158,6 +158,12 @@ namespace Discode_API_FinalProject.Hubs
             {
                 await AnnounceGroupCallAsync(hubContext.Clients, change);
             }
+
+            var voice = scope.ServiceProvider.GetRequiredService<IServerVoiceService>();
+            foreach (var serverId in (await voice.LeaveAsync(userId)).ServerIds)
+            {
+                await hubContext.Clients.Users(await voice.GetMemberIdsAsync(serverId)).SendAsync("ServerVoiceChanged", new { serverId });
+            }
         }
     }
 }
