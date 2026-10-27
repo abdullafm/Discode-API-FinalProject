@@ -1724,6 +1724,9 @@ namespace Repository.Migrations
                     b.Property<int>("ServerId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime>("SessionStartedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasMaxLength(450)

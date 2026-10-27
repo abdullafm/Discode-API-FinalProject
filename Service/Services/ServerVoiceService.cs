@@ -74,8 +74,14 @@ namespace Service.Services
                 var group = result.Channels.FirstOrDefault(c => c.ChannelId == state.ChannelId);
                 if (group is null)
                 {
-                    group = new ServerVoiceChannelDto { ChannelId = state.ChannelId };
+                    group = new ServerVoiceChannelDto { ChannelId = state.ChannelId, StartedAt = DateTime.SpecifyKind(state.SessionStartedAt, DateTimeKind.Utc) };
                     result.Channels.Add(group);
+                }
+
+                var started = DateTime.SpecifyKind(state.SessionStartedAt, DateTimeKind.Utc);
+                if (started < group.StartedAt)
+                {
+                    group.StartedAt = started;
                 }
 
                 group.Users.Add(new ServerVoiceUserDto
@@ -117,10 +123,12 @@ namespace Service.Services
 
             var change = new ServerVoiceChangeDto();
             var state = await _states.GetForUserAsync(userId);
+            var others = (await _states.GetForServerAsync(serverId)).Where(x => x.ChannelId == channelId && x.UserId != userId).ToList();
+            var startedAt = others.Count > 0 ? others.Min(x => x.SessionStartedAt) : DateTime.UtcNow;
             if (channel.UserLimit > 0 && (state is null || state.ChannelId != channelId)
                 && (perms & ServerPermission.ManageChannels) != ServerPermission.ManageChannels)
             {
-                var inside = (await _states.GetForServerAsync(serverId)).Count(x => x.ChannelId == channelId && x.UserId != userId);
+                var inside = others.Count;
                 if (inside >= channel.UserLimit)
                 {
                     throw new BadRequestException("This voice channel is full.");
@@ -135,7 +143,8 @@ namespace Service.Services
                     ChannelId = channelId,
                     UserId = userId,
                     IsMuted = model.IsMuted,
-                    IsDeafened = model.IsDeafened
+                    IsDeafened = model.IsDeafened,
+                    SessionStartedAt = startedAt
                 });
             }
             else
@@ -153,6 +162,7 @@ namespace Service.Services
                 state.ServerId = serverId;
                 state.ChannelId = channelId;
                 state.CreatedAt = DateTime.UtcNow;
+                state.SessionStartedAt = startedAt;
                 await _states.UpdateAsync(state);
             }
 
