@@ -97,7 +97,6 @@ namespace Service.Services
                 throw new NotFoundException("Server not found.");
             }
 
-            await EnsureDefaultsAsync(serverId);
             var context = await _permissions.GetContextAsync(userId, serverId);
 
             var result = new ServerChannelsDto();
