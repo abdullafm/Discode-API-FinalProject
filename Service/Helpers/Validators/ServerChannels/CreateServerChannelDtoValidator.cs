@@ -15,6 +15,9 @@ namespace Service.Helpers.Validators.ServerChannels
 
             RuleFor(x => x.Kind)
                 .Must(kind => !string.IsNullOrWhiteSpace(kind) && Kinds.Contains(kind.Trim().ToLowerInvariant())).WithMessage("Pick a valid channel type.");
+
+            RuleFor(x => x.UserLimit)
+                .InclusiveBetween(0, 99).WithMessage("The user limit must be between 0 and 99.");
         }
     }
 }

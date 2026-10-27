@@ -169,6 +169,7 @@ namespace Service.Services
                 Name = name,
                 Kind = kind,
                 SyncWithCategory = category is not null && !model.IsPrivate,
+                UserLimit = kind == ServerChannelKind.Voice ? model.UserLimit : 0,
                 Position = await _channels.NextPositionAsync(serverId, category?.Id)
             };
             await _channels.AddAsync(channel);
@@ -234,6 +235,12 @@ namespace Service.Services
             }
 
             channel.Name = name;
+            if (channel.Kind == ServerChannelKind.Voice && model.UserLimit.HasValue && model.UserLimit.Value != channel.UserLimit)
+            {
+                changes.Add("Changed the user limit from " + (channel.UserLimit == 0 ? "no limit" : channel.UserLimit.ToString()) + " to " + (model.UserLimit.Value == 0 ? "no limit" : model.UserLimit.Value.ToString()));
+                channel.UserLimit = model.UserLimit.Value;
+            }
+
             var wasPrivate = channel.IsPrivate;
             await ApplyChannelOverwritesAsync(serverId, channel, model.SyncWithCategory, model.Overwrites, changes);
             if (wasPrivate != channel.IsPrivate)
@@ -613,7 +620,8 @@ namespace Service.Services
                 Kind = channel.Kind == ServerChannelKind.Voice ? "voice" : channel.Kind == ServerChannelKind.Announcement ? "announce" : "text",
                 IsPrivate = channel.IsPrivate,
                 IsReadOnly = channel.IsReadOnly,
-                Position = channel.Position
+                Position = channel.Position,
+                UserLimit = channel.UserLimit
             };
         }
     }

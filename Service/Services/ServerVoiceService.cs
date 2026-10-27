@@ -84,7 +84,8 @@ namespace Service.Services
                     DisplayName = user.DisplayName,
                     AvatarUrl = user.AvatarUrl,
                     IsMuted = state.IsMuted || state.IsDeafened,
-                    IsDeafened = state.IsDeafened
+                    IsDeafened = state.IsDeafened,
+                    IsSelf = state.UserId == userId
                 });
             }
 
@@ -116,6 +117,16 @@ namespace Service.Services
 
             var change = new ServerVoiceChangeDto();
             var state = await _states.GetForUserAsync(userId);
+            if (channel.UserLimit > 0 && (state is null || state.ChannelId != channelId)
+                && (perms & ServerPermission.ManageChannels) != ServerPermission.ManageChannels)
+            {
+                var inside = (await _states.GetForServerAsync(serverId)).Count(x => x.ChannelId == channelId && x.UserId != userId);
+                if (inside >= channel.UserLimit)
+                {
+                    throw new BadRequestException("This voice channel is full.");
+                }
+            }
+
             if (state is null)
             {
                 await _states.AddAsync(new ServerVoiceState
@@ -180,6 +191,13 @@ namespace Service.Services
             }
 
             return change;
+        }
+
+        public async Task<bool> AreTogetherAsync(string userId, string otherUserId)
+        {
+            var mine = await _states.GetForUserAsync(userId);
+            var theirs = await _states.GetForUserAsync(otherUserId);
+            return mine is not null && theirs is not null && mine.ChannelId == theirs.ChannelId;
         }
 
         public async Task<List<string>> GetMemberIdsAsync(int serverId)

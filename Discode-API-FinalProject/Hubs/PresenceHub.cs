@@ -15,6 +15,7 @@ namespace Discode_API_FinalProject.Hubs
         private readonly ILiveStreamService _liveStreamService;
         private readonly ICallService _callService;
         private readonly IGroupCallService _groupCallService;
+        private readonly IServerVoiceService _voiceService;
         private readonly IServiceScopeFactory _scopes;
         private readonly IHubContext<PresenceHub> _hubContext;
 
@@ -23,6 +24,7 @@ namespace Discode_API_FinalProject.Hubs
                            ILiveStreamService liveStreamService,
                            ICallService callService,
                            IGroupCallService groupCallService,
+                           IServerVoiceService voiceService,
                            IServiceScopeFactory scopes,
                            IHubContext<PresenceHub> hubContext)
         {
@@ -31,6 +33,7 @@ namespace Discode_API_FinalProject.Hubs
             _liveStreamService = liveStreamService;
             _callService = callService;
             _groupCallService = groupCallService;
+            _voiceService = voiceService;
             _scopes = scopes;
             _hubContext = hubContext;
         }

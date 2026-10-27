@@ -9,5 +9,6 @@ namespace Service.Helpers.DTOs.ServerChannels
         public bool IsPrivate { get; set; }
         public bool IsReadOnly { get; set; }
         public int Position { get; set; }
+        public int UserLimit { get; set; }
     }
 }

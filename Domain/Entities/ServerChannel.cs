@@ -15,5 +15,6 @@ namespace Domain.Entities
         public bool IsReadOnly { get; set; }
         public bool SyncWithCategory { get; set; } = true;
         public int Position { get; set; }
+        public int UserLimit { get; set; }
     }
 }

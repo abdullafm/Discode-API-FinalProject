@@ -1394,6 +1394,9 @@ namespace Repository.Migrations
                     b.Property<bool>("SyncWithCategory")
                         .HasColumnType("bit");
 
+                    b.Property<int>("UserLimit")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
