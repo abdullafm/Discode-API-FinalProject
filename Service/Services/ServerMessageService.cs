@@ -23,6 +23,8 @@ namespace Service.Services
         private readonly IServerPermissionService _permissions;
         private readonly IValidator<SendServerMessageDto> _sendValidator;
         private readonly IValidator<ToggleReactionDto> _reactionValidator;
+        private readonly IValidator<CreatePollDto> _pollValidator;
+        private readonly IPollRepository _polls;
         private readonly IMapper _mapper;
 
         public ServerMessageService(IServerMessageRepository messages,
@@ -32,8 +34,12 @@ namespace Service.Services
                                     IServerPermissionService permissions,
                                     IValidator<SendServerMessageDto> sendValidator,
                                     IValidator<ToggleReactionDto> reactionValidator,
+                                    IValidator<CreatePollDto> pollValidator,
+                                    IPollRepository polls,
                                     IMapper mapper)
         {
+            _pollValidator = pollValidator;
+            _polls = polls;
             _messages = messages;
             _channels = channels;
             _members = members;
@@ -56,15 +62,7 @@ namespace Service.Services
             await _sendValidator.EnsureValidAsync(model);
             var (channel, perms) = await RequireViewAsync(userId, serverId, channelId);
             await EnsureNotTimedOutAsync(userId, serverId);
-
-            var restricted = channel.Kind == ServerChannelKind.Announcement;
-            var needed = restricted ? ServerPermission.ManageMessages : ServerPermission.SendMessages;
-            if ((perms & needed) != needed)
-            {
-                throw new ForbiddenException(restricted
-                    ? "Only people who manage messages can post in this channel."
-                    : "You don't have permission to send messages here.");
-            }
+            EnsureCanPost(channel, perms);
 
             if (model.ReplyToMessageId.HasValue)
             {
@@ -94,6 +92,79 @@ namespace Service.Services
                 Message = _mapper.Map<ServerMessageDto>(saved, options => options.Items[MappingProfile.ViewerIdKey] = string.Empty),
                 ViewerIds = await ViewersAsync(serverId, channel)
             };
+        }
+
+        public async Task<ServerMessageChangeDto> SendPollAsync(string userId, int serverId, int channelId, CreatePollDto model)
+        {
+            await _pollValidator.EnsureValidAsync(model);
+            var (channel, perms) = await RequireViewAsync(userId, serverId, channelId);
+            await EnsureNotTimedOutAsync(userId, serverId);
+            EnsureCanPost(channel, perms);
+            if ((perms & ServerPermission.CreatePolls) != ServerPermission.CreatePolls)
+            {
+                throw new ForbiddenException("You don't have permission to create polls here.");
+            }
+
+            var message = new ServerMessage
+            {
+                ServerId = serverId,
+                ChannelId = channelId,
+                SenderId = userId,
+                Text = string.Empty,
+                Poll = new Poll
+                {
+                    Question = model.Question.Trim(),
+                    AllowMultiple = model.AllowMultiple,
+                    ExpiresAt = DateTime.UtcNow.AddHours(model.DurationHours),
+                    Options = model.Options
+                        .Select((o, index) => new PollOption { Text = o.Text.Trim(), Emoji = (o.Emoji ?? string.Empty).Trim(), Position = index })
+                        .ToList()
+                }
+            };
+            await _messages.AddAsync(message);
+
+            var saved = await _messages.GetWithSenderAsync(message.Id);
+            return new ServerMessageChangeDto
+            {
+                Message = _mapper.Map<ServerMessageDto>(saved, options => options.Items[MappingProfile.ViewerIdKey] = string.Empty),
+                ViewerIds = await ViewersAsync(serverId, channel)
+            };
+        }
+
+        public async Task<ServerMessageUpdateDto> VotePollAsync(string userId, int serverId, int channelId, int messageId, VotePollDto model)
+        {
+            var (channel, _) = await RequireViewAsync(userId, serverId, channelId);
+            await EnsureNotTimedOutAsync(userId, serverId);
+            var message = await _messages.GetWithSenderAsync(messageId);
+            if (message is null || message.ChannelId != channelId)
+            {
+                throw new NotFoundException("Poll not found.");
+            }
+
+            var poll = await _polls.GetByServerMessageIdAsync(messageId);
+            if (poll is null)
+            {
+                throw new NotFoundException("Poll not found.");
+            }
+
+            if (poll.ExpiresAt <= DateTime.UtcNow)
+            {
+                throw new BadRequestException("This poll has ended.");
+            }
+
+            var optionIds = (model.OptionIds ?? new List<int>()).Distinct().ToList();
+            if (optionIds.Any(id => poll.Options.All(o => o.Id != id)))
+            {
+                throw new BadRequestException("Choose one of the answers.");
+            }
+
+            if (!poll.AllowMultiple && optionIds.Count > 1)
+            {
+                throw new BadRequestException("You can choose only one answer.");
+            }
+
+            await _polls.SetVotesAsync(poll, userId, optionIds);
+            return await ViewsAsync(serverId, channel, messageId);
         }
 
         public async Task<ServerMessageDeletedDto> DeleteAsync(string userId, int serverId, int channelId, int messageId)
@@ -134,14 +205,31 @@ namespace Service.Services
             }
 
             await _messages.ToggleReactionAsync(messageId, userId, model.Emoji.Trim());
+            return await ViewsAsync(serverId, channel, messageId);
+        }
+
+        private async Task<ServerMessageUpdateDto> ViewsAsync(int serverId, ServerChannel channel, int messageId)
+        {
             var saved = await _messages.GetWithSenderAsync(messageId);
-            var update = new ServerMessageUpdateDto { ServerId = serverId, ChannelId = channelId };
+            var update = new ServerMessageUpdateDto { ServerId = serverId, ChannelId = channel.Id };
             foreach (var viewerId in await ViewersAsync(serverId, channel))
             {
                 update.Views[viewerId] = _mapper.Map<ServerMessageDto>(saved, options => options.Items[MappingProfile.ViewerIdKey] = viewerId);
             }
 
             return update;
+        }
+
+        private static void EnsureCanPost(ServerChannel channel, ServerPermission perms)
+        {
+            var restricted = channel.Kind == ServerChannelKind.Announcement;
+            var needed = restricted ? ServerPermission.ManageMessages : ServerPermission.SendMessages;
+            if ((perms & needed) != needed)
+            {
+                throw new ForbiddenException(restricted
+                    ? "Only people who manage messages can post in this channel."
+                    : "You don't have permission to send messages here.");
+            }
         }
 
         private async Task<(ServerChannel Channel, ServerPermission Permissions)> RequireViewAsync(string userId, int serverId, int channelId)

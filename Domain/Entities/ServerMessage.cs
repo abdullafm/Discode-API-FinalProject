@@ -13,6 +13,7 @@ namespace Domain.Entities
         public string Text { get; set; } = string.Empty;
         public int? ReplyToMessageId { get; set; }
         public ServerMessage? ReplyTo { get; set; }
+        public Poll? Poll { get; set; }
         public ICollection<ServerMessageAttachment> Attachments { get; set; } = new List<ServerMessageAttachment>();
         public ICollection<ServerMessageReaction> Reactions { get; set; } = new List<ServerMessageReaction>();
     }

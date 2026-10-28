@@ -45,6 +45,26 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(change.Message);
         }
 
+        [HttpPost("polls")]
+        public async Task<IActionResult> SendPoll(int serverId, int channelId, [FromBody] CreatePollDto model)
+        {
+            var change = await _messageService.SendPollAsync(UserId, serverId, channelId, model);
+            await _hubContext.Clients.Users(change.ViewerIds).SendAsync("ServerMessage", new { serverId, channelId, message = change.Message });
+            return Ok(change.Message);
+        }
+
+        [HttpPut("{messageId:int}/poll-votes")]
+        public async Task<IActionResult> VotePoll(int serverId, int channelId, int messageId, [FromBody] VotePollDto model)
+        {
+            var update = await _messageService.VotePollAsync(UserId, serverId, channelId, messageId, model);
+            foreach (var view in update.Views)
+            {
+                await _hubContext.Clients.User(view.Key).SendAsync("ServerMessageUpdated", new { serverId, channelId, message = view.Value });
+            }
+
+            return Ok(update.Views.TryGetValue(UserId, out var mine) ? mine : null);
+        }
+
         [HttpDelete("{messageId:int}")]
         public async Task<IActionResult> Delete(int serverId, int channelId, int messageId)
         {

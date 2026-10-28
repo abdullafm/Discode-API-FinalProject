@@ -13,6 +13,8 @@ namespace Service.Helpers.DTOs.ServerMessages
         public string SenderAvatarUrl { get; set; } = string.Empty;
         public string Text { get; set; } = string.Empty;
         public ReplyDto? ReplyTo { get; set; }
+        public bool IsPoll { get; set; }
+        public PollDto? Poll { get; set; }
         public List<MessageAttachmentDto> Attachments { get; set; } = new();
         public List<ReactionDto> Reactions { get; set; } = new();
         public DateTime CreatedAt { get; set; }

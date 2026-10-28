@@ -27,6 +27,14 @@ namespace Repository.Repositories
                 .FirstOrDefaultAsync(x => x.GroupMessageId == groupMessageId);
         }
 
+        public async Task<Poll?> GetByServerMessageIdAsync(int serverMessageId)
+        {
+            return await _dbSet
+                .Include(x => x.Options)
+                    .ThenInclude(o => o.Votes)
+                .FirstOrDefaultAsync(x => x.ServerMessageId == serverMessageId);
+        }
+
         public async Task SetVotesAsync(Poll poll, string userId, IReadOnlyCollection<int> optionIds)
         {
             var optionKeys = poll.Options.Select(o => o.Id).ToList();

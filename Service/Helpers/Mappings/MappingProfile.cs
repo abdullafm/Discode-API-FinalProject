@@ -111,6 +111,10 @@ namespace Service.Helpers.Mappings
             CreateMap<ServerMessageAttachment, MessageAttachmentDto>();
 
             CreateMap<ServerMessage, ServerMessageDto>()
+                .ForMember(d => d.IsPoll, o => o.MapFrom(s => s.Poll != null))
+                .ForMember(d => d.Poll, o => o.MapFrom((s, d, m, context) => s.Poll == null
+                    ? null
+                    : BuildPoll(s.Poll, context.Items.TryGetValue(ViewerIdKey, out var voter) ? (string?)voter : null)))
                 .ForMember(d => d.ReplyTo, o => o.MapFrom(s => s.ReplyTo == null ? null : new ReplyDto
                 {
                     MessageId = s.ReplyTo.Id,

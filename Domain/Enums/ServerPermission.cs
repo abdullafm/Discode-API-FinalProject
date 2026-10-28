@@ -21,6 +21,7 @@ namespace Domain.Enums
         KickMembers = 1L << 14,
         BanMembers = 1L << 15,
         ModerateMembers = 1L << 16,
-        All = (1L << 17) - 1
+        CreatePolls = 1L << 17,
+        All = (1L << 18) - 1
     }
 }

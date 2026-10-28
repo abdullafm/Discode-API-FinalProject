@@ -996,6 +996,9 @@ namespace Repository.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<int?>("ServerMessageId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("GroupMessageId")
@@ -1005,6 +1008,10 @@ namespace Repository.Migrations
                     b.HasIndex("MessageId")
                         .IsUnique()
                         .HasFilter("[MessageId] IS NOT NULL");
+
+                    b.HasIndex("ServerMessageId")
+                        .IsUnique()
+                        .HasFilter("[ServerMessageId] IS NOT NULL");
 
                     b.ToTable("Polls");
                 });
@@ -2409,9 +2416,16 @@ namespace Repository.Migrations
                         .HasForeignKey("Domain.Entities.Poll", "MessageId")
                         .OnDelete(DeleteBehavior.Cascade);
 
+                    b.HasOne("Domain.Entities.ServerMessage", "ServerMessage")
+                        .WithOne("Poll")
+                        .HasForeignKey("Domain.Entities.Poll", "ServerMessageId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.Navigation("GroupMessage");
 
                     b.Navigation("Message");
+
+                    b.Navigation("ServerMessage");
                 });
 
             modelBuilder.Entity("Domain.Entities.PollOption", b =>
@@ -2949,6 +2963,8 @@ namespace Repository.Migrations
             modelBuilder.Entity("Domain.Entities.ServerMessage", b =>
                 {
                     b.Navigation("Attachments");
+
+                    b.Navigation("Poll");
 
                     b.Navigation("Reactions");
                 });
