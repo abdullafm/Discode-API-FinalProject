@@ -9,6 +9,9 @@ namespace Domain.Configurations
     {
         public void Configure(EntityTypeBuilder<AppUser> builder)
         {
+            builder.Property(u => u.PublicId).IsRequired().HasMaxLength(20);
+            builder.HasIndex(u => u.PublicId).IsUnique();
+
             builder.Property(u => u.DisplayName)
                 .IsRequired()
                 .HasMaxLength(32);

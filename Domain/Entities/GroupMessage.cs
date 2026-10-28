@@ -4,6 +4,7 @@ namespace Domain.Entities
 {
     public class GroupMessage : BaseEntity
     {
+        public string PublicId { get; set; } = Domain.Common.PublicIdGenerator.New();
         public int GroupId { get; set; }
         public Group Group { get; set; } = null!;
         public string SenderId { get; set; } = string.Empty;

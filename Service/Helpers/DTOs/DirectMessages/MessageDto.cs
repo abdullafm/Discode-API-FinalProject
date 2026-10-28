@@ -3,6 +3,7 @@ namespace Service.Helpers.DTOs.DirectMessages
     public class MessageDto
     {
         public int Id { get; set; }
+        public string PublicId { get; set; } = string.Empty;
         public int ConversationId { get; set; }
         public string SenderUserName { get; set; } = string.Empty;
         public string SenderDisplayName { get; set; } = string.Empty;

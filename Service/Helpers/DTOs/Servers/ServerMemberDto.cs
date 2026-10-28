@@ -5,6 +5,7 @@ namespace Service.Helpers.DTOs.Servers
     public class ServerMemberDto
     {
         public string Id { get; set; } = string.Empty;
+        public string PublicId { get; set; } = string.Empty;
         public string UserName { get; set; } = string.Empty;
         public string DisplayName { get; set; } = string.Empty;
         public string AvatarUrl { get; set; } = string.Empty;

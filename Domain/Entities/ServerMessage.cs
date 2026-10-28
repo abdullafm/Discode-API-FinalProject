@@ -4,6 +4,7 @@ namespace Domain.Entities
 {
     public class ServerMessage : BaseEntity
     {
+        public string PublicId { get; set; } = Domain.Common.PublicIdGenerator.New();
         public int ServerId { get; set; }
         public Server Server { get; set; } = null!;
         public int ChannelId { get; set; }

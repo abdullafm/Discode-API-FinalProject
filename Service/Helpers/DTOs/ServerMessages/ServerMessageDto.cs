@@ -5,6 +5,7 @@ namespace Service.Helpers.DTOs.ServerMessages
     public class ServerMessageDto
     {
         public int Id { get; set; }
+        public string PublicId { get; set; } = string.Empty;
         public int ServerId { get; set; }
         public int ChannelId { get; set; }
         public string SenderId { get; set; } = string.Empty;

@@ -8,6 +8,9 @@ namespace Domain.Configurations
     {
         public void Configure(EntityTypeBuilder<Server> builder)
         {
+            builder.Property(x => x.PublicId).IsRequired().HasMaxLength(20);
+            builder.HasIndex(x => x.PublicId).IsUnique();
+
             builder.Property(x => x.Name)
                 .IsRequired()
                 .HasMaxLength(100);

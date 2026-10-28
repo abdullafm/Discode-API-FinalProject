@@ -5,6 +5,7 @@ namespace Service.Helpers.DTOs.Groups
     public class GroupMessageDto
     {
         public int Id { get; set; }
+        public string PublicId { get; set; } = string.Empty;
         public int GroupId { get; set; }
         public string SenderUserName { get; set; } = string.Empty;
         public string SenderDisplayName { get; set; } = string.Empty;

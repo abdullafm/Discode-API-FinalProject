@@ -4,6 +4,7 @@ namespace Domain.Entities
 {
     public class Server : BaseEntity
     {
+        public string PublicId { get; set; } = Domain.Common.PublicIdGenerator.New();
         public string Name { get; set; } = string.Empty;
         public string IconUrl { get; set; } = string.Empty;
         public string InviteCode { get; set; } = string.Empty;

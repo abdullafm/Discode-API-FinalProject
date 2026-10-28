@@ -207,6 +207,7 @@ namespace Service.Services
                     CanModerate = member.UserId != viewerId && member.UserId != server.OwnerId && viewerTop > memberTop,
                     TimeoutUntil = member.TimeoutUntil is not null && member.TimeoutUntil > DateTime.UtcNow ? DateTime.SpecifyKind(member.TimeoutUntil.Value, DateTimeKind.Utc) : null,
                     Id = member.UserId,
+                    PublicId = member.User.PublicId,
                     UserName = member.User.UserName ?? string.Empty,
                     DisplayName = string.IsNullOrWhiteSpace(member.User.DisplayName) ? member.User.UserName ?? string.Empty : member.User.DisplayName,
                     AvatarUrl = member.User.AvatarUrl,
