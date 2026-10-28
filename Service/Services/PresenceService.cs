@@ -51,6 +51,11 @@ namespace Service.Services
             return await _presenceRepository.GetFriendIdsAsync(userId);
         }
 
+        public async Task<IEnumerable<string>> GetSharedSpaceIdsAsync(string userId)
+        {
+            return await _presenceRepository.GetSharedSpaceIdsAsync(userId);
+        }
+
         public async Task<string> ResolveAsync(AppUser user)
         {
             if (user.PreferredStatus == PresenceStatus.Invisible || !await _trackerRepository.IsOnlineAsync(user.Id))

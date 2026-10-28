@@ -40,5 +40,14 @@ namespace Repository.Repositories
                 .Select(x => x.SenderId == userId ? x.ReceiverId : x.SenderId)
                 .ToListAsync();
         }
+
+        public async Task<IEnumerable<string>> GetSharedSpaceIdsAsync(string userId)
+        {
+            var servers = _dbContext.ServerMembers.Where(x => x.UserId == userId).Select(x => x.ServerId);
+            var groups = _dbContext.GroupMembers.Where(x => x.UserId == userId).Select(x => x.GroupId);
+            var serverMates = _dbContext.ServerMembers.AsNoTracking().Where(x => servers.Contains(x.ServerId)).Select(x => x.UserId);
+            var groupMates = _dbContext.GroupMembers.AsNoTracking().Where(x => groups.Contains(x.GroupId)).Select(x => x.UserId);
+            return await serverMates.Union(groupMates).Where(id => id != userId).ToListAsync();
+        }
     }
 }

@@ -126,7 +126,8 @@ namespace Discode_API_FinalProject.Controllers.Client
             }
 
             await _hubContext.Clients.Group(PresenceHub.ProfileGroup(UserId)).SendAsync("ProfileChanged", new { userId = UserId });
-            await _hubContext.Clients.Users(await _presenceService.GetFriendIdsAsync(UserId)).SendAsync("ProfileChanged", new { userId = UserId });
+            var audience = (await _presenceService.GetFriendIdsAsync(UserId)).Union(await _presenceService.GetSharedSpaceIdsAsync(UserId)).Distinct().ToList();
+            await _hubContext.Clients.Users(audience).SendAsync("ProfileChanged", new { userId = UserId });
             await _hubContext.Clients.All.SendAsync("PostsChanged");
             return Ok(result);
         }
