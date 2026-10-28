@@ -9,5 +9,7 @@ namespace Service.Helpers.DTOs.ServerVoice
         public DateTime JoinedAt { get; set; }
         public bool IsMuted { get; set; }
         public bool IsDeafened { get; set; }
+        public bool IsCameraOn { get; set; }
+        public bool IsStreaming { get; set; }
     }
 }

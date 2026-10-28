@@ -7,5 +7,8 @@ namespace Service.Helpers.DTOs.ServerVoice
         public string AvatarUrl { get; set; } = string.Empty;
         public bool IsMuted { get; set; }
         public bool IsDeafened { get; set; }
+        public bool IsCameraOn { get; set; }
+        public bool IsStreaming { get; set; }
+        public bool IsSelf { get; set; }
     }
 }

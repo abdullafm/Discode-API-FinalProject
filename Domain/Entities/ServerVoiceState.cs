@@ -10,6 +10,8 @@ namespace Domain.Entities
         public string UserId { get; set; } = string.Empty;
         public bool IsMuted { get; set; }
         public bool IsDeafened { get; set; }
+        public bool IsCameraOn { get; set; }
+        public bool IsStreaming { get; set; }
         public DateTime SessionStartedAt { get; set; } = DateTime.UtcNow;
     }
 }

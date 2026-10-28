@@ -1715,10 +1715,16 @@ namespace Repository.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsCameraOn")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsDeafened")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsMuted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsStreaming")
                         .HasColumnType("bit");
 
                     b.Property<int>("ServerId")

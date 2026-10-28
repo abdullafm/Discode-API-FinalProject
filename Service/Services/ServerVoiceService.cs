@@ -91,6 +91,8 @@ namespace Service.Services
                     AvatarUrl = user.AvatarUrl,
                     IsMuted = state.IsMuted || state.IsDeafened,
                     IsDeafened = state.IsDeafened,
+                    IsCameraOn = state.IsCameraOn,
+                    IsStreaming = state.IsStreaming,
                     IsSelf = state.UserId == userId
                 });
             }
@@ -192,10 +194,12 @@ namespace Service.Services
                 return change;
             }
 
-            if (state.IsMuted != model.IsMuted || state.IsDeafened != model.IsDeafened)
+            if (state.IsMuted != model.IsMuted || state.IsDeafened != model.IsDeafened || state.IsCameraOn != model.IsCameraOn || state.IsStreaming != model.IsStreaming)
             {
                 state.IsMuted = model.IsMuted;
                 state.IsDeafened = model.IsDeafened;
+                state.IsCameraOn = model.IsCameraOn;
+                state.IsStreaming = model.IsStreaming;
                 await _states.UpdateAsync(state);
                 change.ServerIds.Add(state.ServerId);
             }
@@ -239,7 +243,9 @@ namespace Service.Services
                 ChannelName = channel.Name,
                 JoinedAt = DateTime.SpecifyKind(state.CreatedAt, DateTimeKind.Utc),
                 IsMuted = state.IsMuted || state.IsDeafened,
-                IsDeafened = state.IsDeafened
+                IsDeafened = state.IsDeafened,
+                IsCameraOn = state.IsCameraOn,
+                IsStreaming = state.IsStreaming
             };
         }
 
