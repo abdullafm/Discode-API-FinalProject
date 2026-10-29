@@ -68,6 +68,7 @@ namespace Discode_API_FinalProject.Hubs
                 _ = EndCallsAfterGraceAsync(UserId, _scopes, _hubContext);
             }
 
+            ForgetDiscoverWatcher();
             await ReleaseLiveAsync();
 
             await base.OnDisconnectedAsync(exception);
@@ -108,13 +109,15 @@ namespace Discode_API_FinalProject.Hubs
             }
         }
 
-        private Task NotifyFriendsAsync(PresenceChangeDto change)
+        private async Task NotifyFriendsAsync(PresenceChangeDto change)
         {
-            return Clients.Users(change.FriendIds).SendAsync("PresenceChanged", new
+            await Clients.Users(change.FriendIds).SendAsync("PresenceChanged", new
             {
                 userId = change.UserId,
                 status = change.Status
             });
+
+            _ = PublishDiscoverForUserAsync(change.UserId);
         }
     }
 }

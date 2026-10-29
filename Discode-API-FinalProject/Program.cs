@@ -60,6 +60,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 builder.Services.AddServiceLayer();
+builder.Services.AddScoped<DiscoverBroadcaster>();
 builder.Services.AddRepositoryLayer();
 
 builder.Services.AddHttpClient<IEmailRepository, EmailRepository>(client =>

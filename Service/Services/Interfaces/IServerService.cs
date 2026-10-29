@@ -7,6 +7,9 @@ namespace Service.Services.Interfaces
         Task<ServerChangeDto> CreateAsync(string userId, CreateServerDto model);
         Task<ServerChangeDto> JoinAsync(string userId, JoinServerDto model);
         Task<IEnumerable<ServerDto>> GetMineAsync(string userId);
+        Task<IEnumerable<DiscoverServerDto>> GetDiscoverAsync(string? search);
+        Task<DiscoverServerDto?> GetDiscoverItemAsync(int serverId);
+        Task<IEnumerable<DiscoverServerDto>> GetDiscoverForUserAsync(string userId);
         Task<ServerDto> GetAsync(string userId, int serverId);
         Task<IEnumerable<ServerMemberDto>> GetMembersAsync(string userId, int serverId);
         Task<ServerInviteDto> GetInviteAsync(string userId, string invite);

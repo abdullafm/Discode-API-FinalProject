@@ -29,6 +29,7 @@ namespace Service.Services
         private readonly IServerChannelService _channelService;
         private readonly IValidator<DeleteServerDto> _deleteValidator;
         private readonly IServerOverwriteRepository _overwrites;
+        private const int DiscoverLimit = 60;
         private readonly IPresenceService _presence;
         private readonly IValidator<CreateServerDto> _createValidator;
         private readonly IValidator<JoinServerDto> _joinValidator;
@@ -158,6 +159,74 @@ namespace Service.Services
 
             var fresh = (await _servers.GetWithMembersAsync(server.Id))!;
             return Change(fresh, userId, true);
+        }
+
+        public async Task<IEnumerable<DiscoverServerDto>> GetDiscoverAsync(string? search)
+        {
+            var servers = await _servers.GetPublicAsync(search, DiscoverLimit);
+            var result = new List<DiscoverServerDto>();
+            foreach (var server in servers)
+            {
+                result.Add(await ToDiscoverAsync(server));
+            }
+
+            return result;
+        }
+
+        public async Task<DiscoverServerDto?> GetDiscoverItemAsync(int serverId)
+        {
+            var server = await _servers.GetWithMembersAsync(serverId);
+            if (server is null || server.IsPrivate)
+            {
+                return null;
+            }
+
+            return await ToDiscoverAsync(server);
+        }
+
+        public async Task<IEnumerable<DiscoverServerDto>> GetDiscoverForUserAsync(string userId)
+        {
+            var result = new List<DiscoverServerDto>();
+            foreach (var server in await _servers.GetForUserAsync(userId))
+            {
+                if (server.IsPrivate)
+                {
+                    continue;
+                }
+
+                var item = await GetDiscoverItemAsync(server.Id);
+                if (item is not null)
+                {
+                    result.Add(item);
+                }
+            }
+
+            return result;
+        }
+
+        private async Task<DiscoverServerDto> ToDiscoverAsync(Server server)
+        {
+            var online = 0;
+            foreach (var member in server.Members)
+            {
+                if (await _presence.ResolveAsync(member.User) != "offline")
+                {
+                    online++;
+                }
+            }
+
+            return new DiscoverServerDto
+            {
+                Id = server.Id,
+                Name = server.Name,
+                IconUrl = server.IconUrl,
+                BannerUrl = server.BannerUrl,
+                BannerColor = server.BannerColor,
+                Description = server.Description,
+                InviteCode = server.InviteCode,
+                MemberCount = server.Members.Count,
+                OnlineCount = online
+            };
         }
 
         public async Task<IEnumerable<ServerDto>> GetMineAsync(string userId)
