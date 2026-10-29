@@ -34,6 +34,7 @@ namespace Service
             services.AddScoped<IMentionService, MentionService>();
             services.AddScoped<IGroupCallService, GroupCallService>();
             services.AddScoped<IUserBlockService, UserBlockService>();
+            services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IUserIgnoreService, UserIgnoreService>();
             services.AddScoped<IServerService, ServerService>();
             services.AddScoped<IServerPermissionService, ServerPermissionService>();
