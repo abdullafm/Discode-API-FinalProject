@@ -5,12 +5,12 @@ namespace Discode_API_FinalProject.Hubs
 {
     public class DiscoverBroadcaster
     {
-        private readonly IServerService _servers;
+        private readonly IDiscoverService _discover;
         private readonly IHubContext<PresenceHub> _hub;
 
-        public DiscoverBroadcaster(IServerService servers, IHubContext<PresenceHub> hub)
+        public DiscoverBroadcaster(IDiscoverService discover, IHubContext<PresenceHub> hub)
         {
-            _servers = servers;
+            _discover = discover;
             _hub = hub;
         }
 
@@ -21,7 +21,7 @@ namespace Discode_API_FinalProject.Hubs
                 return;
             }
 
-            var item = await _servers.GetDiscoverItemAsync(serverId);
+            var item = await _discover.GetItemAsync(serverId);
             if (item is null)
             {
                 await _hub.Clients.Group(PresenceHub.DiscoverGroup).SendAsync("DiscoverServerRemoved", new { serverId });
@@ -38,7 +38,7 @@ namespace Discode_API_FinalProject.Hubs
                 return;
             }
 
-            foreach (var item in await _servers.GetDiscoverForUserAsync(userId))
+            foreach (var item in await _discover.GetForUserAsync(userId))
             {
                 await _hub.Clients.Group(PresenceHub.DiscoverGroup).SendAsync("DiscoverServer", item);
             }

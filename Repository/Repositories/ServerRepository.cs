@@ -29,26 +29,6 @@ namespace Repository.Repositories
                 .FirstOrDefaultAsync(x => x.InviteCode == inviteCode);
         }
 
-        public async Task<IEnumerable<Server>> GetPublicAsync(string? search, int take)
-        {
-            var query = _dbSet
-                .AsNoTracking()
-                .Include(x => x.Members).ThenInclude(m => m.User)
-                .Where(x => !x.IsPrivate);
-
-            if (!string.IsNullOrWhiteSpace(search))
-            {
-                var term = search.Trim();
-                query = query.Where(x => x.Name.Contains(term) || x.Description.Contains(term));
-            }
-
-            return await query
-                .OrderByDescending(x => x.Members.Count)
-                .ThenBy(x => x.Name)
-                .Take(take)
-                .ToListAsync();
-        }
-
         public async Task<IEnumerable<Server>> GetForUserAsync(string userId)
         {
             return await _dbSet

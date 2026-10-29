@@ -6,7 +6,6 @@ namespace Repository.Repositories.Interfaces
     {
         Task<Server?> GetWithMembersAsync(int id);
         Task<Server?> GetByInviteCodeAsync(string inviteCode);
-        Task<IEnumerable<Server>> GetPublicAsync(string? search, int take);
         Task<IEnumerable<Server>> GetForUserAsync(string userId);
         Task<bool> InviteCodeExistsAsync(string inviteCode);
     }

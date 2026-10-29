@@ -46,12 +46,6 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(await _serverService.GetMineAsync(UserId));
         }
 
-        [HttpGet("discover")]
-        public async Task<IActionResult> Discover([FromQuery] string? search)
-        {
-            return Ok(await _serverService.GetDiscoverAsync(search));
-        }
-
         [HttpGet("{id:int}")]
         public async Task<IActionResult> Get(int id)
         {

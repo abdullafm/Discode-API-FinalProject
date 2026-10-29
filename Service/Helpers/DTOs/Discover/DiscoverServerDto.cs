@@ -1,4 +1,4 @@
-namespace Service.Helpers.DTOs.Servers
+namespace Service.Helpers.DTOs.Discover
 {
     public class DiscoverServerDto
     {
