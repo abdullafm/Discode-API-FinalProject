@@ -17,6 +17,9 @@ namespace Domain.Configurations
                 .HasMaxLength(32)
                 .HasDefaultValue(string.Empty);
 
+            builder.Property(x => x.UnreadMentions)
+                .HasDefaultValue(0);
+
             builder.HasOne(x => x.Server)
                 .WithMany(s => s.Members)
                 .HasForeignKey(x => x.ServerId)

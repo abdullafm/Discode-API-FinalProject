@@ -9,12 +9,16 @@ using Service.Helpers.Exceptions;
 using Service.Helpers.Mappings;
 using Service.Helpers.Validators;
 using Service.Services.Interfaces;
+using System.Text.RegularExpressions;
 
 namespace Service.Services
 {
     public class ServerMessageService : IServerMessageService
     {
         private const int HistoryLimit = 50;
+
+        private static readonly Regex EveryoneMention = new(@"(?<![\w@])@everyone\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex HereMention = new(@"(?<![\w@])@here\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         private readonly IServerMessageRepository _messages;
         private readonly IServerChannelRepository _channels;
@@ -25,6 +29,7 @@ namespace Service.Services
         private readonly IValidator<ToggleReactionDto> _reactionValidator;
         private readonly IValidator<CreatePollDto> _pollValidator;
         private readonly IPollRepository _polls;
+        private readonly IPresenceService _presence;
         private readonly IMapper _mapper;
 
         public ServerMessageService(IServerMessageRepository messages,
@@ -36,6 +41,7 @@ namespace Service.Services
                                     IValidator<ToggleReactionDto> reactionValidator,
                                     IValidator<CreatePollDto> pollValidator,
                                     IPollRepository polls,
+                                    IPresenceService presence,
                                     IMapper mapper)
         {
             _pollValidator = pollValidator;
@@ -47,6 +53,7 @@ namespace Service.Services
             _permissions = permissions;
             _sendValidator = sendValidator;
             _reactionValidator = reactionValidator;
+            _presence = presence;
             _mapper = mapper;
         }
 
@@ -87,10 +94,12 @@ namespace Service.Services
             await _messages.AddAsync(message);
 
             var saved = await _messages.GetWithSenderAsync(message.Id);
+            var viewerIds = await ViewersAsync(serverId, channel);
             return new ServerMessageChangeDto
             {
                 Message = _mapper.Map<ServerMessageDto>(saved, options => options.Items[MappingProfile.ViewerIdKey] = string.Empty),
-                ViewerIds = await ViewersAsync(serverId, channel)
+                ViewerIds = viewerIds,
+                MentionCounts = await CountMentionsAsync(userId, serverId, perms, message.Text, viewerIds)
             };
         }
 
@@ -266,6 +275,36 @@ namespace Service.Services
             {
                 throw new ForbiddenException("You are timed out and can't send messages or react right now.");
             }
+        }
+
+        private async Task<Dictionary<string, int>> CountMentionsAsync(string senderId, int serverId, ServerPermission perms, string text, List<string> viewerIds)
+        {
+            var everyone = EveryoneMention.IsMatch(text);
+            var here = HereMention.IsMatch(text);
+            if ((!everyone && !here) || (perms & ServerPermission.MentionEveryone) != ServerPermission.MentionEveryone)
+            {
+                return new Dictionary<string, int>();
+            }
+
+            var members = await _members.GetByUserIdsAsync(serverId, viewerIds.Where(id => id != senderId).ToList());
+            var targets = new List<string>();
+            foreach (var member in members)
+            {
+                var muted = member.MutedIndefinitely || (member.MutedUntil.HasValue && member.MutedUntil.Value > DateTime.UtcNow);
+                if (muted || member.NotificationLevel == ServerNotificationLevel.Nothing)
+                {
+                    continue;
+                }
+
+                if (!everyone && await _presence.ResolveAsync(member.User) == "offline")
+                {
+                    continue;
+                }
+
+                targets.Add(member.UserId);
+            }
+
+            return await _members.AddMentionAsync(serverId, targets);
         }
 
         private async Task<List<string>> ViewersAsync(int serverId, ServerChannel channel)

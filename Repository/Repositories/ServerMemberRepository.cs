@@ -32,6 +32,30 @@ namespace Repository.Repositories
             return await _dbSet.AsNoTracking().Include(x => x.User).Where(x => x.ServerId == serverId && userIds.Contains(x.UserId)).ToListAsync();
         }
 
+        public async Task<Dictionary<string, int>> AddMentionAsync(int serverId, List<string> userIds)
+        {
+            if (userIds.Count == 0)
+            {
+                return new Dictionary<string, int>();
+            }
+
+            await _dbSet
+                .Where(x => x.ServerId == serverId && userIds.Contains(x.UserId))
+                .ExecuteUpdateAsync(set => set.SetProperty(x => x.UnreadMentions, x => x.UnreadMentions + 1));
+
+            return await _dbSet
+                .AsNoTracking()
+                .Where(x => x.ServerId == serverId && userIds.Contains(x.UserId))
+                .ToDictionaryAsync(x => x.UserId, x => x.UnreadMentions);
+        }
+
+        public async Task ClearMentionsAsync(int serverId, string userId)
+        {
+            await _dbSet
+                .Where(x => x.ServerId == serverId && x.UserId == userId && x.UnreadMentions != 0)
+                .ExecuteUpdateAsync(set => set.SetProperty(x => x.UnreadMentions, 0));
+        }
+
         public async Task<List<ServerMember>> SearchAsync(int serverId, string? search, int take)
         {
             var query = _dbSet.AsNoTracking().Include(x => x.User).Where(x => x.ServerId == serverId);

@@ -1549,6 +1549,11 @@ namespace Repository.Migrations
                     b.Property<DateTime?>("TimeoutUntil")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("UnreadMentions")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
                     b.Property<string>("UserId")
                         .IsRequired()
                         .HasMaxLength(450)

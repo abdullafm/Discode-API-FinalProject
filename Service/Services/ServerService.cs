@@ -181,6 +181,16 @@ namespace Service.Services
             return dto;
         }
 
+        public async Task ClearMentionsAsync(string userId, int serverId)
+        {
+            if (await _members.GetAsync(serverId, userId) is null)
+            {
+                throw new NotFoundException("Server not found.");
+            }
+
+            await _members.ClearMentionsAsync(serverId, userId);
+        }
+
         public async Task<IEnumerable<ServerMemberDto>> GetMembersAsync(string userId, int serverId)
         {
             var server = await _servers.GetWithMembersAsync(serverId);
@@ -499,6 +509,7 @@ namespace Service.Services
                 dto.NotificationLevel = membership.NotificationLevel.ToString().ToLowerInvariant();
                 dto.HideMutedChannels = membership.HideMutedChannels;
                 dto.ShowAllChannels = membership.ShowAllChannels;
+                dto.MentionCount = membership.UnreadMentions;
             }
 
             return dto;

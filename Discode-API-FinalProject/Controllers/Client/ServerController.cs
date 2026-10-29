@@ -52,6 +52,14 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(await _serverService.GetAsync(UserId, id));
         }
 
+        [HttpPost("{id:int}/mentions/read")]
+        public async Task<IActionResult> ReadMentions(int id)
+        {
+            await _serverService.ClearMentionsAsync(UserId, id);
+            await _hubContext.Clients.User(UserId).SendAsync("ServerMentions", new { serverId = id, count = 0 });
+            return NoContent();
+        }
+
         [HttpGet("invite/{code}")]
         public async Task<IActionResult> GetInvite(string code)
         {

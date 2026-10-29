@@ -18,5 +18,6 @@ namespace Domain.Entities
         public ServerNotificationLevel NotificationLevel { get; set; } = ServerNotificationLevel.Mentions;
         public bool HideMutedChannels { get; set; }
         public bool ShowAllChannels { get; set; } = true;
+        public int UnreadMentions { get; set; }
     }
 }

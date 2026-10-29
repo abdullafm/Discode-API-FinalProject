@@ -42,6 +42,11 @@ namespace Discode_API_FinalProject.Controllers.Client
         {
             var change = await _messageService.SendAsync(UserId, serverId, channelId, model);
             await _hubContext.Clients.Users(change.ViewerIds).SendAsync("ServerMessage", new { serverId, channelId, message = change.Message });
+            foreach (var mention in change.MentionCounts)
+            {
+                await _hubContext.Clients.User(mention.Key).SendAsync("ServerMentions", new { serverId, channelId, count = mention.Value });
+            }
+
             return Ok(change.Message);
         }
 
