@@ -86,6 +86,7 @@ namespace Service.Services
                 Pronouns = showDetails ? other.Pronouns ?? string.Empty : string.Empty,
                 CustomStatus = showDetails && presence != "offline" ? other.CustomStatus ?? string.Empty : string.Empty,
                 UserId = other.Id,
+                PublicId = other.PublicId,
                 UserName = other.UserName ?? string.Empty,
                 DisplayName = string.IsNullOrWhiteSpace(other.DisplayName) ? other.UserName ?? string.Empty : other.DisplayName,
                 AvatarUrl = other.AvatarUrl ?? string.Empty,
