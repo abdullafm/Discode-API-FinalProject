@@ -41,6 +41,7 @@ namespace Service
             services.AddScoped<IServerRoleService, ServerRoleService>();
             services.AddScoped<IServerAuditService, ServerAuditService>();
             services.AddScoped<IServerBanService, ServerBanService>();
+            services.AddScoped<IServerPruneService, ServerPruneService>();
             services.AddScoped<IDiscoverService, DiscoverService>();
             services.AddScoped<IServerChannelService, ServerChannelService>();
             services.AddScoped<IServerTimeoutService, ServerTimeoutService>();

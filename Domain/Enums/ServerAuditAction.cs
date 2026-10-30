@@ -23,6 +23,7 @@ namespace Domain.Enums
         MemberUnmute = 19,
         MemberVoiceDisconnect = 20,
         MemberTimeout = 21,
-        MemberTimeoutRemove = 22
+        MemberTimeoutRemove = 22,
+        MemberPrune = 23
     }
 }

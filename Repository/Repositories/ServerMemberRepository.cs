@@ -56,6 +56,23 @@ namespace Repository.Repositories
                 .ExecuteUpdateAsync(set => set.SetProperty(x => x.UnreadMentions, 0));
         }
 
+        public async Task<List<ServerMember>> GetPrunableAsync(int serverId, DateTime cutoff)
+        {
+            var ownerId = await _dbContext.Servers
+                .Where(x => x.Id == serverId)
+                .Select(x => x.OwnerId)
+                .FirstOrDefaultAsync();
+
+            return await _dbSet
+                .AsNoTracking()
+                .Where(m => m.ServerId == serverId
+                    && m.JoinedAt < cutoff
+                    && m.UserId != ownerId
+                    && !_dbContext.ServerMemberRoles.Any(r => r.ServerMemberId == m.Id)
+                    && !_dbContext.ServerMessages.Any(message => message.ServerId == serverId && message.SenderId == m.UserId && message.CreatedAt >= cutoff))
+                .ToListAsync();
+        }
+
         public async Task<List<ServerMember>> SearchAsync(int serverId, string? search, int take)
         {
             var query = _dbSet.AsNoTracking().Include(x => x.User).Where(x => x.ServerId == serverId);

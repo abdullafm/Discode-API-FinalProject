@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Service.Helpers.DTOs.ServerAudit;
 using Service.Helpers.DTOs.ServerBans;
+using Service.Helpers.DTOs.ServerPrune;
 using Service.Helpers.DTOs.Servers;
 using Service.Services.Interfaces;
 using System.Security.Claims;
@@ -19,15 +20,17 @@ namespace Discode_API_FinalProject.Controllers.Client
         private readonly IServerAuditService _auditService;
         private readonly IServerBanService _banService;
         private readonly IServerTimeoutService _timeoutService;
+        private readonly IServerPruneService _pruneService;
         private readonly IHubContext<PresenceHub> _hubContext;
         private readonly DiscoverBroadcaster _discover;
 
-        public ServerController(IServerService serverService, IServerAuditService auditService, IServerBanService banService, IServerTimeoutService timeoutService, IHubContext<PresenceHub> hubContext, DiscoverBroadcaster discover)
+        public ServerController(IServerService serverService, IServerAuditService auditService, IServerBanService banService, IServerTimeoutService timeoutService, IServerPruneService pruneService, IHubContext<PresenceHub> hubContext, DiscoverBroadcaster discover)
         {
             _serverService = serverService;
             _auditService = auditService;
             _banService = banService;
             _timeoutService = timeoutService;
+            _pruneService = pruneService;
             _hubContext = hubContext;
             _discover = discover;
         }
@@ -126,6 +129,28 @@ namespace Discode_API_FinalProject.Controllers.Client
             await _banService.KickAsync(UserId, id, userId);
             await RemovedAsync(id, userId, "kicked");
             return Ok();
+        }
+
+        [HttpGet("{id:int}/prune")]
+        public async Task<IActionResult> PrunePreview(int id, [FromQuery] ServerPruneDto model)
+        {
+            return Ok(new { count = await _pruneService.PreviewAsync(UserId, id, model) });
+        }
+
+        [HttpPost("{id:int}/prune")]
+        public async Task<IActionResult> Prune(int id, [FromBody] ServerPruneDto model)
+        {
+            var change = await _pruneService.PruneAsync(UserId, id, model);
+            if (change.Count > 0)
+            {
+                await _hubContext.Clients.Users(change.RemovedUserIds).SendAsync("ServersChanged");
+                await _hubContext.Clients.Users(change.RemovedUserIds).SendAsync("ServerRemoved", new { serverId = id, reason = "pruned" });
+                await _hubContext.Clients.Users(change.RemainingUserIds).SendAsync("ServerUpdated", new { serverId = id, memberCount = change.RemainingUserIds.Count });
+                await _hubContext.Clients.Users(change.RemainingUserIds).SendAsync("ServerAuditChanged", new { serverId = id });
+                await _discover.PublishServerAsync(id);
+            }
+
+            return Ok(new { count = change.Count });
         }
 
         [HttpPost("{id:int}/delete")]
