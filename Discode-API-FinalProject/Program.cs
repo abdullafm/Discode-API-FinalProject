@@ -190,6 +190,7 @@ using (var scope = app.Services.CreateScope())
 
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     await RoleSeeder.SeedAsync(roleManager);
+    await RoleSeeder.SeedSuperAdminAsync(scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>(), app.Configuration["Seed:SuperAdminEmail"]);
     await EmojiSeeder.SeedAsync(db);
     await TranslationSeeder.SeedAsync(db);
 }
