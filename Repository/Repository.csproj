@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="Data\Seed\emojis.json" LogicalName="emojis.json" />
+    <EmbeddedResource Include="Data\Seed\translations.json" LogicalName="translations.json" />
   </ItemGroup>
 
   <ItemGroup>

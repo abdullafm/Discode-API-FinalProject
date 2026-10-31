@@ -43,6 +43,7 @@ namespace Service
             services.AddScoped<IServerBanService, ServerBanService>();
             services.AddScoped<IServerPruneService, ServerPruneService>();
             services.AddScoped<IDiscoverService, DiscoverService>();
+            services.AddScoped<ITranslationService, TranslationService>();
             services.AddScoped<IServerChannelService, ServerChannelService>();
             services.AddScoped<IServerTimeoutService, ServerTimeoutService>();
             services.AddScoped<IServerVoiceService, ServerVoiceService>();

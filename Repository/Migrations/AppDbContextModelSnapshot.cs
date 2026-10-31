@@ -79,6 +79,13 @@ namespace Repository.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(true);
 
+                    b.Property<string>("Language")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)")
+                        .HasDefaultValue("en");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 
@@ -1947,6 +1954,41 @@ namespace Repository.Migrations
                         .IsUnique();
 
                     b.ToTable("StoryViews");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Translation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)")
+                        .UseCollation("Latin1_General_100_CS_AS");
+
+                    b.Property<string>("LanguageCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("nvarchar(8)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(600)
+                        .HasColumnType("nvarchar(600)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LanguageCode", "Key")
+                        .IsUnique();
+
+                    b.ToTable("Translations");
                 });
 
             modelBuilder.Entity("Domain.Entities.UserBlock", b =>

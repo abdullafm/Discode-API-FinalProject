@@ -35,6 +35,11 @@ namespace Domain.Configurations
                 .IsRequired()
                 .HasDefaultValue(true);
 
+            builder.Property(u => u.Language)
+                .IsRequired()
+                .HasMaxLength(8)
+                .HasDefaultValue("en");
+
             builder.Property(u => u.PreferredStatus)
                 .IsRequired()
                 .HasDefaultValue(PresenceStatus.Online);

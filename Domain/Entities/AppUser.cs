@@ -13,6 +13,7 @@ namespace Domain.Entities
         public string Pronouns { get; set; } = string.Empty;
         public string CustomStatus { get; set; } = string.Empty;
         public bool IsPublic { get; set; } = true;
+        public string Language { get; set; } = "en";
         public PresenceStatus PreferredStatus { get; set; } = PresenceStatus.Online;
         public string? EmailVerificationCode { get; set; }
         public DateTime? EmailVerificationExpiresAt { get; set; }
