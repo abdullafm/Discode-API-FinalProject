@@ -91,7 +91,7 @@ namespace Repository.Repositories
         {
             var term = searchName.Trim();
             return await _userManager.Users
-                .Where(n => (n.UserName != null && n.UserName.Contains(term)) || n.DisplayName.Contains(term)).ToListAsync();
+                .Where(n => n.UserName != null && n.UserName.Contains(term)).ToListAsync();
         }
 
         public async Task<(AppUser User, FriendRequest? Request)?> GetUserProfileAsync(string viewerId, string userName)
