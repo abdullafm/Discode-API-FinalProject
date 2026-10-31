@@ -8,7 +8,7 @@ namespace Service.Services
 {
     public class TranslationService : ITranslationService
     {
-        public static readonly string[] Languages = { "en", "tr", "az" };
+        public static readonly string[] Languages = { "en", "tr", "az", "ru" };
 
         private readonly ITranslationRepository _translations;
         private readonly IValidator<SetLanguageDto> _languageValidator;
