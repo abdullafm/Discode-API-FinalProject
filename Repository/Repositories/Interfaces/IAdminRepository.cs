@@ -27,6 +27,14 @@ namespace Repository.Repositories.Interfaces
         Task<int> CountGroupMessagesAsync();
         Task<int> CountServerMessagesAsync();
 
+        Task<(List<Domain.Entities.AppUser> Users, int Total)> GetUsersAsync(string? search, int page, int pageSize);
+        Task<Dictionary<string, List<string>>> GetRolesForUsersAsync(List<string> userIds);
+        Task<Dictionary<string, int>> GetServerCountsForUsersAsync(List<string> userIds);
+        Task<Dictionary<string, int>> GetBanCountsForUsersAsync(List<string> userIds);
+        Task<(List<Domain.Entities.Server> Servers, int Total)> GetServersAsync(string? search, int page, int pageSize);
+        Task<Dictionary<int, int>> GetMemberCountsForServersAsync(List<int> serverIds);
+        Task<Dictionary<int, int>> GetBanCountsForServersAsync(List<int> serverIds);
+
         Task<int> CountReportsAsync();
         Task<int> CountReportsByStatusAsync(Domain.Enums.ReportStatus status);
         Task<List<(Domain.Enums.ReportReason Reason, int Count)>> GetTopReportReasonsAsync(int take);

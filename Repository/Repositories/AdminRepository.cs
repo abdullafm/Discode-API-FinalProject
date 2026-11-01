@@ -62,6 +62,87 @@ namespace Repository.Repositories
 
         public Task<int> CountServerMessagesAsync() => _dbContext.ServerMessages.CountAsync();
 
+        public async Task<(List<Domain.Entities.AppUser> Users, int Total)> GetUsersAsync(string? search, int page, int pageSize)
+        {
+            var query = _dbContext.Users.AsNoTracking().AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(x => (x.UserName != null && x.UserName.Contains(term)) || x.DisplayName.Contains(term) || (x.Email != null && x.Email.Contains(term)));
+            }
+
+            var total = await query.CountAsync();
+            var users = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+            return (users, total);
+        }
+
+        public async Task<Dictionary<string, List<string>>> GetRolesForUsersAsync(List<string> userIds)
+        {
+            var rows = await (from userRole in _dbContext.UserRoles
+                              join role in _dbContext.Roles on userRole.RoleId equals role.Id
+                              where userIds.Contains(userRole.UserId)
+                              select new { userRole.UserId, role.Name }).ToListAsync();
+            return rows.GroupBy(x => x.UserId).ToDictionary(g => g.Key, g => g.Select(x => x.Name ?? string.Empty).ToList());
+        }
+
+        public async Task<Dictionary<string, int>> GetServerCountsForUsersAsync(List<string> userIds)
+        {
+            return await _dbContext.ServerMembers
+                .Where(x => userIds.Contains(x.UserId))
+                .GroupBy(x => x.UserId)
+                .Select(g => new { g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Key, x => x.Count);
+        }
+
+        public async Task<Dictionary<string, int>> GetBanCountsForUsersAsync(List<string> userIds)
+        {
+            return await _dbContext.ServerBans
+                .Where(x => userIds.Contains(x.UserId))
+                .GroupBy(x => x.UserId)
+                .Select(g => new { g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Key, x => x.Count);
+        }
+
+        public async Task<(List<Domain.Entities.Server> Servers, int Total)> GetServersAsync(string? search, int page, int pageSize)
+        {
+            var query = _dbContext.Servers.AsNoTracking().Include(x => x.Owner).AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim();
+                query = query.Where(x => x.Name.Contains(term) || (x.Owner.UserName != null && x.Owner.UserName.Contains(term)));
+            }
+
+            var total = await query.CountAsync();
+            var servers = await query
+                .OrderByDescending(x => x.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+            return (servers, total);
+        }
+
+        public async Task<Dictionary<int, int>> GetMemberCountsForServersAsync(List<int> serverIds)
+        {
+            return await _dbContext.ServerMembers
+                .Where(x => serverIds.Contains(x.ServerId))
+                .GroupBy(x => x.ServerId)
+                .Select(g => new { g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Key, x => x.Count);
+        }
+
+        public async Task<Dictionary<int, int>> GetBanCountsForServersAsync(List<int> serverIds)
+        {
+            return await _dbContext.ServerBans
+                .Where(x => serverIds.Contains(x.ServerId))
+                .GroupBy(x => x.ServerId)
+                .Select(g => new { g.Key, Count = g.Count() })
+                .ToDictionaryAsync(x => x.Key, x => x.Count);
+        }
+
         public Task<int> CountReportsAsync() => _dbContext.Reports.CountAsync();
 
         public Task<int> CountReportsByStatusAsync(ReportStatus status) => _dbContext.Reports.CountAsync(x => x.Status == status);

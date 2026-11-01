@@ -9,10 +9,73 @@ namespace Service.Services
     public class AdminService : IAdminService
     {
         private readonly IAdminRepository _admin;
+        private readonly FluentValidation.IValidator<AdminListFilterDto> _filterValidator;
 
-        public AdminService(IAdminRepository admin)
+        public AdminService(IAdminRepository admin, FluentValidation.IValidator<AdminListFilterDto> filterValidator)
         {
             _admin = admin;
+            _filterValidator = filterValidator;
+        }
+
+        public async Task<AdminUserListDto> GetUsersAsync(AdminListFilterDto filter)
+        {
+            await Helpers.Validators.ValidationExtensions.EnsureValidAsync(_filterValidator, filter);
+
+            var (users, total) = await _admin.GetUsersAsync(filter.Search, filter.Page, filter.PageSize);
+            var ids = users.Select(x => x.Id).ToList();
+            var roles = await _admin.GetRolesForUsersAsync(ids);
+            var servers = await _admin.GetServerCountsForUsersAsync(ids);
+            var bans = await _admin.GetBanCountsForUsersAsync(ids);
+
+            return new AdminUserListDto
+            {
+                Total = total,
+                Page = filter.Page,
+                PageSize = filter.PageSize,
+                Items = users.Select(user => new AdminUserRowDto
+                {
+                    Id = user.Id,
+                    PublicId = user.PublicId,
+                    UserName = user.UserName ?? string.Empty,
+                    DisplayName = user.DisplayName,
+                    Email = user.Email ?? string.Empty,
+                    AvatarUrl = user.AvatarUrl,
+                    IsPublic = user.IsPublic,
+                    CreatedAt = user.CreatedAt,
+                    Roles = roles.TryGetValue(user.Id, out var list) ? list : new List<string>(),
+                    ServersJoined = servers.TryGetValue(user.Id, out var joined) ? joined : 0,
+                    BansReceived = bans.TryGetValue(user.Id, out var banned) ? banned : 0
+                }).ToList()
+            };
+        }
+
+        public async Task<AdminServerListDto> GetServersAsync(AdminListFilterDto filter)
+        {
+            await Helpers.Validators.ValidationExtensions.EnsureValidAsync(_filterValidator, filter);
+
+            var (servers, total) = await _admin.GetServersAsync(filter.Search, filter.Page, filter.PageSize);
+            var ids = servers.Select(x => x.Id).ToList();
+            var members = await _admin.GetMemberCountsForServersAsync(ids);
+            var bans = await _admin.GetBanCountsForServersAsync(ids);
+
+            return new AdminServerListDto
+            {
+                Total = total,
+                Page = filter.Page,
+                PageSize = filter.PageSize,
+                Items = servers.Select(server => new AdminServerRowDto
+                {
+                    Id = server.Id,
+                    PublicId = server.PublicId,
+                    Name = server.Name,
+                    IconUrl = server.IconUrl,
+                    OwnerUserName = server.Owner?.UserName ?? string.Empty,
+                    IsPrivate = server.IsPrivate,
+                    CreatedAt = server.CreatedAt,
+                    Members = members.TryGetValue(server.Id, out var count) ? count : 0,
+                    Bans = bans.TryGetValue(server.Id, out var banned) ? banned : 0
+                }).ToList()
+            };
         }
 
         public async Task<AdminOverviewDto> GetOverviewAsync()
