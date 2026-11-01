@@ -155,15 +155,26 @@ namespace Repository.Repositories
 
         public Task<int> CountMessagesInServerAsync(int serverId) => _dbContext.ServerMessages.CountAsync(x => x.ServerId == serverId);
 
-        public async Task<List<Domain.Entities.ServerMember>> GetRecentMembersAsync(int serverId, int take)
+        public async Task<(List<Domain.Entities.ServerMember> Members, int Total)> GetServerMembersAsync(int serverId, string? term, int page, int pageSize)
         {
-            return await _dbContext.ServerMembers
+            var query = _dbContext.ServerMembers
                 .AsNoTracking()
                 .Include(x => x.User)
-                .Where(x => x.ServerId == serverId)
+                .Where(x => x.ServerId == serverId);
+
+            if (!string.IsNullOrWhiteSpace(term))
+            {
+                var text = term.Trim();
+                query = query.Where(x => (x.User.UserName != null && x.User.UserName.Contains(text)) || x.User.DisplayName.Contains(text));
+            }
+
+            var total = await query.CountAsync();
+            var members = await query
                 .OrderBy(x => x.JoinedAt)
-                .Take(take)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+            return (members, total);
         }
 
         public Task<int> CountBannedServersAsync() => _dbContext.Servers.CountAsync(x => x.IsBanned);

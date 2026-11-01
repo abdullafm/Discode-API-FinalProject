@@ -33,7 +33,6 @@ namespace Service.Services
         public async Task<AdminServerDetailDto> GetServerAsync(int serverId)
         {
             var server = await _admin.GetServerAsync(serverId) ?? throw new Helpers.Exceptions.NotFoundException("Server not found.");
-            var recent = await _admin.GetRecentMembersAsync(serverId, 8);
             var bans = await _admin.GetBanCountsForServersAsync(new List<int> { serverId });
             var members = await _admin.GetMemberCountsForServersAsync(new List<int> { serverId });
 
@@ -59,7 +58,33 @@ namespace Service.Services
                 BannedAt = server.BannedAt,
                 BanReason = server.BanReason,
                 BannedByUserName = server.BannedById is null ? string.Empty : await _admin.GetUserNameAsync(server.BannedById) ?? string.Empty,
-                RecentMembers = recent.Select(member => new AdminServerMemberDto
+            };
+        }
+
+        public Task<AdminServerMemberListDto> GetServerMembersAsync(int serverId, AdminListFilterDto filter)
+        {
+            return LoadMembersAsync(serverId, null, filter);
+        }
+
+        public async Task<AdminServerMemberListDto> SearchServerMembersAsync(int serverId, AdminListFilterDto filter)
+        {
+            await Helpers.Validators.ValidationExtensions.EnsureValidAsync(_filterValidator, filter);
+            return await LoadMembersAsync(serverId, string.IsNullOrWhiteSpace(filter.Search) ? null : filter.Search, filter);
+        }
+
+        private async Task<AdminServerMemberListDto> LoadMembersAsync(int serverId, string? term, AdminListFilterDto filter)
+        {
+            await Helpers.Validators.ValidationExtensions.EnsureValidAsync(_filterValidator, filter);
+
+            var server = await _admin.GetServerAsync(serverId) ?? throw new Helpers.Exceptions.NotFoundException("Server not found.");
+            var (members, total) = await _admin.GetServerMembersAsync(serverId, term, filter.Page, filter.PageSize);
+
+            return new AdminServerMemberListDto
+            {
+                Total = total,
+                Page = filter.Page,
+                PageSize = filter.PageSize,
+                Items = members.Select(member => new AdminServerMemberDto
                 {
                     UserName = member.User.UserName ?? string.Empty,
                     DisplayName = member.User.DisplayName,

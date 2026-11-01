@@ -31,7 +31,7 @@ namespace Repository.Repositories.Interfaces
         Task<int> CountChannelsAsync(int serverId, Domain.Enums.ServerChannelKind kind);
         Task<int> CountRolesAsync(int serverId);
         Task<int> CountMessagesInServerAsync(int serverId);
-        Task<List<Domain.Entities.ServerMember>> GetRecentMembersAsync(int serverId, int take);
+        Task<(List<Domain.Entities.ServerMember> Members, int Total)> GetServerMembersAsync(int serverId, string? term, int page, int pageSize);
         Task<int> CountBannedServersAsync();
         Task SetServerBanAsync(int serverId, bool banned, string reason, string? bannedById);
         Task<Dictionary<int, int>> GetBanCountsForServersAsync(List<int> serverIds);

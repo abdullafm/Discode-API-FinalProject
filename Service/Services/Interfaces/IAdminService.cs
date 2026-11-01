@@ -9,6 +9,8 @@ namespace Service.Services.Interfaces
         Task<AdminServerListDto> GetAllServersAsync(AdminListFilterDto filter);
         Task<AdminServerListDto> SearchServersAsync(AdminListFilterDto filter);
         Task<AdminServerDetailDto> GetServerAsync(int serverId);
+        Task<AdminServerMemberListDto> GetServerMembersAsync(int serverId, AdminListFilterDto filter);
+        Task<AdminServerMemberListDto> SearchServerMembersAsync(int serverId, AdminListFilterDto filter);
         Task<List<string>> BanServerAsync(string adminId, int serverId, BanServerDto model);
         Task<List<string>> UnbanServerAsync(int serverId);
         Task<List<string>> DeleteServerAsync(int serverId);

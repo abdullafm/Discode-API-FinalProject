@@ -33,6 +33,18 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return Ok(await _adminService.GetServerAsync(id));
         }
 
+        [HttpGet("servers/{id:int}/members")]
+        public async Task<IActionResult> GetServerMembers(int id, [FromQuery] Service.Helpers.DTOs.Admin.AdminListFilterDto filter)
+        {
+            return Ok(await _adminService.GetServerMembersAsync(id, filter));
+        }
+
+        [HttpGet("servers/{id:int}/members/search")]
+        public async Task<IActionResult> SearchServerMembers(int id, [FromQuery] Service.Helpers.DTOs.Admin.AdminListFilterDto filter)
+        {
+            return Ok(await _adminService.SearchServerMembersAsync(id, filter));
+        }
+
         [HttpPost("servers/{id:int}/ban")]
         public async Task<IActionResult> BanServer(int id, [FromBody] Service.Helpers.DTOs.Admin.BanServerDto model)
         {

@@ -22,7 +22,14 @@ namespace Service.Helpers.DTOs.Admin
         public DateTime? BannedAt { get; set; }
         public string BanReason { get; set; } = string.Empty;
         public string BannedByUserName { get; set; } = string.Empty;
-        public List<AdminServerMemberDto> RecentMembers { get; set; } = new();
+    }
+
+    public class AdminServerMemberListDto
+    {
+        public List<AdminServerMemberDto> Items { get; set; } = new();
+        public int Total { get; set; }
+        public int Page { get; set; }
+        public int PageSize { get; set; }
     }
 
     public class AdminServerMemberDto
