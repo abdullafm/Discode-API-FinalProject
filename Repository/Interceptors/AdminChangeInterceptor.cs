@@ -97,6 +97,18 @@ namespace Repository.Interceptors
                         _topics.Add("users");
                         _serverIds.Add(ban.ServerId);
                         break;
+                    case ServerChannel channel when added || deleted:
+                        _topics.Add("server-detail");
+                        _serverIds.Add(channel.ServerId);
+                        break;
+                    case ServerRole role when added || deleted:
+                        _topics.Add("server-detail");
+                        _serverIds.Add(role.ServerId);
+                        break;
+                    case ServerMessage message when added || deleted:
+                        _topics.Add("server-detail");
+                        _serverIds.Add(message.ServerId);
+                        break;
                     case Report:
                         _topics.Add("reports");
                         break;
