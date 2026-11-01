@@ -11,7 +11,7 @@ namespace Service.Helpers.Validators.Admin
                 .GreaterThanOrEqualTo(1).WithMessage("The page must be 1 or higher.");
 
             RuleFor(x => x.PageSize)
-                .InclusiveBetween(5, 100).WithMessage("Ask for between 5 and 100 rows.");
+                .InclusiveBetween(1, 100).WithMessage("Ask for between 1 and 100 rows.");
 
             RuleFor(x => x.Role)
                 .Must(role => role is null || role == "Admin" || role == "SuperAdmin" || role == "Member")
