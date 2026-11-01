@@ -13,6 +13,10 @@ namespace Service.Helpers.Validators.Admin
             RuleFor(x => x.PageSize)
                 .InclusiveBetween(5, 100).WithMessage("Ask for between 5 and 100 rows.");
 
+            RuleFor(x => x.Role)
+                .Must(role => role is null || role == "Admin" || role == "SuperAdmin" || role == "Member")
+                .WithMessage("That role is not supported.");
+
             RuleFor(x => x.Search)
                 .Must(text => text is null || text.Length <= 100).WithMessage("That search is too long.");
         }

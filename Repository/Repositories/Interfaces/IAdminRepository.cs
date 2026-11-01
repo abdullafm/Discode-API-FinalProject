@@ -5,6 +5,7 @@ namespace Repository.Repositories.Interfaces
         Task<int> CountUsersAsync();
         Task<int> CountUsersCreatedSinceAsync(DateTime since);
         Task<int> CountUsersByVisibilityAsync(bool isPublic);
+        Task<int> CountUsersInRoleAsync(string roleName);
 
         Task<int> CountServersAsync();
         Task<int> CountServersByPrivacyAsync(bool isPrivate);
@@ -18,11 +19,11 @@ namespace Repository.Repositories.Interfaces
         Task<int> CountPostsAsync();
         Task<int> CountCommentsAsync();
 
-        Task<(List<Domain.Entities.AppUser> Users, int Total)> GetUsersAsync(string? search, int page, int pageSize);
+        Task<(List<Domain.Entities.AppUser> Users, int Total)> GetUsersAsync(string? search, string? role, bool bannedOnly, int page, int pageSize);
         Task<Dictionary<string, List<string>>> GetRolesForUsersAsync(List<string> userIds);
         Task<Dictionary<string, int>> GetServerCountsForUsersAsync(List<string> userIds);
         Task<Dictionary<string, int>> GetBanCountsForUsersAsync(List<string> userIds);
-        Task<(List<Domain.Entities.Server> Servers, int Total)> GetServersAsync(string? search, int page, int pageSize);
+        Task<(List<Domain.Entities.Server> Servers, int Total)> GetServersAsync(string? search, bool bannedOnly, int page, int pageSize);
         Task<Dictionary<int, int>> GetMemberCountsForServersAsync(List<int> serverIds);
         Task<Dictionary<int, int>> GetBanCountsForServersAsync(List<int> serverIds);
 

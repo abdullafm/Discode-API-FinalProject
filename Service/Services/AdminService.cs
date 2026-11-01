@@ -21,7 +21,7 @@ namespace Service.Services
         {
             await Helpers.Validators.ValidationExtensions.EnsureValidAsync(_filterValidator, filter);
 
-            var (users, total) = await _admin.GetUsersAsync(filter.Search, filter.Page, filter.PageSize);
+            var (users, total) = await _admin.GetUsersAsync(filter.Search, filter.Role, filter.BannedOnly, filter.Page, filter.PageSize);
             var ids = users.Select(x => x.Id).ToList();
             var roles = await _admin.GetRolesForUsersAsync(ids);
             var servers = await _admin.GetServerCountsForUsersAsync(ids);
@@ -53,7 +53,7 @@ namespace Service.Services
         {
             await Helpers.Validators.ValidationExtensions.EnsureValidAsync(_filterValidator, filter);
 
-            var (servers, total) = await _admin.GetServersAsync(filter.Search, filter.Page, filter.PageSize);
+            var (servers, total) = await _admin.GetServersAsync(filter.Search, filter.BannedOnly, filter.Page, filter.PageSize);
             var ids = servers.Select(x => x.Id).ToList();
             var members = await _admin.GetMemberCountsForServersAsync(ids);
             var bans = await _admin.GetBanCountsForServersAsync(ids);
@@ -92,7 +92,9 @@ namespace Service.Services
                 NewLast7Days = await _admin.CountUsersCreatedSinceAsync(week),
                 NewLast30Days = await _admin.CountUsersCreatedSinceAsync(month),
                 PublicAccounts = await _admin.CountUsersByVisibilityAsync(true),
-                PrivateAccounts = await _admin.CountUsersByVisibilityAsync(false)
+                PrivateAccounts = await _admin.CountUsersByVisibilityAsync(false),
+                Admins = await _admin.CountUsersInRoleAsync(Roles.Admin),
+                SuperAdmins = await _admin.CountUsersInRoleAsync(Roles.SuperAdmin)
             };
 
             overview.Servers = new AdminServerStatsDto

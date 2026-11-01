@@ -20,6 +20,14 @@ namespace Repository.Repositories
 
         public Task<int> CountUsersByVisibilityAsync(bool isPublic) => _dbContext.Users.CountAsync(x => x.IsPublic == isPublic);
 
+        public Task<int> CountUsersInRoleAsync(string roleName)
+        {
+            return (from userRole in _dbContext.UserRoles
+                    join role in _dbContext.Roles on userRole.RoleId equals role.Id
+                    where role.Name == roleName
+                    select userRole.UserId).Distinct().CountAsync();
+        }
+
         public Task<int> CountServersAsync() => _dbContext.Servers.CountAsync();
 
         public Task<int> CountServersByPrivacyAsync(bool isPrivate) => _dbContext.Servers.CountAsync(x => x.IsPrivate == isPrivate);
@@ -38,9 +46,22 @@ namespace Repository.Repositories
 
         public Task<int> CountCommentsAsync() => _dbContext.Comments.CountAsync();
 
-        public async Task<(List<Domain.Entities.AppUser> Users, int Total)> GetUsersAsync(string? search, int page, int pageSize)
+        public async Task<(List<Domain.Entities.AppUser> Users, int Total)> GetUsersAsync(string? search, string? role, bool bannedOnly, int page, int pageSize)
         {
             var query = _dbContext.Users.AsNoTracking().AsQueryable();
+            if (!string.IsNullOrWhiteSpace(role))
+            {
+                query = query.Where(user => (from userRole in _dbContext.UserRoles
+                                             join r in _dbContext.Roles on userRole.RoleId equals r.Id
+                                             where r.Name == role && userRole.UserId == user.Id
+                                             select userRole.UserId).Any());
+            }
+
+            if (bannedOnly)
+            {
+                query = query.Where(user => _dbContext.ServerBans.Any(ban => ban.UserId == user.Id));
+            }
+
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var term = search.Trim();
@@ -83,9 +104,14 @@ namespace Repository.Repositories
                 .ToDictionaryAsync(x => x.Key, x => x.Count);
         }
 
-        public async Task<(List<Domain.Entities.Server> Servers, int Total)> GetServersAsync(string? search, int page, int pageSize)
+        public async Task<(List<Domain.Entities.Server> Servers, int Total)> GetServersAsync(string? search, bool bannedOnly, int page, int pageSize)
         {
             var query = _dbContext.Servers.AsNoTracking().Include(x => x.Owner).AsQueryable();
+            if (bannedOnly)
+            {
+                query = query.Where(server => _dbContext.ServerBans.Any(ban => ban.ServerId == server.Id));
+            }
+
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var term = search.Trim();
