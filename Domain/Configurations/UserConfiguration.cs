@@ -35,6 +35,13 @@ namespace Domain.Configurations
                 .IsRequired()
                 .HasDefaultValue(true);
 
+            builder.Property(u => u.IsBanned).IsRequired().HasDefaultValue(false);
+            builder.Property(u => u.IsDeleted).IsRequired().HasDefaultValue(false);
+            builder.Property(u => u.BanReason).IsRequired().HasMaxLength(300).HasDefaultValue(string.Empty);
+            builder.Property(u => u.TimeoutReason).IsRequired().HasMaxLength(300).HasDefaultValue(string.Empty);
+            builder.Property(u => u.BannedById).HasMaxLength(450);
+            builder.HasIndex(u => u.IsBanned);
+
             builder.Property(u => u.Language)
                 .IsRequired()
                 .HasMaxLength(8)

@@ -30,6 +30,12 @@ namespace Discode_API_FinalProject.Controllers.Admin
 
         private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
 
+        [HttpGet("activity")]
+        public async Task<IActionResult> Activity([FromQuery] Service.Helpers.DTOs.Admin.AdminListFilterDto filter, [FromServices] IUserModerationService moderation)
+        {
+            return Ok(await moderation.GetActivityAsync(filter));
+        }
+
         [HttpGet("servers/{id:int}")]
         public async Task<IActionResult> GetServer(int id)
         {
@@ -62,7 +68,7 @@ namespace Discode_API_FinalProject.Controllers.Admin
         [HttpPost("servers/{id:int}/unban")]
         public async Task<IActionResult> UnbanServer(int id)
         {
-            var memberIds = await _adminService.UnbanServerAsync(id);
+            var memberIds = await _adminService.UnbanServerAsync(UserId, id);
             await _hubContext.Clients.Users(memberIds).SendAsync("ServersChanged");
             await _discover.PublishServerAsync(id);
             await _changes.NotifyAsync(new[] { "servers" }, new[] { id });
@@ -72,7 +78,7 @@ namespace Discode_API_FinalProject.Controllers.Admin
         [HttpDelete("servers/{id:int}")]
         public async Task<IActionResult> DeleteServer(int id)
         {
-            var memberIds = await _adminService.DeleteServerAsync(id);
+            var memberIds = await _adminService.DeleteServerAsync(UserId, id);
             await _hubContext.Clients.Users(memberIds).SendAsync("ServersChanged");
             await _hubContext.Clients.Users(memberIds).SendAsync("ServerRemoved", new { serverId = id, reason = "deleted" });
             await _discover.PublishRemovedAsync(id);

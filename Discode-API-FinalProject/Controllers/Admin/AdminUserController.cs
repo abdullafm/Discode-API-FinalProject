@@ -1,0 +1,100 @@
+using Domain.Constants;
+using Discode_API_FinalProject.Filters;
+using Discode_API_FinalProject.Hubs;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
+using Repository.Notifications;
+using Service.Helpers.DTOs.Admin;
+using Service.Services.Interfaces;
+using System.Security.Claims;
+
+namespace Discode_API_FinalProject.Controllers.Admin
+{
+    [Route("api/admin/users")]
+    [ApiController]
+    [Authorize(Roles = Roles.Staff)]
+    public class AdminUserController : ControllerBase
+    {
+        private readonly IUserModerationService _moderation;
+        private readonly IHubContext<PresenceHub> _hub;
+        private readonly IAdminChangeNotifier _changes;
+        private readonly AccountStatusCache _statusCache;
+
+        public AdminUserController(IUserModerationService moderation, IHubContext<PresenceHub> hub, IAdminChangeNotifier changes, AccountStatusCache statusCache)
+        {
+            _moderation = moderation;
+            _hub = hub;
+            _changes = changes;
+            _statusCache = statusCache;
+        }
+
+        private ModerationActor Actor => new()
+        {
+            UserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty,
+            IsSuperAdmin = User.IsInRole(Roles.SuperAdmin)
+        };
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> Get(string id)
+        {
+            return Ok(await _moderation.GetAsync(Actor, id));
+        }
+
+        [HttpPost("{id}/warn")]
+        public async Task<IActionResult> Warn(string id, [FromBody] WarnUserDto model)
+        {
+            var result = await _moderation.WarnAsync(Actor, id, model);
+            await _hub.Clients.User(id).SendAsync("AccountWarning", new[] { new { id = result.WarningId, reason = result.Reason, count = result.WarningCount } });
+            return await DoneAsync(result);
+        }
+
+        [HttpPost("{id}/timeout")]
+        public async Task<IActionResult> Timeout(string id, [FromBody] TimeoutUserDto model)
+        {
+            return await DoneAsync(await _moderation.TimeoutAsync(Actor, id, model));
+        }
+
+        [HttpPost("{id}/timeout/clear")]
+        public async Task<IActionResult> ClearTimeout(string id)
+        {
+            return await DoneAsync(await _moderation.ClearTimeoutAsync(Actor, id));
+        }
+
+        [HttpPost("{id}/kick")]
+        public async Task<IActionResult> Kick(string id, [FromBody] KickUserDto model)
+        {
+            return await DoneAsync(await _moderation.KickAsync(Actor, id, model));
+        }
+
+        [HttpPost("{id}/ban")]
+        public async Task<IActionResult> Ban(string id, [FromBody] BanUserDto model)
+        {
+            return await DoneAsync(await _moderation.BanAsync(Actor, id, model));
+        }
+
+        [HttpPost("{id}/unban")]
+        public async Task<IActionResult> Unban(string id)
+        {
+            return await DoneAsync(await _moderation.UnbanAsync(Actor, id));
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(string id, [FromBody] DeleteUserDto model)
+        {
+            return await DoneAsync(await _moderation.DeleteAsync(Actor, id, model));
+        }
+
+        private async Task<IActionResult> DoneAsync(ModerationResultDto result)
+        {
+            _statusCache.Invalidate(result.UserId);
+            if (result.ForceLogout)
+            {
+                await _hub.Clients.User(result.UserId).SendAsync("ForceLogout", new { reason = result.Reason });
+            }
+
+            await _changes.NotifyAsync(new[] { "users", "activity" }, Array.Empty<int>());
+            return Ok(result);
+        }
+    }
+}

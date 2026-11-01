@@ -13,6 +13,7 @@ namespace Repository.Repositories.Interfaces
         Task<int> CountServerBansAsync();
         Task<int> CountServerBansSinceAsync(DateTime since);
         Task<int> CountDistinctBannedUsersAsync();
+        Task<int> CountBannedUsersAsync(DateTime now);
         Task<int> CountServersWithBansAsync();
         Task<int> CountActiveTimeoutsAsync(DateTime now);
 

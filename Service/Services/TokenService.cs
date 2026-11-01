@@ -26,7 +26,8 @@ namespace Service.Services
                 new(ClaimTypes.Email, user.Email ?? string.Empty),
                 new(ClaimTypes.Name, user.DisplayName.Length > 0 ? user.DisplayName : user.UserName ?? string.Empty),
                 new("userName", user.UserName ?? string.Empty),
-                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
             };
             claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 

@@ -50,6 +50,12 @@ namespace Discode_API_FinalProject.Hubs
 
         public override async Task OnConnectedAsync()
         {
+            if (await IsBlockedAccountAsync())
+            {
+                Context.Abort();
+                return;
+            }
+
             if (Context.User?.IsInRole(Domain.Constants.Roles.Admin) == true || Context.User?.IsInRole(Domain.Constants.Roles.SuperAdmin) == true)
             {
                 await Groups.AddToGroupAsync(Context.ConnectionId, AdminGroup);
@@ -63,6 +69,7 @@ namespace Discode_API_FinalProject.Hubs
                 await NotifyFriendsAsync(change);
             }
 
+            await DeliverWarningsAsync();
             await base.OnConnectedAsync();
         }
 

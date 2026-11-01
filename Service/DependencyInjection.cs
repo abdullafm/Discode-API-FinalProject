@@ -45,6 +45,7 @@ namespace Service
             services.AddScoped<IDiscoverService, DiscoverService>();
             services.AddScoped<ITranslationService, TranslationService>();
             services.AddScoped<IAdminService, AdminService>();
+            services.AddScoped<IUserModerationService, UserModerationService>();
             services.AddScoped<IServerChannelService, ServerChannelService>();
             services.AddScoped<IServerTimeoutService, ServerTimeoutService>();
             services.AddScoped<IServerVoiceService, ServerVoiceService>();

@@ -12,7 +12,7 @@ namespace Service.Services.Interfaces
         Task<AdminServerMemberListDto> GetServerMembersAsync(int serverId, AdminListFilterDto filter);
         Task<AdminServerMemberListDto> SearchServerMembersAsync(int serverId, AdminListFilterDto filter);
         Task<List<string>> BanServerAsync(string adminId, int serverId, BanServerDto model);
-        Task<List<string>> UnbanServerAsync(int serverId);
-        Task<List<string>> DeleteServerAsync(int serverId);
+        Task<List<string>> UnbanServerAsync(string adminId, int serverId);
+        Task<List<string>> DeleteServerAsync(string adminId, int serverId);
     }
 }

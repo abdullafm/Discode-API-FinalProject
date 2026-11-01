@@ -109,6 +109,12 @@ namespace Repository.Interceptors
                         _topics.Add("server-detail");
                         _serverIds.Add(message.ServerId);
                         break;
+                    case UserWarning:
+                        _topics.Add("users");
+                        break;
+                    case AdminAction:
+                        _topics.Add("activity");
+                        break;
                     case Report:
                         _topics.Add("reports");
                         break;
@@ -122,7 +128,7 @@ namespace Repository.Interceptors
 
         private static bool ProfileChanged(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
         {
-            foreach (var name in new[] { "DisplayName", "UserName", "Email", "AvatarUrl", "IsPublic" })
+            foreach (var name in new[] { "DisplayName", "UserName", "Email", "AvatarUrl", "IsPublic", "IsBanned", "TimeoutUntil", "IsDeleted" })
             {
                 if (entry.Property(name).IsModified)
                 {

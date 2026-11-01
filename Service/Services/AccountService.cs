@@ -6,6 +6,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Repository.Repositories.Interfaces;
+using Service.Helpers;
 using Service.Helpers.DTOs.Accounts;
 using Service.Helpers.Exceptions;
 using Service.Helpers.Responses;
@@ -312,6 +313,16 @@ namespace Service.Services
             {
                 await _accountRepository.RegisterFailedAttemptAsync(user);
                 return FailLogin(InvalidCredentials);
+            }
+
+            if (user.IsDeleted)
+            {
+                return FailLogin(InvalidCredentials);
+            }
+
+            if (ModerationMessages.IsBanActive(user.IsBanned, user.BannedUntil, DateTime.UtcNow))
+            {
+                return FailLogin(ModerationMessages.Banned(user.BannedUntil, user.BanReason));
             }
 
             await _accountRepository.ResetFailedAttemptsAsync(user);

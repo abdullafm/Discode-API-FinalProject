@@ -9,6 +9,9 @@ namespace Service.Helpers.DTOs.Admin
         public string Email { get; set; } = string.Empty;
         public string AvatarUrl { get; set; } = string.Empty;
         public bool IsPublic { get; set; }
+        public bool IsBanned { get; set; }
+        public bool TimedOut { get; set; }
+        public bool IsDeleted { get; set; }
         public DateTime CreatedAt { get; set; }
         public List<string> Roles { get; set; } = new();
         public int ServersJoined { get; set; }

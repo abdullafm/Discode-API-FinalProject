@@ -11,6 +11,8 @@ namespace Repository.Data
         public DbSet<UserBlock> UserBlocks { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<Translation> Translations { get; set; }
+        public DbSet<UserWarning> UserWarnings { get; set; }
+        public DbSet<AdminAction> AdminActions { get; set; }
         public DbSet<UserIgnore> UserIgnores { get; set; }
         public DbSet<Server> Servers { get; set; }
         public DbSet<ServerMember> ServerMembers { get; set; }

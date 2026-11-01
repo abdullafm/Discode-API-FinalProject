@@ -38,6 +38,8 @@ namespace Repository.Repositories
 
         public Task<int> CountDistinctBannedUsersAsync() => _dbContext.ServerBans.Select(x => x.UserId).Distinct().CountAsync();
 
+        public Task<int> CountBannedUsersAsync(DateTime now) => _dbContext.Users.CountAsync(x => x.IsBanned && (x.BannedUntil == null || x.BannedUntil > now));
+
         public Task<int> CountServersWithBansAsync() => _dbContext.ServerBans.Select(x => x.ServerId).Distinct().CountAsync();
 
         public Task<int> CountActiveTimeoutsAsync(DateTime now) => _dbContext.ServerMembers.CountAsync(x => x.TimeoutUntil != null && x.TimeoutUntil > now);
@@ -59,7 +61,8 @@ namespace Repository.Repositories
 
             if (bannedOnly)
             {
-                query = query.Where(user => _dbContext.ServerBans.Any(ban => ban.UserId == user.Id));
+                var now = DateTime.UtcNow;
+                query = query.Where(user => user.IsBanned && (user.BannedUntil == null || user.BannedUntil > now));
             }
 
             if (!string.IsNullOrWhiteSpace(search))

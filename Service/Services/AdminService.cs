@@ -1,7 +1,9 @@
 using Domain.Constants;
+using Domain.Entities;
 using Domain.Enums;
 using Repository.Repositories.Interfaces;
 using Service.Helpers.DTOs.Admin;
+using Service.Helpers;
 using Service.Services.Interfaces;
 
 namespace Service.Services
@@ -14,20 +16,38 @@ namespace Service.Services
         private readonly IServerRepository _servers;
         private readonly IServerMemberRepository _members;
         private readonly IServerOverwriteRepository _overwrites;
+        private readonly IUserModerationRepository _moderation;
 
         public AdminService(IAdminRepository admin,
                             FluentValidation.IValidator<AdminListFilterDto> filterValidator,
                             FluentValidation.IValidator<BanServerDto> banValidator,
                             IServerRepository servers,
                             IServerMemberRepository members,
-                            IServerOverwriteRepository overwrites)
+                            IServerOverwriteRepository overwrites,
+                            IUserModerationRepository moderation)
         {
+            _moderation = moderation;
             _admin = admin;
             _filterValidator = filterValidator;
             _banValidator = banValidator;
             _servers = servers;
             _members = members;
             _overwrites = overwrites;
+        }
+
+        private async Task LogServerAsync(string adminId, int serverId, string name, AdminActionKind kind, string reason)
+        {
+            await _moderation.AddActionAsync(new AdminAction
+            {
+                AdminId = adminId,
+                TargetType = AdminTargetType.Server,
+                TargetId = serverId.ToString(),
+                TargetName = name,
+                Kind = kind,
+                Reason = reason,
+                Details = string.Empty
+            });
+            await _moderation.SaveChangesAsync();
         }
 
         public async Task<AdminServerDetailDto> GetServerAsync(int serverId)
@@ -107,10 +127,11 @@ namespace Service.Services
             }
 
             await _admin.SetServerBanAsync(serverId, true, model.Reason.Trim(), adminId);
+            await LogServerAsync(adminId, server.Id, server.Name, AdminActionKind.ServerBan, model.Reason.Trim());
             return await _members.GetUserIdsAsync(serverId);
         }
 
-        public async Task<List<string>> UnbanServerAsync(int serverId)
+        public async Task<List<string>> UnbanServerAsync(string adminId, int serverId)
         {
             var server = await _admin.GetServerAsync(serverId) ?? throw new Helpers.Exceptions.NotFoundException("Server not found.");
             if (!server.IsBanned)
@@ -119,13 +140,15 @@ namespace Service.Services
             }
 
             await _admin.SetServerBanAsync(serverId, false, string.Empty, null);
+            await LogServerAsync(adminId, server.Id, server.Name, AdminActionKind.ServerUnban, "Ban removed");
             return await _members.GetUserIdsAsync(serverId);
         }
 
-        public async Task<List<string>> DeleteServerAsync(int serverId)
+        public async Task<List<string>> DeleteServerAsync(string adminId, int serverId)
         {
             var server = await _servers.GetByIdAsync(serverId) ?? throw new Helpers.Exceptions.NotFoundException("Server not found.");
             var memberIds = await _members.GetUserIdsAsync(serverId);
+            await LogServerAsync(adminId, server.Id, server.Name, AdminActionKind.ServerDelete, "Server deleted");
             await _overwrites.DeleteForServerAsync(serverId);
             await _servers.DeleteAsync(server);
             return memberIds;
@@ -155,6 +178,9 @@ namespace Service.Services
                     Email = user.Email ?? string.Empty,
                     AvatarUrl = user.AvatarUrl,
                     IsPublic = user.IsPublic,
+                    IsBanned = ModerationMessages.IsBanActive(user.IsBanned, user.BannedUntil, DateTime.UtcNow),
+                    TimedOut = user.TimeoutUntil != null && user.TimeoutUntil > DateTime.UtcNow,
+                    IsDeleted = user.IsDeleted,
                     CreatedAt = user.CreatedAt,
                     Roles = roles.TryGetValue(user.Id, out var list) ? list : new List<string>(),
                     ServersJoined = servers.TryGetValue(user.Id, out var joined) ? joined : 0,
@@ -242,7 +268,7 @@ namespace Service.Services
             {
                 TotalBans = await _admin.CountServerBansAsync(),
                 BansLast7Days = await _admin.CountServerBansSinceAsync(week),
-                UsersBanned = await _admin.CountDistinctBannedUsersAsync(),
+                UsersBanned = await _admin.CountBannedUsersAsync(DateTime.UtcNow),
                 ServersWithBans = await _admin.CountServersWithBansAsync(),
                 ActiveTimeouts = await _admin.CountActiveTimeoutsAsync(now)
             };

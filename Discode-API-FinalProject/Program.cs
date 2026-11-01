@@ -20,7 +20,13 @@ using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers(options => options.Filters.Add<Discode_API_FinalProject.Filters.BannedServerFilter>());
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<Discode_API_FinalProject.Filters.AccountStatusCache>();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<Discode_API_FinalProject.Filters.AccountStatusFilter>();
+    options.Filters.Add<Discode_API_FinalProject.Filters.BannedServerFilter>();
+});
 builder.Services.AddSignalR();
 builder.Services.AddHostedService<VoiceGhostSweeper>();
 builder.Services.AddEndpointsApiExplorer();

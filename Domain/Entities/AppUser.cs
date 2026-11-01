@@ -14,6 +14,15 @@ namespace Domain.Entities
         public string CustomStatus { get; set; } = string.Empty;
         public bool IsPublic { get; set; } = true;
         public string Language { get; set; } = "en";
+        public bool IsBanned { get; set; }
+        public DateTime? BannedUntil { get; set; }
+        public DateTime? BannedAt { get; set; }
+        public string BanReason { get; set; } = string.Empty;
+        public string? BannedById { get; set; }
+        public DateTime? TimeoutUntil { get; set; }
+        public string TimeoutReason { get; set; } = string.Empty;
+        public DateTime? ForcedLogoutAt { get; set; }
+        public bool IsDeleted { get; set; }
         public PresenceStatus PreferredStatus { get; set; } = PresenceStatus.Online;
         public string? EmailVerificationCode { get; set; }
         public DateTime? EmailVerificationExpiresAt { get; set; }
