@@ -56,8 +56,10 @@ var connectionString = ConnectionStringResolver.Resolve(
     builder.Configuration,
     LoggerFactory.Create(logging => logging.AddConsole()).CreateLogger("Database"));
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(connectionString));
+builder.Services.AddSingleton<Repository.Notifications.IAdminChangeNotifier, Discode_API_FinalProject.Hubs.AdminHubNotifier>();
+builder.Services.AddDbContext<AppDbContext>((services, options) =>
+    options.UseSqlServer(connectionString)
+           .AddInterceptors(services.GetRequiredService<Repository.Interceptors.AdminChangeInterceptor>()));
 
 builder.Services.AddServiceLayer();
 builder.Services.AddScoped<DiscoverBroadcaster>();

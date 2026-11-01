@@ -46,8 +46,15 @@ namespace Discode_API_FinalProject.Hubs
             }
         }
 
+        public const string AdminGroup = "admins";
+
         public override async Task OnConnectedAsync()
         {
+            if (Context.User?.IsInRole(Domain.Constants.Roles.Admin) == true || Context.User?.IsInRole(Domain.Constants.Roles.SuperAdmin) == true)
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, AdminGroup);
+            }
+
             var change = await _trackerService.ConnectAsync(UserId, Context.ConnectionId);
             await Clients.Caller.SendAsync("StatusChanged", change.PreferredStatus);
 

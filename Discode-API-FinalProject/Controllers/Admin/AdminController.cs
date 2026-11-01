@@ -15,14 +15,17 @@ namespace Discode_API_FinalProject.Controllers.Admin
         private readonly IAdminService _adminService;
         private readonly Microsoft.AspNetCore.SignalR.IHubContext<Discode_API_FinalProject.Hubs.PresenceHub> _hubContext;
         private readonly Discode_API_FinalProject.Hubs.DiscoverBroadcaster _discover;
+        private readonly Repository.Notifications.IAdminChangeNotifier _changes;
 
         public AdminController(IAdminService adminService,
                                Microsoft.AspNetCore.SignalR.IHubContext<Discode_API_FinalProject.Hubs.PresenceHub> hubContext,
-                               Discode_API_FinalProject.Hubs.DiscoverBroadcaster discover)
+                               Discode_API_FinalProject.Hubs.DiscoverBroadcaster discover,
+                               Repository.Notifications.IAdminChangeNotifier changes)
         {
             _adminService = adminService;
             _hubContext = hubContext;
             _discover = discover;
+            _changes = changes;
         }
 
         private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
@@ -52,6 +55,7 @@ namespace Discode_API_FinalProject.Controllers.Admin
             await _hubContext.Clients.Users(memberIds).SendAsync("ServersChanged");
             await _hubContext.Clients.Users(memberIds).SendAsync("ServerRemoved", new { serverId = id, reason = "banned" });
             await _discover.PublishServerAsync(id);
+            await _changes.NotifyAsync(new[] { "servers" }, new[] { id });
             return Ok();
         }
 
@@ -61,6 +65,7 @@ namespace Discode_API_FinalProject.Controllers.Admin
             var memberIds = await _adminService.UnbanServerAsync(id);
             await _hubContext.Clients.Users(memberIds).SendAsync("ServersChanged");
             await _discover.PublishServerAsync(id);
+            await _changes.NotifyAsync(new[] { "servers" }, new[] { id });
             return Ok();
         }
 

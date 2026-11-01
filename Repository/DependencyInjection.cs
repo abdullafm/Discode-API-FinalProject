@@ -21,6 +21,7 @@ namespace Repository
             services.AddScoped<IDiscoverRepository, DiscoverRepository>();
             services.AddScoped<ITranslationRepository, TranslationRepository>();
             services.AddScoped<IAdminRepository, AdminRepository>();
+            services.AddScoped<Repository.Interceptors.AdminChangeInterceptor>();
             services.AddScoped<IServerCategoryRepository, ServerCategoryRepository>();
             services.AddScoped<IServerChannelRepository, ServerChannelRepository>();
             services.AddScoped<IServerOverwriteRepository, ServerOverwriteRepository>();
