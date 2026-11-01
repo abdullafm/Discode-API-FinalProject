@@ -20,9 +20,11 @@ namespace Discode_API_FinalProject.Controllers.Admin
         private readonly IHubContext<PresenceHub> _hub;
         private readonly IAdminChangeNotifier _changes;
         private readonly AccountStatusCache _statusCache;
+        private readonly SystemMessenger _messenger;
 
-        public AdminUserController(IUserModerationService moderation, IHubContext<PresenceHub> hub, IAdminChangeNotifier changes, AccountStatusCache statusCache)
+        public AdminUserController(IUserModerationService moderation, IHubContext<PresenceHub> hub, IAdminChangeNotifier changes, AccountStatusCache statusCache, SystemMessenger messenger)
         {
+            _messenger = messenger;
             _moderation = moderation;
             _hub = hub;
             _changes = changes;
@@ -46,6 +48,7 @@ namespace Discode_API_FinalProject.Controllers.Admin
         {
             var result = await _moderation.WarnAsync(Actor, id, model);
             await _hub.Clients.User(id).SendAsync("AccountWarning", new[] { new { id = result.WarningId, reason = result.Reason, count = result.WarningCount } });
+            await _messenger.SendAsync(id, $"You received a warning from the Discode team.\n\nReason: {result.Reason}\n\nPlease follow the community rules. Further violations can lead to a timeout or a ban.");
             return await DoneAsync(result);
         }
 

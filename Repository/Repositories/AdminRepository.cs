@@ -14,11 +14,11 @@ namespace Repository.Repositories
             _dbContext = dbContext;
         }
 
-        public Task<int> CountUsersAsync() => _dbContext.Users.CountAsync();
+        public Task<int> CountUsersAsync() => _dbContext.Users.CountAsync(x => !x.IsSystem);
 
-        public Task<int> CountUsersCreatedSinceAsync(DateTime since) => _dbContext.Users.CountAsync(x => x.CreatedAt >= since);
+        public Task<int> CountUsersCreatedSinceAsync(DateTime since) => _dbContext.Users.CountAsync(x => !x.IsSystem && x.CreatedAt >= since);
 
-        public Task<int> CountUsersByVisibilityAsync(bool isPublic) => _dbContext.Users.CountAsync(x => x.IsPublic == isPublic);
+        public Task<int> CountUsersByVisibilityAsync(bool isPublic) => _dbContext.Users.CountAsync(x => !x.IsSystem && x.IsPublic == isPublic);
 
         public Task<int> CountUsersInRoleAsync(string roleName)
         {
@@ -50,7 +50,7 @@ namespace Repository.Repositories
 
         public async Task<(List<Domain.Entities.AppUser> Users, int Total)> GetUsersAsync(string? search, string? role, bool bannedOnly, int page, int pageSize)
         {
-            var query = _dbContext.Users.AsNoTracking().AsQueryable();
+            var query = _dbContext.Users.AsNoTracking().Where(x => !x.IsSystem);
             if (!string.IsNullOrWhiteSpace(role))
             {
                 query = query.Where(user => (from userRole in _dbContext.UserRoles

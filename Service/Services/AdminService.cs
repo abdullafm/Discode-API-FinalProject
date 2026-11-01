@@ -116,6 +116,15 @@ namespace Service.Services
             };
         }
 
+        public async Task<(string OwnerId, string ServerName)> WarnServerAsync(string adminId, int serverId, BanServerDto model)
+        {
+            await Helpers.Validators.ValidationExtensions.EnsureValidAsync(_banValidator, model);
+
+            var server = await _admin.GetServerAsync(serverId) ?? throw new Helpers.Exceptions.NotFoundException("Server not found.");
+            await LogServerAsync(adminId, server.Id, server.Name, AdminActionKind.ServerWarn, model.Reason.Trim());
+            return (server.OwnerId, server.Name);
+        }
+
         public async Task<List<string>> BanServerAsync(string adminId, int serverId, BanServerDto model)
         {
             await Helpers.Validators.ValidationExtensions.EnsureValidAsync(_banValidator, model);

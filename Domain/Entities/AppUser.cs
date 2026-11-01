@@ -23,6 +23,7 @@ namespace Domain.Entities
         public string TimeoutReason { get; set; } = string.Empty;
         public DateTime? ForcedLogoutAt { get; set; }
         public bool IsDeleted { get; set; }
+        public bool IsSystem { get; set; }
         public PresenceStatus PreferredStatus { get; set; } = PresenceStatus.Online;
         public string? EmailVerificationCode { get; set; }
         public DateTime? EmailVerificationExpiresAt { get; set; }

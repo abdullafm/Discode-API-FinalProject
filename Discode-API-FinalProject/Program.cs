@@ -22,6 +22,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<Discode_API_FinalProject.Filters.AccountStatusCache>();
+builder.Services.AddScoped<Discode_API_FinalProject.Hubs.SystemMessenger>();
 builder.Services.AddControllers(options =>
 {
     options.Filters.Add<Discode_API_FinalProject.Filters.AccountStatusFilter>();
@@ -199,6 +200,7 @@ using (var scope = app.Services.CreateScope())
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
     await RoleSeeder.SeedAsync(roleManager);
     await RoleSeeder.SeedSuperAdminAsync(scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>(), app.Configuration["Seed:SuperAdminEmail"]);
+    await SystemUserSeeder.SeedAsync(db);
     await EmojiSeeder.SeedAsync(db);
     await TranslationSeeder.SeedAsync(db);
 }

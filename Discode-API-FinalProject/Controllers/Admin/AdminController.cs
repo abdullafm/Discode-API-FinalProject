@@ -54,6 +54,15 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return Ok(await _adminService.SearchServerMembersAsync(id, filter));
         }
 
+        [HttpPost("servers/{id:int}/warn")]
+        public async Task<IActionResult> WarnServer(int id, [FromBody] Service.Helpers.DTOs.Admin.BanServerDto model, [FromServices] Discode_API_FinalProject.Hubs.SystemMessenger messenger)
+        {
+            var (ownerId, serverName) = await _adminService.WarnServerAsync(UserId, id, model);
+            await messenger.SendAsync(ownerId, $"Your server \"{serverName}\" received a warning from the Discode team.\n\nReason: {model.Reason.Trim()}\n\nPlease review the server and follow the community rules.");
+            await _changes.NotifyAsync(new[] { "servers", "activity" }, new[] { id });
+            return Ok();
+        }
+
         [HttpPost("servers/{id:int}/ban")]
         public async Task<IActionResult> BanServer(int id, [FromBody] Service.Helpers.DTOs.Admin.BanServerDto model)
         {

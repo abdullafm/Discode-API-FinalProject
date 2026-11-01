@@ -175,6 +175,11 @@ namespace Service.Services
             }
 
             var recipient = await GetChatPartnerAsync(senderId, userName, requireFriendship: false);
+            if (recipient.IsSystem)
+            {
+                throw new BadRequestException("You can't reply to Discode. It only sends notices.");
+            }
+
             var undelivered = await _blocks.IsBlockedEitherWayAsync(senderId, recipient.Id) || !await CanMessageAsync(senderId, recipient);
 
             var text = model.Text.Trim();
@@ -191,6 +196,22 @@ namespace Service.Services
             }
 
             return await ToSentAsync(senderId, recipient.Id, messageForSender);
+        }
+
+        public async Task<SentMessageDto> SendSystemAsync(string recipientId, string text)
+        {
+            var bot = await _accounts.GetByUserNameAsync(Domain.Constants.SystemUser.UserName)
+                      ?? throw new NotFoundException("System user not found.");
+
+            var preview = Preview(text, 0);
+            var conversation = await _conversations.GetBetweenAsync(bot.Id, recipientId)
+                               ?? await _conversations.CreateAsync(bot.Id, recipientId, preview, hiddenForOther: false);
+
+            var message = await _messages.CreateAsync(conversation.ConversationId, bot.Id, text, null, false);
+            await _conversations.RecordMessageAsync(bot.Id, recipientId, preview, message.CreatedAt);
+            await _conversations.ShowForAsync(recipientId, bot.Id);
+
+            return await ToSentAsync(bot.Id, recipientId, message);
         }
 
         public async Task<SentMessageDto> SendPollAsync(string senderId, string userName, CreatePollDto model)

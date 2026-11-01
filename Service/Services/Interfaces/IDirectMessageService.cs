@@ -8,6 +8,7 @@ namespace Service.Services.Interfaces
         Task<ChatDto> GetChatAsync(string userId, string userName);
         Task<RelationDto> GetRelationAsync(string userId, string userName);
         Task<SentMessageDto> SendAsync(string senderId, string userName, SendMessageDto model);
+        Task<SentMessageDto> SendSystemAsync(string recipientId, string text);
         Task<SentMessageDto> SendStoryReplyAsync(string senderId, int storyId, string text);
         Task<SentMessageDto> SendLiveShareAsync(string senderId, string userName, LiveShareDto live);
         Task<SentMessageDto> SendPollAsync(string senderId, string userName, CreatePollDto model);
