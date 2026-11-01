@@ -119,7 +119,7 @@ namespace Repository.Repositories
             var query = _dbContext.Servers.AsNoTracking().Include(x => x.Owner).AsQueryable();
             if (bannedOnly)
             {
-                query = query.Where(server => _dbContext.ServerBans.Any(ban => ban.ServerId == server.Id));
+                query = query.Where(server => server.IsBanned);
             }
 
             if (!string.IsNullOrEmpty(term))
@@ -134,6 +134,49 @@ namespace Repository.Repositories
                 .Take(pageSize)
                 .ToListAsync();
             return (servers, total);
+        }
+
+        public async Task<Domain.Entities.Server?> GetServerAsync(int serverId)
+        {
+            return await _dbContext.Servers.AsNoTracking().Include(x => x.Owner).FirstOrDefaultAsync(x => x.Id == serverId);
+        }
+
+        public async Task<string?> GetUserNameAsync(string userId)
+        {
+            return await _dbContext.Users.AsNoTracking().Where(x => x.Id == userId).Select(x => x.UserName).FirstOrDefaultAsync();
+        }
+
+        public Task<int> CountChannelsAsync(int serverId, ServerChannelKind kind)
+        {
+            return _dbContext.ServerChannels.CountAsync(x => x.ServerId == serverId && x.Kind == kind);
+        }
+
+        public Task<int> CountRolesAsync(int serverId) => _dbContext.ServerRoles.CountAsync(x => x.ServerId == serverId);
+
+        public Task<int> CountMessagesInServerAsync(int serverId) => _dbContext.ServerMessages.CountAsync(x => x.ServerId == serverId);
+
+        public async Task<List<Domain.Entities.ServerMember>> GetRecentMembersAsync(int serverId, int take)
+        {
+            return await _dbContext.ServerMembers
+                .AsNoTracking()
+                .Include(x => x.User)
+                .Where(x => x.ServerId == serverId)
+                .OrderBy(x => x.JoinedAt)
+                .Take(take)
+                .ToListAsync();
+        }
+
+        public Task<int> CountBannedServersAsync() => _dbContext.Servers.CountAsync(x => x.IsBanned);
+
+        public async Task SetServerBanAsync(int serverId, bool banned, string reason, string? bannedById)
+        {
+            await _dbContext.Servers
+                .Where(x => x.Id == serverId)
+                .ExecuteUpdateAsync(set => set
+                    .SetProperty(x => x.IsBanned, banned)
+                    .SetProperty(x => x.BanReason, banned ? reason : string.Empty)
+                    .SetProperty(x => x.BannedById, banned ? bannedById : null)
+                    .SetProperty(x => x.BannedAt, banned ? DateTime.UtcNow : (DateTime?)null));
         }
 
         public async Task<Dictionary<int, int>> GetMemberCountsForServersAsync(List<int> serverIds)

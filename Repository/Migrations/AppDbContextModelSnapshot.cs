@@ -1273,6 +1273,20 @@ namespace Repository.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("BanReason")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)")
+                        .HasDefaultValue("");
+
+                    b.Property<DateTime?>("BannedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("BannedById")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<string>("BannerColor")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -1305,6 +1319,11 @@ namespace Repository.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
+                    b.Property<bool>("IsBanned")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<bool>("IsPrivate")
                         .HasColumnType("bit");
 
@@ -1327,6 +1346,8 @@ namespace Repository.Migrations
 
                     b.HasIndex("InviteCode")
                         .IsUnique();
+
+                    b.HasIndex("IsBanned");
 
                     b.HasIndex("OwnerId");
 

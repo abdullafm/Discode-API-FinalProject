@@ -1,7 +1,9 @@
 using Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Service.Services.Interfaces;
+using System.Security.Claims;
 
 namespace Discode_API_FinalProject.Controllers.Admin
 {
@@ -11,10 +13,53 @@ namespace Discode_API_FinalProject.Controllers.Admin
     public class AdminController : ControllerBase
     {
         private readonly IAdminService _adminService;
+        private readonly Microsoft.AspNetCore.SignalR.IHubContext<Discode_API_FinalProject.Hubs.PresenceHub> _hubContext;
+        private readonly Discode_API_FinalProject.Hubs.DiscoverBroadcaster _discover;
 
-        public AdminController(IAdminService adminService)
+        public AdminController(IAdminService adminService,
+                               Microsoft.AspNetCore.SignalR.IHubContext<Discode_API_FinalProject.Hubs.PresenceHub> hubContext,
+                               Discode_API_FinalProject.Hubs.DiscoverBroadcaster discover)
         {
             _adminService = adminService;
+            _hubContext = hubContext;
+            _discover = discover;
+        }
+
+        private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+
+        [HttpGet("servers/{id:int}")]
+        public async Task<IActionResult> GetServer(int id)
+        {
+            return Ok(await _adminService.GetServerAsync(id));
+        }
+
+        [HttpPost("servers/{id:int}/ban")]
+        public async Task<IActionResult> BanServer(int id, [FromBody] Service.Helpers.DTOs.Admin.BanServerDto model)
+        {
+            var memberIds = await _adminService.BanServerAsync(UserId, id, model);
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServersChanged");
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServerRemoved", new { serverId = id, reason = "banned" });
+            await _discover.PublishServerAsync(id);
+            return Ok();
+        }
+
+        [HttpPost("servers/{id:int}/unban")]
+        public async Task<IActionResult> UnbanServer(int id)
+        {
+            var memberIds = await _adminService.UnbanServerAsync(id);
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServersChanged");
+            await _discover.PublishServerAsync(id);
+            return Ok();
+        }
+
+        [HttpDelete("servers/{id:int}")]
+        public async Task<IActionResult> DeleteServer(int id)
+        {
+            var memberIds = await _adminService.DeleteServerAsync(id);
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServersChanged");
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServerRemoved", new { serverId = id, reason = "deleted" });
+            await _discover.PublishRemovedAsync(id);
+            return Ok();
         }
 
         [HttpGet("users")]

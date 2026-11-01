@@ -26,6 +26,14 @@ namespace Repository.Repositories.Interfaces
         Task<(List<Domain.Entities.Server> Servers, int Total)> GetAllServersAsync(bool bannedOnly, int page, int pageSize);
         Task<(List<Domain.Entities.Server> Servers, int Total)> SearchServersAsync(string term, bool bannedOnly, int page, int pageSize);
         Task<Dictionary<int, int>> GetMemberCountsForServersAsync(List<int> serverIds);
+        Task<Domain.Entities.Server?> GetServerAsync(int serverId);
+        Task<string?> GetUserNameAsync(string userId);
+        Task<int> CountChannelsAsync(int serverId, Domain.Enums.ServerChannelKind kind);
+        Task<int> CountRolesAsync(int serverId);
+        Task<int> CountMessagesInServerAsync(int serverId);
+        Task<List<Domain.Entities.ServerMember>> GetRecentMembersAsync(int serverId, int take);
+        Task<int> CountBannedServersAsync();
+        Task SetServerBanAsync(int serverId, bool banned, string reason, string? bannedById);
         Task<Dictionary<int, int>> GetBanCountsForServersAsync(List<int> serverIds);
 
         Task<int> CountReportsAsync();

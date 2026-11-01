@@ -10,11 +10,99 @@ namespace Service.Services
     {
         private readonly IAdminRepository _admin;
         private readonly FluentValidation.IValidator<AdminListFilterDto> _filterValidator;
+        private readonly FluentValidation.IValidator<BanServerDto> _banValidator;
+        private readonly IServerRepository _servers;
+        private readonly IServerMemberRepository _members;
+        private readonly IServerOverwriteRepository _overwrites;
 
-        public AdminService(IAdminRepository admin, FluentValidation.IValidator<AdminListFilterDto> filterValidator)
+        public AdminService(IAdminRepository admin,
+                            FluentValidation.IValidator<AdminListFilterDto> filterValidator,
+                            FluentValidation.IValidator<BanServerDto> banValidator,
+                            IServerRepository servers,
+                            IServerMemberRepository members,
+                            IServerOverwriteRepository overwrites)
         {
             _admin = admin;
             _filterValidator = filterValidator;
+            _banValidator = banValidator;
+            _servers = servers;
+            _members = members;
+            _overwrites = overwrites;
+        }
+
+        public async Task<AdminServerDetailDto> GetServerAsync(int serverId)
+        {
+            var server = await _admin.GetServerAsync(serverId) ?? throw new Helpers.Exceptions.NotFoundException("Server not found.");
+            var recent = await _admin.GetRecentMembersAsync(serverId, 8);
+            var bans = await _admin.GetBanCountsForServersAsync(new List<int> { serverId });
+            var members = await _admin.GetMemberCountsForServersAsync(new List<int> { serverId });
+
+            return new AdminServerDetailDto
+            {
+                Id = server.Id,
+                PublicId = server.PublicId,
+                Name = server.Name,
+                IconUrl = server.IconUrl,
+                Description = server.Description,
+                InviteCode = server.InviteCode,
+                OwnerUserName = server.Owner?.UserName ?? string.Empty,
+                OwnerDisplayName = server.Owner?.DisplayName ?? string.Empty,
+                IsPrivate = server.IsPrivate,
+                CreatedAt = server.CreatedAt,
+                Members = members.TryGetValue(serverId, out var memberCount) ? memberCount : 0,
+                TextChannels = await _admin.CountChannelsAsync(serverId, ServerChannelKind.Text),
+                VoiceChannels = await _admin.CountChannelsAsync(serverId, ServerChannelKind.Voice),
+                Roles = await _admin.CountRolesAsync(serverId),
+                Messages = await _admin.CountMessagesInServerAsync(serverId),
+                MemberBans = bans.TryGetValue(serverId, out var banCount) ? banCount : 0,
+                IsBanned = server.IsBanned,
+                BannedAt = server.BannedAt,
+                BanReason = server.BanReason,
+                BannedByUserName = server.BannedById is null ? string.Empty : await _admin.GetUserNameAsync(server.BannedById) ?? string.Empty,
+                RecentMembers = recent.Select(member => new AdminServerMemberDto
+                {
+                    UserName = member.User.UserName ?? string.Empty,
+                    DisplayName = member.User.DisplayName,
+                    AvatarUrl = member.User.AvatarUrl,
+                    JoinedAt = member.JoinedAt,
+                    IsOwner = member.UserId == server.OwnerId
+                }).ToList()
+            };
+        }
+
+        public async Task<List<string>> BanServerAsync(string adminId, int serverId, BanServerDto model)
+        {
+            await Helpers.Validators.ValidationExtensions.EnsureValidAsync(_banValidator, model);
+
+            var server = await _admin.GetServerAsync(serverId) ?? throw new Helpers.Exceptions.NotFoundException("Server not found.");
+            if (server.IsBanned)
+            {
+                throw new Helpers.Exceptions.BadRequestException("That server is already banned.");
+            }
+
+            await _admin.SetServerBanAsync(serverId, true, model.Reason.Trim(), adminId);
+            return await _members.GetUserIdsAsync(serverId);
+        }
+
+        public async Task<List<string>> UnbanServerAsync(int serverId)
+        {
+            var server = await _admin.GetServerAsync(serverId) ?? throw new Helpers.Exceptions.NotFoundException("Server not found.");
+            if (!server.IsBanned)
+            {
+                throw new Helpers.Exceptions.BadRequestException("That server is not banned.");
+            }
+
+            await _admin.SetServerBanAsync(serverId, false, string.Empty, null);
+            return await _members.GetUserIdsAsync(serverId);
+        }
+
+        public async Task<List<string>> DeleteServerAsync(int serverId)
+        {
+            var server = await _servers.GetByIdAsync(serverId) ?? throw new Helpers.Exceptions.NotFoundException("Server not found.");
+            var memberIds = await _members.GetUserIdsAsync(serverId);
+            await _overwrites.DeleteForServerAsync(serverId);
+            await _servers.DeleteAsync(server);
+            return memberIds;
         }
 
         public async Task<AdminUserListDto> GetUsersAsync(AdminListFilterDto filter)
@@ -89,6 +177,7 @@ namespace Service.Services
                     IconUrl = server.IconUrl,
                     OwnerUserName = server.Owner?.UserName ?? string.Empty,
                     IsPrivate = server.IsPrivate,
+                    IsBanned = server.IsBanned,
                     CreatedAt = server.CreatedAt,
                     Members = members.TryGetValue(server.Id, out var count) ? count : 0,
                     Bans = bans.TryGetValue(server.Id, out var banned) ? banned : 0
@@ -119,7 +208,8 @@ namespace Service.Services
             {
                 Total = await _admin.CountServersAsync(),
                 Public = await _admin.CountServersByPrivacyAsync(false),
-                Private = await _admin.CountServersByPrivacyAsync(true)
+                Private = await _admin.CountServersByPrivacyAsync(true),
+                Banned = await _admin.CountBannedServersAsync()
             };
 
             overview.Bans = new AdminBanStatsDto

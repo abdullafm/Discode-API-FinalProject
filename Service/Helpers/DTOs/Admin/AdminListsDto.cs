@@ -31,6 +31,7 @@ namespace Service.Helpers.DTOs.Admin
         public string IconUrl { get; set; } = string.Empty;
         public string OwnerUserName { get; set; } = string.Empty;
         public bool IsPrivate { get; set; }
+        public bool IsBanned { get; set; }
         public DateTime CreatedAt { get; set; }
         public int Members { get; set; }
         public int Bans { get; set; }

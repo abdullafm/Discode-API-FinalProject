@@ -25,6 +25,7 @@ namespace Service.Helpers.DTOs.Admin
         public int Total { get; set; }
         public int Public { get; set; }
         public int Private { get; set; }
+        public int Banned { get; set; }
     }
 
     public class AdminBanStatsDto

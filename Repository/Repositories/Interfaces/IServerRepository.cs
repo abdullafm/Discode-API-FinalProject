@@ -8,5 +8,6 @@ namespace Repository.Repositories.Interfaces
         Task<Server?> GetByInviteCodeAsync(string inviteCode);
         Task<IEnumerable<Server>> GetForUserAsync(string userId);
         Task<bool> InviteCodeExistsAsync(string inviteCode);
+        Task<bool> IsBannedAsync(int serverId);
     }
 }

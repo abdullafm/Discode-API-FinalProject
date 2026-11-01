@@ -37,6 +37,20 @@ namespace Domain.Configurations
                 .HasMaxLength(16)
                 .HasDefaultValue("ink");
 
+            builder.Property(x => x.IsBanned)
+                .IsRequired()
+                .HasDefaultValue(false);
+
+            builder.Property(x => x.BanReason)
+                .IsRequired()
+                .HasMaxLength(300)
+                .HasDefaultValue(string.Empty);
+
+            builder.Property(x => x.BannedById)
+                .HasMaxLength(450);
+
+            builder.HasIndex(x => x.IsBanned);
+
             builder.Property(x => x.OwnerId)
                 .IsRequired()
                 .HasMaxLength(450);

@@ -12,6 +12,10 @@ namespace Domain.Entities
         public string BannerUrl { get; set; } = string.Empty;
         public string BannerColor { get; set; } = "ink";
         public bool IsPrivate { get; set; }
+        public bool IsBanned { get; set; }
+        public DateTime? BannedAt { get; set; }
+        public string BanReason { get; set; } = string.Empty;
+        public string? BannedById { get; set; }
         public string OwnerId { get; set; } = string.Empty;
         public AppUser Owner { get; set; } = null!;
         public ICollection<ServerMember> Members { get; set; } = new List<ServerMember>();

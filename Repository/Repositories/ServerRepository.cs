@@ -26,7 +26,7 @@ namespace Repository.Repositories
                 .AsNoTracking()
                 .Include(x => x.Owner)
                 .Include(x => x.Members).ThenInclude(m => m.User)
-                .FirstOrDefaultAsync(x => x.InviteCode == inviteCode);
+                .FirstOrDefaultAsync(x => x.InviteCode == inviteCode && !x.IsBanned);
         }
 
         public async Task<IEnumerable<Server>> GetForUserAsync(string userId)
@@ -35,10 +35,15 @@ namespace Repository.Repositories
                 .AsNoTracking()
                 .Include(x => x.Owner)
                 .Include(x => x.Members)
-                .Where(x => x.Members.Any(m => m.UserId == userId))
+                .Where(x => !x.IsBanned && x.Members.Any(m => m.UserId == userId))
                 .OrderBy(x => x.Members.Where(m => m.UserId == userId).Select(m => m.Position).FirstOrDefault())
                 .ThenBy(x => x.Members.Where(m => m.UserId == userId).Select(m => m.JoinedAt).FirstOrDefault())
                 .ToListAsync();
+        }
+
+        public async Task<bool> IsBannedAsync(int serverId)
+        {
+            return await _dbSet.AnyAsync(x => x.Id == serverId && x.IsBanned);
         }
 
         public async Task<bool> InviteCodeExistsAsync(string inviteCode)

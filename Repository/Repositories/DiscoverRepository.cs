@@ -48,7 +48,7 @@ namespace Repository.Repositories
             return _dbContext.Servers
                 .AsNoTracking()
                 .Include(x => x.Members).ThenInclude(m => m.User)
-                .Where(x => !x.IsPrivate);
+                .Where(x => !x.IsPrivate && !x.IsBanned);
         }
     }
 }
