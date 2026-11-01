@@ -92,18 +92,14 @@ namespace Service.Services
                 NewLast7Days = await _admin.CountUsersCreatedSinceAsync(week),
                 NewLast30Days = await _admin.CountUsersCreatedSinceAsync(month),
                 PublicAccounts = await _admin.CountUsersByVisibilityAsync(true),
-                PrivateAccounts = await _admin.CountUsersByVisibilityAsync(false),
-                Admins = await _admin.CountUsersInRoleAsync(Roles.Admin),
-                SuperAdmins = await _admin.CountUsersInRoleAsync(Roles.SuperAdmin),
-                Blocks = await _admin.CountUserBlocksAsync()
+                PrivateAccounts = await _admin.CountUsersByVisibilityAsync(false)
             };
 
             overview.Servers = new AdminServerStatsDto
             {
                 Total = await _admin.CountServersAsync(),
                 Public = await _admin.CountServersByPrivacyAsync(false),
-                Private = await _admin.CountServersByPrivacyAsync(true),
-                Memberships = await _admin.CountServerMembershipsAsync()
+                Private = await _admin.CountServersByPrivacyAsync(true)
             };
 
             overview.Bans = new AdminBanStatsDto
@@ -118,13 +114,7 @@ namespace Service.Services
             overview.Content = new AdminContentStatsDto
             {
                 Posts = await _admin.CountPostsAsync(),
-                Comments = await _admin.CountCommentsAsync(),
-                Reposts = await _admin.CountRepostsAsync(),
-                Stories = await _admin.CountStoriesAsync(),
-                Groups = await _admin.CountGroupsAsync(),
-                DirectMessages = await _admin.CountDirectMessagesAsync(),
-                GroupMessages = await _admin.CountGroupMessagesAsync(),
-                ServerMessages = await _admin.CountServerMessagesAsync()
+                Comments = await _admin.CountCommentsAsync()
             };
 
             var reasons = await _admin.GetTopReportReasonsAsync(5);

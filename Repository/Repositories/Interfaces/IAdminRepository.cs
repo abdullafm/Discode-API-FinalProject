@@ -5,12 +5,9 @@ namespace Repository.Repositories.Interfaces
         Task<int> CountUsersAsync();
         Task<int> CountUsersCreatedSinceAsync(DateTime since);
         Task<int> CountUsersByVisibilityAsync(bool isPublic);
-        Task<int> CountUsersInRoleAsync(string roleName);
-        Task<int> CountUserBlocksAsync();
 
         Task<int> CountServersAsync();
         Task<int> CountServersByPrivacyAsync(bool isPrivate);
-        Task<int> CountServerMembershipsAsync();
 
         Task<int> CountServerBansAsync();
         Task<int> CountServerBansSinceAsync(DateTime since);
@@ -20,12 +17,6 @@ namespace Repository.Repositories.Interfaces
 
         Task<int> CountPostsAsync();
         Task<int> CountCommentsAsync();
-        Task<int> CountRepostsAsync();
-        Task<int> CountStoriesAsync();
-        Task<int> CountGroupsAsync();
-        Task<int> CountDirectMessagesAsync();
-        Task<int> CountGroupMessagesAsync();
-        Task<int> CountServerMessagesAsync();
 
         Task<(List<Domain.Entities.AppUser> Users, int Total)> GetUsersAsync(string? search, int page, int pageSize);
         Task<Dictionary<string, List<string>>> GetRolesForUsersAsync(List<string> userIds);

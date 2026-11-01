@@ -20,21 +20,9 @@ namespace Repository.Repositories
 
         public Task<int> CountUsersByVisibilityAsync(bool isPublic) => _dbContext.Users.CountAsync(x => x.IsPublic == isPublic);
 
-        public Task<int> CountUsersInRoleAsync(string roleName)
-        {
-            return (from userRole in _dbContext.UserRoles
-                    join role in _dbContext.Roles on userRole.RoleId equals role.Id
-                    where role.Name == roleName
-                    select userRole.UserId).Distinct().CountAsync();
-        }
-
-        public Task<int> CountUserBlocksAsync() => _dbContext.UserBlocks.CountAsync();
-
         public Task<int> CountServersAsync() => _dbContext.Servers.CountAsync();
 
         public Task<int> CountServersByPrivacyAsync(bool isPrivate) => _dbContext.Servers.CountAsync(x => x.IsPrivate == isPrivate);
-
-        public Task<int> CountServerMembershipsAsync() => _dbContext.ServerMembers.CountAsync();
 
         public Task<int> CountServerBansAsync() => _dbContext.ServerBans.CountAsync();
 
@@ -49,18 +37,6 @@ namespace Repository.Repositories
         public Task<int> CountPostsAsync() => _dbContext.Posts.CountAsync();
 
         public Task<int> CountCommentsAsync() => _dbContext.Comments.CountAsync();
-
-        public Task<int> CountRepostsAsync() => _dbContext.PostReposts.CountAsync();
-
-        public Task<int> CountStoriesAsync() => _dbContext.Stories.CountAsync();
-
-        public Task<int> CountGroupsAsync() => _dbContext.Groups.CountAsync();
-
-        public Task<int> CountDirectMessagesAsync() => _dbContext.Messages.CountAsync();
-
-        public Task<int> CountGroupMessagesAsync() => _dbContext.GroupMessages.CountAsync();
-
-        public Task<int> CountServerMessagesAsync() => _dbContext.ServerMessages.CountAsync();
 
         public async Task<(List<Domain.Entities.AppUser> Users, int Total)> GetUsersAsync(string? search, int page, int pageSize)
         {
