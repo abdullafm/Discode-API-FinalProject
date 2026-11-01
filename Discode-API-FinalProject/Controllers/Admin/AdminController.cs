@@ -24,9 +24,15 @@ namespace Discode_API_FinalProject.Controllers.Admin
         }
 
         [HttpGet("servers")]
-        public async Task<IActionResult> Servers([FromQuery] Service.Helpers.DTOs.Admin.AdminListFilterDto filter)
+        public async Task<IActionResult> GetAllServers([FromQuery] Service.Helpers.DTOs.Admin.AdminListFilterDto filter)
         {
-            return Ok(await _adminService.GetServersAsync(filter));
+            return Ok(await _adminService.GetAllServersAsync(filter));
+        }
+
+        [HttpGet("servers/search")]
+        public async Task<IActionResult> SearchServers([FromQuery] Service.Helpers.DTOs.Admin.AdminListFilterDto filter)
+        {
+            return Ok(await _adminService.SearchServersAsync(filter));
         }
 
         [HttpGet("overview")]

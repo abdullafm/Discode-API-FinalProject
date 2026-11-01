@@ -6,6 +6,7 @@ namespace Service.Services.Interfaces
     {
         Task<AdminOverviewDto> GetOverviewAsync();
         Task<AdminUserListDto> GetUsersAsync(AdminListFilterDto filter);
-        Task<AdminServerListDto> GetServersAsync(AdminListFilterDto filter);
+        Task<AdminServerListDto> GetAllServersAsync(AdminListFilterDto filter);
+        Task<AdminServerListDto> SearchServersAsync(AdminListFilterDto filter);
     }
 }

@@ -49,11 +49,29 @@ namespace Service.Services
             };
         }
 
-        public async Task<AdminServerListDto> GetServersAsync(AdminListFilterDto filter)
+        public async Task<AdminServerListDto> GetAllServersAsync(AdminListFilterDto filter)
         {
             await Helpers.Validators.ValidationExtensions.EnsureValidAsync(_filterValidator, filter);
 
-            var (servers, total) = await _admin.GetServersAsync(filter.Search, filter.BannedOnly, filter.Page, filter.PageSize);
+            var (servers, total) = await _admin.GetAllServersAsync(filter.BannedOnly, filter.Page, filter.PageSize);
+            return await ToServerListAsync(servers, total, filter);
+        }
+
+        public async Task<AdminServerListDto> SearchServersAsync(AdminListFilterDto filter)
+        {
+            await Helpers.Validators.ValidationExtensions.EnsureValidAsync(_filterValidator, filter);
+
+            if (string.IsNullOrWhiteSpace(filter.Search))
+            {
+                return await GetAllServersAsync(filter);
+            }
+
+            var (servers, total) = await _admin.SearchServersAsync(filter.Search, filter.BannedOnly, filter.Page, filter.PageSize);
+            return await ToServerListAsync(servers, total, filter);
+        }
+
+        private async Task<AdminServerListDto> ToServerListAsync(List<Domain.Entities.Server> servers, int total, AdminListFilterDto filter)
+        {
             var ids = servers.Select(x => x.Id).ToList();
             var members = await _admin.GetMemberCountsForServersAsync(ids);
             var bans = await _admin.GetBanCountsForServersAsync(ids);

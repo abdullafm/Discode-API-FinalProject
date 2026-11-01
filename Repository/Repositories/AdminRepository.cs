@@ -104,7 +104,17 @@ namespace Repository.Repositories
                 .ToDictionaryAsync(x => x.Key, x => x.Count);
         }
 
-        public async Task<(List<Domain.Entities.Server> Servers, int Total)> GetServersAsync(string? search, bool bannedOnly, int page, int pageSize)
+        public Task<(List<Domain.Entities.Server> Servers, int Total)> GetAllServersAsync(bool bannedOnly, int page, int pageSize)
+        {
+            return QueryServersAsync(null, bannedOnly, page, pageSize);
+        }
+
+        public Task<(List<Domain.Entities.Server> Servers, int Total)> SearchServersAsync(string term, bool bannedOnly, int page, int pageSize)
+        {
+            return QueryServersAsync(term.Trim(), bannedOnly, page, pageSize);
+        }
+
+        private async Task<(List<Domain.Entities.Server> Servers, int Total)> QueryServersAsync(string? term, bool bannedOnly, int page, int pageSize)
         {
             var query = _dbContext.Servers.AsNoTracking().Include(x => x.Owner).AsQueryable();
             if (bannedOnly)
@@ -112,9 +122,8 @@ namespace Repository.Repositories
                 query = query.Where(server => _dbContext.ServerBans.Any(ban => ban.ServerId == server.Id));
             }
 
-            if (!string.IsNullOrWhiteSpace(search))
+            if (!string.IsNullOrEmpty(term))
             {
-                var term = search.Trim();
                 query = query.Where(x => x.Name.Contains(term) || (x.Owner.UserName != null && x.Owner.UserName.Contains(term)));
             }
 

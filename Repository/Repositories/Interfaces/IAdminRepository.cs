@@ -23,7 +23,8 @@ namespace Repository.Repositories.Interfaces
         Task<Dictionary<string, List<string>>> GetRolesForUsersAsync(List<string> userIds);
         Task<Dictionary<string, int>> GetServerCountsForUsersAsync(List<string> userIds);
         Task<Dictionary<string, int>> GetBanCountsForUsersAsync(List<string> userIds);
-        Task<(List<Domain.Entities.Server> Servers, int Total)> GetServersAsync(string? search, bool bannedOnly, int page, int pageSize);
+        Task<(List<Domain.Entities.Server> Servers, int Total)> GetAllServersAsync(bool bannedOnly, int page, int pageSize);
+        Task<(List<Domain.Entities.Server> Servers, int Total)> SearchServersAsync(string term, bool bannedOnly, int page, int pageSize);
         Task<Dictionary<int, int>> GetMemberCountsForServersAsync(List<int> serverIds);
         Task<Dictionary<int, int>> GetBanCountsForServersAsync(List<int> serverIds);
 
