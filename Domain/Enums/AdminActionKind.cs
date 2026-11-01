@@ -12,6 +12,7 @@ namespace Domain.Enums
         ServerBan = 7,
         ServerUnban = 8,
         ServerDelete = 9,
-        ServerWarn = 10
+        ServerWarn = 10,
+        BrandingChange = 11
     }
 }

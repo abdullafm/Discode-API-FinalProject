@@ -20,6 +20,7 @@ namespace Repository
             services.AddScoped<IServerBanRepository, ServerBanRepository>();
             services.AddScoped<IDiscoverRepository, DiscoverRepository>();
             services.AddScoped<ITranslationRepository, TranslationRepository>();
+            services.AddScoped<ISiteSettingRepository, SiteSettingRepository>();
             services.AddScoped<IAdminRepository, AdminRepository>();
             services.AddScoped<IUserModerationRepository, UserModerationRepository>();
             services.AddScoped<Repository.Interceptors.AdminChangeInterceptor>();
