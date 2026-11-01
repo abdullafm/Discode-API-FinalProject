@@ -34,6 +34,21 @@ namespace Discode_API_FinalProject.Hubs
             }
         }
 
+        // Lets the page re-sync the timeout (changed from anywhere, not only through the admin API)
+        public async Task CheckTimeout()
+        {
+            using var scope = _scopes.CreateScope();
+            var status = await scope.ServiceProvider.GetRequiredService<IUserModerationRepository>().GetStatusAsync(UserId);
+            if (status?.TimeoutUntil is DateTime until && until > DateTime.UtcNow)
+            {
+                await Clients.Caller.SendAsync("AccountTimeout", new { seconds = (int)Math.Ceiling((until - DateTime.UtcNow).TotalSeconds), until, reason = status.TimeoutReason });
+            }
+            else
+            {
+                await Clients.Caller.SendAsync("AccountTimeout", new { seconds = 0, until = (DateTime?)null, reason = string.Empty });
+            }
+        }
+
         public async Task AcknowledgeWarning(int warningId)
         {
             using var scope = _scopes.CreateScope();
