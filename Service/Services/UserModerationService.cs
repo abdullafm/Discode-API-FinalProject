@@ -83,6 +83,7 @@ namespace Service.Services
                 Comments = await _moderation.CountCommentsByAsync(userId),
                 CanModerate = allowed && !user.IsDeleted,
                 CanDelete = allowed && actor.IsSuperAdmin && !user.IsDeleted,
+                CanChangeRole = actor.IsSuperAdmin && userId != actor.UserId && !user.IsDeleted,
                 RecentWarnings = warnings.Select(x => new UserWarningDto
                 {
                     Id = x.Warning.Id,
@@ -143,6 +144,46 @@ namespace Service.Services
             await _moderation.SaveChangesAsync();
 
             return new ModerationResultDto { UserId = userId };
+        }
+
+        public async Task<ModerationResultDto> ChangeRoleAsync(ModerationActor actor, string userId, ChangeRoleDto model)
+        {
+            if (!actor.IsSuperAdmin)
+            {
+                throw new ForbiddenException("Only a SuperAdmin can change roles.");
+            }
+
+            var role = (model.Role ?? string.Empty).Trim();
+            if (!Roles.All.Contains(role))
+            {
+                throw new BadRequestException("Choose Member, Admin or SuperAdmin.");
+            }
+
+            if (userId == actor.UserId)
+            {
+                throw new ForbiddenException("You cannot change your own role.");
+            }
+
+            var user = await _moderation.GetTrackedUserAsync(userId) ?? throw new NotFoundException("Member not found.");
+            if (user.IsDeleted)
+            {
+                throw new BadRequestException("That account is deleted.");
+            }
+
+            var current = (await _admin.GetRolesForUsersAsync(new List<string> { userId })).GetValueOrDefault(userId)?.FirstOrDefault() ?? Roles.Member;
+            if (current == role)
+            {
+                throw new BadRequestException("They already have that role.");
+            }
+
+            await _moderation.SetRoleAsync(userId, role);
+
+            // the role lives inside the sign-in token, so the old token has to stop working
+            user.ForcedLogoutAt = DateTime.UtcNow;
+            await LogAsync(actor, user, AdminActionKind.ChangeRole, current + " to " + role, "Signed out to apply the new role");
+            await _moderation.SaveChangesAsync();
+
+            return new ModerationResultDto { UserId = userId, ForceLogout = true, Reason = "Your role changed. Sign in again." };
         }
 
         public async Task<ModerationResultDto> KickAsync(ModerationActor actor, string userId, KickUserDto model)

@@ -8,6 +8,7 @@ namespace Service.Services.Interfaces
         Task<ModerationResultDto> WarnAsync(ModerationActor actor, string userId, WarnUserDto model);
         Task<ModerationResultDto> TimeoutAsync(ModerationActor actor, string userId, TimeoutUserDto model);
         Task<ModerationResultDto> ClearTimeoutAsync(ModerationActor actor, string userId);
+        Task<ModerationResultDto> ChangeRoleAsync(ModerationActor actor, string userId, ChangeRoleDto model);
         Task<ModerationResultDto> KickAsync(ModerationActor actor, string userId, KickUserDto model);
         Task<ModerationResultDto> BanAsync(ModerationActor actor, string userId, BanUserDto model);
         Task<ModerationResultDto> UnbanAsync(ModerationActor actor, string userId);

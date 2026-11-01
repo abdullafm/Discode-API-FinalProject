@@ -22,6 +22,15 @@ namespace Repository.Repositories
 
         public Task SaveChangesAsync() => _dbContext.SaveChangesAsync();
 
+        // every account holds exactly one role
+        public async Task SetRoleAsync(string userId, string role)
+        {
+            var roleId = await _dbContext.Roles.Where(x => x.Name == role).Select(x => x.Id).FirstAsync();
+            await _dbContext.UserRoles.Where(x => x.UserId == userId).ExecuteDeleteAsync();
+            _dbContext.UserRoles.Add(new Microsoft.AspNetCore.Identity.IdentityUserRole<string> { UserId = userId, RoleId = roleId });
+            await _dbContext.SaveChangesAsync();
+        }
+
         public async Task AddWarningAsync(UserWarning warning)
         {
             await _dbContext.UserWarnings.AddAsync(warning);

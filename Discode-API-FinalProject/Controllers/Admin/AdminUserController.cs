@@ -68,6 +68,12 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return await DoneAsync(result);
         }
 
+        [HttpPost("{id}/role")]
+        public async Task<IActionResult> ChangeRole(string id, [FromBody] ChangeRoleDto model)
+        {
+            return await DoneAsync(await _moderation.ChangeRoleAsync(Actor, id, model));
+        }
+
         [HttpPost("{id}/kick")]
         public async Task<IActionResult> Kick(string id, [FromBody] KickUserDto model)
         {

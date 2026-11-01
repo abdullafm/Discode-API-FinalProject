@@ -28,6 +28,11 @@ namespace Service.Helpers.DTOs.Admin
         public int Days { get; set; }
     }
 
+    public class ChangeRoleDto
+    {
+        public string Role { get; set; } = string.Empty;
+    }
+
     public class DeleteUserDto
     {
         public string Reason { get; set; } = string.Empty;
@@ -110,6 +115,7 @@ namespace Service.Helpers.DTOs.Admin
         public int Comments { get; set; }
         public bool CanModerate { get; set; }
         public bool CanDelete { get; set; }
+        public bool CanChangeRole { get; set; }
         public List<UserWarningDto> RecentWarnings { get; set; } = new();
         public List<AdminActionDto> History { get; set; } = new();
     }
