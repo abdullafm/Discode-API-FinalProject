@@ -42,6 +42,7 @@ namespace Service.Services
                 PublicId = server.PublicId,
                 Name = server.Name,
                 IconUrl = server.IconUrl,
+                BannerUrl = server.BannerUrl,
                 Description = server.Description,
                 InviteCode = server.InviteCode,
                 OwnerUserName = server.Owner?.UserName ?? string.Empty,
