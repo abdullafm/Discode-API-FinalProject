@@ -70,6 +70,7 @@ namespace Discode_API_FinalProject.Hubs
             }
 
             await DeliverWarningsAsync();
+            await DeliverTimeoutAsync();
             await base.OnConnectedAsync();
         }
 

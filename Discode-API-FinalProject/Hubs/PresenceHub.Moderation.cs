@@ -24,6 +24,16 @@ namespace Discode_API_FinalProject.Hubs
             }
         }
 
+        private async Task DeliverTimeoutAsync()
+        {
+            using var scope = _scopes.CreateScope();
+            var status = await scope.ServiceProvider.GetRequiredService<IUserModerationRepository>().GetStatusAsync(UserId);
+            if (status?.TimeoutUntil is DateTime until && until > DateTime.UtcNow)
+            {
+                await Clients.Caller.SendAsync("AccountTimeout", new { seconds = (int)Math.Ceiling((until - DateTime.UtcNow).TotalSeconds), until, reason = status.TimeoutReason });
+            }
+        }
+
         public async Task AcknowledgeWarning(int warningId)
         {
             using var scope = _scopes.CreateScope();

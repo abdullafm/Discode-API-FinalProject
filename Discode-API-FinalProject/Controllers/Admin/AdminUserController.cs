@@ -55,13 +55,17 @@ namespace Discode_API_FinalProject.Controllers.Admin
         [HttpPost("{id}/timeout")]
         public async Task<IActionResult> Timeout(string id, [FromBody] TimeoutUserDto model)
         {
-            return await DoneAsync(await _moderation.TimeoutAsync(Actor, id, model));
+            var result = await _moderation.TimeoutAsync(Actor, id, model);
+            await _hub.Clients.User(id).SendAsync("AccountTimeout", new { seconds = (int)Math.Ceiling((result.TimeoutUntil!.Value - DateTime.UtcNow).TotalSeconds), until = result.TimeoutUntil, reason = result.Reason });
+            return await DoneAsync(result);
         }
 
         [HttpPost("{id}/timeout/clear")]
         public async Task<IActionResult> ClearTimeout(string id)
         {
-            return await DoneAsync(await _moderation.ClearTimeoutAsync(Actor, id));
+            var result = await _moderation.ClearTimeoutAsync(Actor, id);
+            await _hub.Clients.User(id).SendAsync("AccountTimeout", new { seconds = 0, until = (DateTime?)null, reason = string.Empty });
+            return await DoneAsync(result);
         }
 
         [HttpPost("{id}/kick")]

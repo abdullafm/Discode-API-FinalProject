@@ -126,7 +126,7 @@ namespace Service.Services
             await LogAsync(actor, user, AdminActionKind.Timeout, reason, DescribeMinutes(model.Minutes));
             await _moderation.SaveChangesAsync();
 
-            return new ModerationResultDto { UserId = userId, Reason = reason };
+            return new ModerationResultDto { UserId = userId, Reason = reason, TimeoutUntil = user.TimeoutUntil };
         }
 
         public async Task<ModerationResultDto> ClearTimeoutAsync(ModerationActor actor, string userId)

@@ -41,6 +41,7 @@ namespace Service.Helpers.DTOs.Admin
         public string Reason { get; set; } = string.Empty;
         public int WarningId { get; set; }
         public int WarningCount { get; set; }
+        public DateTime? TimeoutUntil { get; set; }
     }
 
     public class UserWarningDto
