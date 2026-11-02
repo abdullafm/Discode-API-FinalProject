@@ -3,6 +3,7 @@ using Domain.Entities;
 using Domain.Enums;
 using FluentValidation;
 using Repository.Repositories.Interfaces;
+using Service.Helpers;
 using Service.Helpers.DTOs.Live;
 using Service.Helpers.Exceptions;
 using Service.Helpers.Mappings;
@@ -54,6 +55,11 @@ namespace Service.Services
                 throw new NotFoundException("User not found.");
             }
 
+            if (ModerationMessages.IsLiveBanActive(host.LiveBanned, host.LiveBannedUntil, DateTime.UtcNow))
+            {
+                throw new BadRequestException(ModerationMessages.LiveBanned(host.LiveBannedUntil, host.LiveBanReason));
+            }
+
             var stream = new LiveStream
             {
                 HostId = userId,
@@ -93,9 +99,37 @@ namespace Service.Services
             await _streams.UpdateAsync(stream);
         }
 
-        public async Task<IEnumerable<LiveStreamDto>> GetActiveAsync(string viewerId)
+        public async Task<List<Service.Helpers.DTOs.Admin.AdminLiveStreamDto>> GetActiveForAdminAsync()
         {
-            var streams = await _streams.GetActiveVisibleAsync(viewerId);
+            var result = new List<Service.Helpers.DTOs.Admin.AdminLiveStreamDto>();
+            foreach (var stream in await _streams.GetActiveAllAsync())
+            {
+                if (await _tracker.GetHostConnectionAsync(stream.Id) is null)
+                {
+                    continue;
+                }
+
+                result.Add(new Service.Helpers.DTOs.Admin.AdminLiveStreamDto
+                {
+                    Id = stream.Id,
+                    HostId = stream.HostId,
+                    HostUserName = stream.Host?.UserName ?? string.Empty,
+                    HostDisplayName = stream.Host?.DisplayName ?? string.Empty,
+                    HostAvatarUrl = stream.Host?.AvatarUrl ?? string.Empty,
+                    Title = stream.Title,
+                    Category = stream.Category,
+                    ThumbnailUrl = stream.ThumbnailUrl ?? string.Empty,
+                    StartedAt = stream.CreatedAt,
+                    ViewerCount = await _tracker.CountViewersAsync(stream.Id)
+                });
+            }
+
+            return result;
+        }
+
+        public async Task<IEnumerable<LiveStreamDto>> GetActiveAsync(string viewerId, bool staff = false)
+        {
+            var streams = await _streams.GetActiveVisibleAsync(viewerId, staff);
             var friendIds = await GetFriendIdsAsync(viewerId);
 
             var result = new List<LiveStreamDto>();
@@ -156,9 +190,9 @@ namespace Service.Services
             };
         }
 
-        public async Task<LiveJoinDto> JoinAsync(string viewerId, string connectionId, int streamId)
+        public async Task<LiveJoinDto> JoinAsync(string viewerId, string connectionId, int streamId, bool staff = false)
         {
-            var stream = await _streams.GetActiveVisibleByIdAsync(viewerId, streamId);
+            var stream = await _streams.GetActiveVisibleByIdAsync(viewerId, streamId, staff);
             var hostConnection = stream is null ? null : await _tracker.GetHostConnectionAsync(streamId);
             if (stream is null || hostConnection is null)
             {

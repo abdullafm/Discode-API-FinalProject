@@ -172,6 +172,16 @@ namespace Repository.Migrations
                         .HasColumnType("nvarchar(8)")
                         .HasDefaultValue("en");
 
+                    b.Property<string>("LiveBanReason")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("LiveBanned")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LiveBannedUntil")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
 

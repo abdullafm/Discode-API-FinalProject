@@ -15,6 +15,7 @@ namespace Discode_API_FinalProject.Hubs
         {
             try
             {
+                await EnsureNotTimedOutAsync();
                 await EndOwnStreamsAsync();
                 var stream = await _liveStreamService.StartAsync(UserId, Context.ConnectionId, model);
                 await Groups.AddToGroupAsync(Context.ConnectionId, LiveGroup(stream.Id));
@@ -58,7 +59,8 @@ namespace Discode_API_FinalProject.Hubs
         {
             try
             {
-                var join = await _liveStreamService.JoinAsync(UserId, Context.ConnectionId, streamId);
+                var staff = Context.User?.IsInRole(Domain.Constants.Roles.SuperAdmin) == true || Context.User?.IsInRole(Domain.Constants.Roles.Admin) == true;
+                var join = await _liveStreamService.JoinAsync(UserId, Context.ConnectionId, streamId, staff);
                 await Groups.AddToGroupAsync(Context.ConnectionId, LiveGroup(streamId));
                 await Clients.Client(join.HostConnectionId).SendAsync("ViewerJoined", streamId, Context.ConnectionId);
                 await Clients.All.SendAsync("LiveViewers", streamId, join.Stream.ViewerCount);
@@ -156,6 +158,7 @@ namespace Discode_API_FinalProject.Hubs
         {
             try
             {
+                await EnsureNotTimedOutAsync();
                 var message = await _liveStreamService.CreateMessageAsync(UserId, Context.ConnectionId, streamId, text, replyUserName, replyText);
                 await Clients.Group(LiveGroup(streamId)).SendAsync("LiveMessage", message);
             }
@@ -173,6 +176,7 @@ namespace Discode_API_FinalProject.Hubs
         {
             try
             {
+                await EnsureNotTimedOutAsync();
                 var message = await _liveStreamService.CreateMessageAsync(UserId, Context.ConnectionId, streamId, text);
                 await Clients.Group(LiveGroup(streamId)).SendAsync("LiveMessage", message);
             }

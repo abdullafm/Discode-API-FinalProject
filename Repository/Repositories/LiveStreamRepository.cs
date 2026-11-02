@@ -12,11 +12,21 @@ namespace Repository.Repositories
         {
         }
 
-        public async Task<IEnumerable<LiveStream>> GetActiveVisibleAsync(string viewerId)
+        public async Task<IEnumerable<LiveStream>> GetActiveVisibleAsync(string viewerId, bool staff = false)
         {
-            return await VisibleTo(viewerId)
+            return await VisibleTo(viewerId, staff)
                 .AsNoTracking()
                 .Include(x => x.Host)
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<LiveStream>> GetActiveAllAsync()
+        {
+            return await _dbSet
+                .AsNoTracking()
+                .Include(x => x.Host)
+                .Where(x => x.EndedAt == null)
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync();
         }
@@ -28,16 +38,21 @@ namespace Repository.Repositories
                 .ToListAsync();
         }
 
-        public async Task<LiveStream?> GetActiveVisibleByIdAsync(string viewerId, int streamId)
+        public async Task<LiveStream?> GetActiveVisibleByIdAsync(string viewerId, int streamId, bool staff = false)
         {
-            return await VisibleTo(viewerId)
+            return await VisibleTo(viewerId, staff)
                 .AsNoTracking()
                 .Include(x => x.Host)
                 .FirstOrDefaultAsync(x => x.Id == streamId);
         }
 
-        private IQueryable<LiveStream> VisibleTo(string viewerId)
+        private IQueryable<LiveStream> VisibleTo(string viewerId, bool staff = false)
         {
+            if (staff)
+            {
+                return _dbSet.Where(x => x.EndedAt == null);
+            }
+
             return _dbSet.Where(x => x.EndedAt == null &&
                                      !_dbContext.UserBlocks.Any(b =>
                                          (b.BlockerId == x.HostId && b.BlockedId == viewerId) ||

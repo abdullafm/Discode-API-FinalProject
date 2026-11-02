@@ -118,6 +118,9 @@ namespace Repository.Interceptors
                     case Report:
                         _topics.Add("reports");
                         break;
+                    case LiveStream:
+                        _topics.Add("live");
+                        break;
                     case Post when added || deleted:
                     case Comment when added || deleted:
                         _topics.Add("content");
@@ -128,7 +131,7 @@ namespace Repository.Interceptors
 
         private static bool ProfileChanged(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
         {
-            foreach (var name in new[] { "DisplayName", "UserName", "Email", "AvatarUrl", "Bio", "Pronouns", "CustomStatus", "IsPublic", "IsBanned", "TimeoutUntil", "IsDeleted" })
+            foreach (var name in new[] { "DisplayName", "UserName", "Email", "AvatarUrl", "Bio", "Pronouns", "CustomStatus", "IsPublic", "IsBanned", "TimeoutUntil", "IsDeleted", "LiveBanned" })
             {
                 if (entry.Property(name).IsModified)
                 {

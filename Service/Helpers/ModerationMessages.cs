@@ -14,6 +14,18 @@ namespace Service.Helpers
             return "Your account is banned " + when + "." + why;
         }
 
+        public static bool IsLiveBanActive(bool banned, DateTime? until, DateTime now)
+        {
+            return banned && (until is null || until > now);
+        }
+
+        public static string LiveBanned(DateTime? until, string reason)
+        {
+            var when = until is null ? "permanently" : "until " + until.Value.ToString("yyyy-MM-dd HH:mm") + " UTC";
+            var why = string.IsNullOrWhiteSpace(reason) ? string.Empty : " Reason: " + reason;
+            return "You cannot go live " + when + "." + why;
+        }
+
         public static string TimedOut(DateTime until, string reason)
         {
             var why = string.IsNullOrWhiteSpace(reason) ? string.Empty : " Reason: " + reason;

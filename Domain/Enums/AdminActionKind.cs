@@ -17,6 +17,9 @@ namespace Domain.Enums
         ChangeRole = 12,
         ReportReviewed = 13,
         ReportDismissed = 14,
-        ReportReopened = 15
+        ReportReopened = 15,
+        LiveBan = 16,
+        LiveUnban = 17,
+        LiveEnd = 18
     }
 }

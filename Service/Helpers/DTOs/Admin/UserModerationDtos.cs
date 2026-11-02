@@ -116,6 +116,9 @@ namespace Service.Helpers.DTOs.Admin
         public bool CanModerate { get; set; }
         public bool CanDelete { get; set; }
         public bool CanChangeRole { get; set; }
+        public bool LiveBanned { get; set; }
+        public DateTime? LiveBannedUntil { get; set; }
+        public string LiveBanReason { get; set; } = string.Empty;
         public List<UserWarningDto> RecentWarnings { get; set; } = new();
         public List<AdminActionDto> History { get; set; } = new();
     }

@@ -24,6 +24,9 @@ namespace Domain.Entities
         public DateTime? ForcedLogoutAt { get; set; }
         public bool IsDeleted { get; set; }
         public bool IsSystem { get; set; }
+        public bool LiveBanned { get; set; }
+        public DateTime? LiveBannedUntil { get; set; }
+        public string LiveBanReason { get; set; } = string.Empty;
         public PresenceStatus PreferredStatus { get; set; } = PresenceStatus.Online;
         public string? EmailVerificationCode { get; set; }
         public DateTime? EmailVerificationExpiresAt { get; set; }

@@ -14,6 +14,16 @@ namespace Discode_API_FinalProject.Hubs
             return status is not null && (status.IsDeleted || ModerationMessages.IsBanActive(status.IsBanned, status.BannedUntil, DateTime.UtcNow));
         }
 
+        private async Task EnsureNotTimedOutAsync()
+        {
+            using var scope = _scopes.CreateScope();
+            var status = await scope.ServiceProvider.GetRequiredService<IUserModerationRepository>().GetStatusAsync(UserId);
+            if (status?.TimeoutUntil is DateTime until && until > DateTime.UtcNow)
+            {
+                throw new HubException(ModerationMessages.TimedOut(until, status.TimeoutReason));
+            }
+        }
+
         private async Task DeliverWarningsAsync()
         {
             using var scope = _scopes.CreateScope();

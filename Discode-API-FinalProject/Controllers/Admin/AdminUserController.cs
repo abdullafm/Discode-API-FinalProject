@@ -74,6 +74,34 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return await DoneAsync(await _moderation.ChangeRoleAsync(Actor, id, model));
         }
 
+        [HttpPost("{id}/live-ban")]
+        public async Task<IActionResult> LiveBan(string id, [FromBody] LiveBanDto model, [FromServices] ILiveStreamService live)
+        {
+            var result = await _moderation.LiveBanAsync(Actor, id, model);
+            var ended = (await live.StopAsync(id)).ToList();
+            foreach (var streamId in ended)
+            {
+                await _hub.Clients.Group("live-" + streamId).SendAsync("LiveEnded", streamId);
+            }
+
+            if (ended.Count > 0)
+            {
+                await _hub.Clients.All.SendAsync("LiveChanged");
+            }
+
+            var when = result.TimeoutUntil is null ? "permanently" : "until " + result.TimeoutUntil.Value.ToString("yyyy-MM-dd HH:mm") + " UTC";
+            await _messenger.SendAsync(id, $"You can no longer go live {when}.\n\nReason: {result.Reason}\n\nThe rest of Discode still works as usual.");
+            return await DoneAsync(result);
+        }
+
+        [HttpPost("{id}/live-unban")]
+        public async Task<IActionResult> LiveUnban(string id)
+        {
+            var result = await _moderation.LiveUnbanAsync(Actor, id);
+            await _messenger.SendAsync(id, "Your live ban was removed. You can go live again.");
+            return await DoneAsync(result);
+        }
+
         [HttpPost("{id}/kick")]
         public async Task<IActionResult> Kick(string id, [FromBody] KickUserDto model)
         {

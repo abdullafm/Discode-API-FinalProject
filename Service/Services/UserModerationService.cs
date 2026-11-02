@@ -83,6 +83,9 @@ namespace Service.Services
                 Comments = await _moderation.CountCommentsByAsync(userId),
                 CanModerate = allowed && !user.IsDeleted,
                 CanDelete = allowed && actor.IsSuperAdmin && !user.IsDeleted,
+                LiveBanned = ModerationMessages.IsLiveBanActive(user.LiveBanned, user.LiveBannedUntil, now),
+                LiveBannedUntil = ModerationMessages.IsLiveBanActive(user.LiveBanned, user.LiveBannedUntil, now) ? user.LiveBannedUntil : null,
+                LiveBanReason = ModerationMessages.IsLiveBanActive(user.LiveBanned, user.LiveBannedUntil, now) ? user.LiveBanReason : string.Empty,
                 CanChangeRole = actor.IsSuperAdmin && userId != actor.UserId && !user.IsDeleted,
                 RecentWarnings = warnings.Select(x => new UserWarningDto
                 {
@@ -184,6 +187,67 @@ namespace Service.Services
             await _moderation.SaveChangesAsync();
 
             return new ModerationResultDto { UserId = userId, ForceLogout = true, Reason = "Your role changed. Sign in again." };
+        }
+
+        public async Task<ModerationResultDto> LiveBanAsync(ModerationActor actor, string userId, LiveBanDto model)
+        {
+            var reason = (model.Reason ?? string.Empty).Trim();
+            if (reason.Length == 0 || reason.Length > 300)
+            {
+                throw new BadRequestException("Write a reason of up to 300 characters.");
+            }
+
+            if (model.Minutes != 0 && model.Minutes != 60 && model.Minutes != 1440 && model.Minutes != 10080)
+            {
+                throw new BadRequestException("Choose 1 hour, 1 day, 7 days or permanent.");
+            }
+
+            var user = await LoadForActionAsync(actor, userId);
+            var now = DateTime.UtcNow;
+            if (ModerationMessages.IsLiveBanActive(user.LiveBanned, user.LiveBannedUntil, now))
+            {
+                throw new BadRequestException("That member already cannot go live.");
+            }
+
+            user.LiveBanned = true;
+            user.LiveBannedUntil = model.Minutes > 0 ? now.AddMinutes(model.Minutes) : null;
+            user.LiveBanReason = reason;
+            await LogAsync(actor, user, AdminActionKind.LiveBan, reason, model.Minutes > 0 ? DescribeMinutes(model.Minutes) : "Permanent");
+            await _moderation.SaveChangesAsync();
+
+            return new ModerationResultDto { UserId = userId, Reason = reason, TimeoutUntil = user.LiveBannedUntil };
+        }
+
+        public async Task<ModerationResultDto> LiveUnbanAsync(ModerationActor actor, string userId)
+        {
+            var user = await LoadForActionAsync(actor, userId);
+            if (!ModerationMessages.IsLiveBanActive(user.LiveBanned, user.LiveBannedUntil, DateTime.UtcNow))
+            {
+                throw new BadRequestException("That member can already go live.");
+            }
+
+            user.LiveBanned = false;
+            user.LiveBannedUntil = null;
+            user.LiveBanReason = string.Empty;
+            await LogAsync(actor, user, AdminActionKind.LiveUnban, "Live ban removed", string.Empty);
+            await _moderation.SaveChangesAsync();
+
+            return new ModerationResultDto { UserId = userId };
+        }
+
+        public async Task<ModerationResultDto> LogLiveEndAsync(ModerationActor actor, string userId, string reason, string streamTitle)
+        {
+            var text = (reason ?? string.Empty).Trim();
+            if (text.Length == 0 || text.Length > 300)
+            {
+                throw new BadRequestException("Write a reason of up to 300 characters.");
+            }
+
+            var user = await LoadForActionAsync(actor, userId);
+            await LogAsync(actor, user, AdminActionKind.LiveEnd, text, "Stream: " + streamTitle);
+            await _moderation.SaveChangesAsync();
+
+            return new ModerationResultDto { UserId = userId, Reason = text };
         }
 
         public async Task<ModerationResultDto> KickAsync(ModerationActor actor, string userId, KickUserDto model)

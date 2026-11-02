@@ -6,8 +6,9 @@ namespace Service.Services.Interfaces
     {
         Task<LiveStreamDto> StartAsync(string userId, string connectionId, StartLiveDto model);
         Task<IEnumerable<int>> StopAsync(string userId);
-        Task<IEnumerable<LiveStreamDto>> GetActiveAsync(string viewerId);
-        Task<LiveJoinDto> JoinAsync(string viewerId, string connectionId, int streamId);
+        Task<IEnumerable<LiveStreamDto>> GetActiveAsync(string viewerId, bool staff = false);
+        Task<List<Service.Helpers.DTOs.Admin.AdminLiveStreamDto>> GetActiveForAdminAsync();
+        Task<LiveJoinDto> JoinAsync(string viewerId, string connectionId, int streamId, bool staff = false);
         Task SetThumbnailAsync(string userId, LiveThumbnailDto model);
         Task<IEnumerable<LiveViewerDto>> GetViewersAsync(string connectionId, int streamId);
         Task<LiveGuestRequestDto> RequestGuestAsync(string connectionId, int streamId);

@@ -68,7 +68,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         [HttpGet]
         public async Task<IActionResult> GetActive()
         {
-            return Ok(await _liveStreamService.GetActiveAsync(UserId));
+            return Ok(await _liveStreamService.GetActiveAsync(UserId, User.IsInRole(Domain.Constants.Roles.SuperAdmin) || User.IsInRole(Domain.Constants.Roles.Admin)));
         }
     }
 }
