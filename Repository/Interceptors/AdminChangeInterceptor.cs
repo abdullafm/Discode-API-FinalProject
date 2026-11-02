@@ -128,7 +128,7 @@ namespace Repository.Interceptors
 
         private static bool ProfileChanged(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
         {
-            foreach (var name in new[] { "DisplayName", "UserName", "Email", "AvatarUrl", "IsPublic", "IsBanned", "TimeoutUntil", "IsDeleted" })
+            foreach (var name in new[] { "DisplayName", "UserName", "Email", "AvatarUrl", "Bio", "Pronouns", "CustomStatus", "IsPublic", "IsBanned", "TimeoutUntil", "IsDeleted" })
             {
                 if (entry.Property(name).IsModified)
                 {
