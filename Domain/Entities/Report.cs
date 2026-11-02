@@ -16,5 +16,7 @@ namespace Domain.Entities
         public int? ContextServerId { get; set; }
         public int? ContextGroupId { get; set; }
         public ReportStatus Status { get; set; } = ReportStatus.Open;
+        public string? ReviewedById { get; set; }
+        public DateTime? ReviewedAt { get; set; }
     }
 }

@@ -16,6 +16,9 @@ namespace Domain.Configurations
                 .IsRequired()
                 .HasMaxLength(450);
 
+            builder.Property(x => x.ReviewedById)
+                .HasMaxLength(450);
+
             builder.Property(x => x.TargetOwnerId)
                 .HasMaxLength(450);
 

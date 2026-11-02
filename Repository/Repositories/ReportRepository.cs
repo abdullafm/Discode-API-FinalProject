@@ -15,6 +15,43 @@ namespace Repository.Repositories
             _stories = stories;
         }
 
+        public async Task<(List<ReportRow> Items, int Total)> GetPagedAsync(ReportStatus? status, string? search, int page, int pageSize)
+        {
+            var query = _dbContext.Reports.AsNoTracking().AsQueryable();
+            if (status is not null)
+            {
+                query = query.Where(x => x.Status == status);
+            }
+
+            var term = (search ?? string.Empty).Trim();
+            if (term.Length > 0)
+            {
+                query = query.Where(x => x.Reporter.UserName!.Contains(term)
+                    || x.Details.Contains(term)
+                    || x.ContentSnapshot.Contains(term)
+                    || _dbContext.Users.Any(u => u.Id == x.TargetOwnerId && (u.UserName!.Contains(term) || u.DisplayName.Contains(term))));
+            }
+
+            var total = await query.CountAsync();
+            var rows = await query
+                .OrderBy(x => x.Status == ReportStatus.Open ? 0 : 1)
+                .ThenByDescending(x => x.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => new ReportRow(
+                    x,
+                    x.Reporter.UserName ?? string.Empty, x.Reporter.DisplayName, x.Reporter.AvatarUrl,
+                    _dbContext.Users.Where(u => u.Id == x.TargetOwnerId).Select(u => u.UserName).FirstOrDefault(),
+                    _dbContext.Users.Where(u => u.Id == x.TargetOwnerId).Select(u => u.DisplayName).FirstOrDefault(),
+                    _dbContext.Users.Where(u => u.Id == x.TargetOwnerId).Select(u => u.AvatarUrl).FirstOrDefault(),
+                    _dbContext.Servers.Where(s => s.Id == x.ContextServerId).Select(s => s.Name).FirstOrDefault(),
+                    _dbContext.Groups.Where(g => g.Id == x.ContextGroupId).Select(g => g.Name).FirstOrDefault(),
+                    _dbContext.Users.Where(u => u.Id == x.ReviewedById).Select(u => u.UserName).FirstOrDefault()))
+                .ToListAsync();
+
+            return (rows, total);
+        }
+
         public async Task<bool> HasOpenReportAsync(string reporterId, ReportTargetType type, string targetId)
         {
             return await _dbSet.AnyAsync(x => x.ReporterId == reporterId && x.TargetType == type && x.TargetId == targetId && x.Status == ReportStatus.Open);

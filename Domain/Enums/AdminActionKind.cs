@@ -14,6 +14,9 @@ namespace Domain.Enums
         ServerDelete = 9,
         ServerWarn = 10,
         BrandingChange = 11,
-        ChangeRole = 12
+        ChangeRole = 12,
+        ReportReviewed = 13,
+        ReportDismissed = 14,
+        ReportReopened = 15
     }
 }
