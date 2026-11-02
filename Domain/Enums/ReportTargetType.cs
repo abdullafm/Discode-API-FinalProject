@@ -10,6 +10,7 @@ namespace Domain.Enums
         ServerMessage = 5,
         Story = 6,
         Post = 7,
-        Comment = 8
+        Comment = 8,
+        LiveStream = 9
     }
 }

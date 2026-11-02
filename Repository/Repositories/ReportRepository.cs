@@ -127,6 +127,13 @@ namespace Repository.Repositories
                     if (comment is null) return null;
                     return new ReportTarget(comment.AuthorId, Clip(comment.Text), null, null);
                 }
+                case ReportTargetType.LiveStream:
+                {
+                    var stream = await _dbContext.LiveStreams.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+                    if (stream is null) return null;
+                    var text = string.IsNullOrEmpty(stream.Category) ? stream.Title : stream.Title + "\n" + stream.Category;
+                    return new ReportTarget(stream.HostId, Clip(string.IsNullOrEmpty(stream.ThumbnailUrl) ? text : text + "\n" + stream.ThumbnailUrl), null, null);
+                }
                 default:
                     return null;
             }
