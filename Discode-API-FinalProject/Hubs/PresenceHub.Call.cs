@@ -141,25 +141,39 @@ namespace Discode_API_FinalProject.Hubs
             await Task.Delay(CallReconnectGrace);
 
             using var scope = scopes.CreateScope();
-            var tracker = scope.ServiceProvider.GetRequiredService<IPresenceTrackerRepository>();
+            try
+            {
+                await EndCallsAsync(userId, scope.ServiceProvider, hubContext);
+            }
+            catch (Exception ex)
+            {
+                // runs detached from any request: nobody awaits it, so a failure would otherwise vanish and leave the calls open
+                scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger<PresenceHub>()
+                    .LogError(ex, "Ending the calls of {UserId} after the grace period failed", userId);
+            }
+        }
+
+        private static async Task EndCallsAsync(string userId, IServiceProvider services, IHubContext<PresenceHub> hubContext)
+        {
+            var tracker = services.GetRequiredService<IPresenceTrackerRepository>();
             if (await tracker.IsOnlineAsync(userId))
             {
                 return;
             }
 
-            var calls = scope.ServiceProvider.GetRequiredService<ICallService>();
+            var calls = services.GetRequiredService<ICallService>();
             foreach (var ended in await calls.EndAllForAsync(userId))
             {
                 await AnnounceCallEndAsync(hubContext.Clients, ended);
             }
 
-            var groupCalls = scope.ServiceProvider.GetRequiredService<IGroupCallService>();
+            var groupCalls = services.GetRequiredService<IGroupCallService>();
             foreach (var change in await groupCalls.LeaveAllForAsync(userId))
             {
                 await AnnounceGroupCallAsync(hubContext.Clients, change);
             }
 
-            var voice = scope.ServiceProvider.GetRequiredService<IServerVoiceService>();
+            var voice = services.GetRequiredService<IServerVoiceService>();
             foreach (var serverId in (await voice.LeaveAsync(userId)).ServerIds)
             {
                 await hubContext.Clients.Users(await voice.GetMemberIdsAsync(serverId)).SendAsync("ServerVoiceChanged", new { serverId });

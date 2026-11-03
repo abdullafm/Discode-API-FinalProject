@@ -18,6 +18,7 @@ namespace Discode_API_FinalProject.Hubs
         private readonly IServerVoiceService _voiceService;
         private readonly IServiceScopeFactory _scopes;
         private readonly IHubContext<PresenceHub> _hubContext;
+        private readonly ILogger<PresenceHub> _logger;
 
         public PresenceHub(IPresenceService presenceService,
                            IPresenceTrackerService trackerService,
@@ -26,7 +27,8 @@ namespace Discode_API_FinalProject.Hubs
                            IGroupCallService groupCallService,
                            IServerVoiceService voiceService,
                            IServiceScopeFactory scopes,
-                           IHubContext<PresenceHub> hubContext)
+                           IHubContext<PresenceHub> hubContext,
+                           ILogger<PresenceHub> logger)
         {
             _presenceService = presenceService;
             _trackerService = trackerService;
@@ -36,6 +38,7 @@ namespace Discode_API_FinalProject.Hubs
             _voiceService = voiceService;
             _scopes = scopes;
             _hubContext = hubContext;
+            _logger = logger;
         }
 
         private string UserId

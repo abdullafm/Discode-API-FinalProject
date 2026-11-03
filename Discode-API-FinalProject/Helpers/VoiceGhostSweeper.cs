@@ -12,12 +12,14 @@ namespace Discode_API_FinalProject.Helpers
 
         private readonly IServiceScopeFactory _scopes;
         private readonly IHubContext<PresenceHub> _hubContext;
+        private readonly ILogger<VoiceGhostSweeper> _logger;
         private readonly Dictionary<string, DateTime> _offlineSince = new();
 
-        public VoiceGhostSweeper(IServiceScopeFactory scopes, IHubContext<PresenceHub> hubContext)
+        public VoiceGhostSweeper(IServiceScopeFactory scopes, IHubContext<PresenceHub> hubContext, ILogger<VoiceGhostSweeper> logger)
         {
             _scopes = scopes;
             _hubContext = hubContext;
+            _logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -29,8 +31,10 @@ namespace Discode_API_FinalProject.Helpers
                 {
                     await SweepAsync();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    // one bad sweep (database restarting, ...) must not stop the loop, the next tick tries again
+                    _logger.LogError(ex, "Voice ghost sweep failed");
                 }
             }
         }
