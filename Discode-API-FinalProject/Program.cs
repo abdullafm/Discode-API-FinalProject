@@ -5,6 +5,7 @@ using Domain.Entities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -27,8 +28,33 @@ builder.Services.AddControllers(options =>
 {
     options.Filters.Add<Discode_API_FinalProject.Filters.AccountStatusFilter>();
     options.Filters.Add<Discode_API_FinalProject.Filters.BannedServerFilter>();
+})
+.ConfigureApiBehaviorOptions(options =>
+{
+    // a bad model answers in the same { isSuccess, errors } shape as every other failure, so clients show the real message
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var all = context.ModelState.Values.SelectMany(entry => entry.Errors).ToList();
+
+        // a body that is not JSON carries parser internals ("'b' is an invalid start of a property name..."): keep those out of the answer.
+        // The JSON parser reports under the key "$" or "$.property".
+        var errors = all.Any(error => error.Exception is not null) || context.ModelState.Keys.Any(key => key.StartsWith('$'))
+            ? new[] { "The request body is not valid." }
+            : all.Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage) ? "The request is not valid." : error.ErrorMessage)
+                 .Distinct()
+                 .ToArray();
+        return new Microsoft.AspNetCore.Mvc.BadRequestObjectResult(new
+        {
+            isSuccess = false,
+            errors = errors.Length > 0 ? errors : new[] { "The request is not valid." },
+            traceId = context.HttpContext.TraceIdentifier
+        });
+    };
 });
-builder.Services.AddSignalR();
+builder.Services.AddSignalR(options =>
+{
+    options.AddFilter<Discode_API_FinalProject.Hubs.HubExceptionFilter>();
+});
 builder.Services.AddHostedService<VoiceGhostSweeper>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -177,6 +203,16 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            isSuccess = false,
+            errors = new[] { "Too many attempts. Wait a minute and try again." },
+            traceId = context.HttpContext.TraceIdentifier
+        }, token);
+    };
     options.AddPolicy("auth", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -189,20 +225,56 @@ builder.Services.AddRateLimiter(options =>
 });
 
 var app = builder.Build();
+var startupLog = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+
+// Exceptions nobody catches (fire-and-forget tasks, timers) would otherwise disappear or kill the process without a trace
+AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+    startupLog.LogCritical(e.ExceptionObject as Exception, "Unhandled exception, terminating: {Terminating}", e.IsTerminating);
+TaskScheduler.UnobservedTaskException += (_, e) =>
+{
+    startupLog.LogError(e.Exception, "Unobserved task exception");
+    e.SetObserved();
+};
 
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
-    await scope.ServiceProvider.GetRequiredService<ICallRepository>().EndAllOpenAsync();
-    await scope.ServiceProvider.GetRequiredService<IGroupCallRepository>().EndAllOpenAsync();
+    try
+    {
+        // without these the app cannot work, so a failure stops the start with a clear reason
+        await db.Database.MigrateAsync();
+        await scope.ServiceProvider.GetRequiredService<ICallRepository>().EndAllOpenAsync();
+        await scope.ServiceProvider.GetRequiredService<IGroupCallRepository>().EndAllOpenAsync();
 
-    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
-    await RoleSeeder.SeedAsync(roleManager);
-    await RoleSeeder.SeedSuperAdminAsync(scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>(), app.Configuration["Seed:SuperAdminEmail"]);
-    await SystemUserSeeder.SeedAsync(db);
-    await EmojiSeeder.SeedAsync(db);
-    await TranslationSeeder.SeedAsync(db);
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+        await RoleSeeder.SeedAsync(roleManager);
+        await RoleSeeder.SeedSuperAdminAsync(scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>(), app.Configuration["Seed:SuperAdminEmail"]);
+        await SystemUserSeeder.SeedAsync(db);
+    }
+    catch (Exception ex)
+    {
+        startupLog.LogCritical(ex, "The database could not be prepared. Check the connection string and that SQL Server is running.");
+        throw;
+    }
+
+    // emojis and translations are content, the app still works without them: log and carry on
+    try
+    {
+        await EmojiSeeder.SeedAsync(db);
+    }
+    catch (Exception ex)
+    {
+        startupLog.LogError(ex, "Seeding the emojis failed. The app starts without them.");
+    }
+
+    try
+    {
+        await TranslationSeeder.SeedAsync(db);
+    }
+    catch (Exception ex)
+    {
+        startupLog.LogError(ex, "Seeding the translations failed. The app starts without them.");
+    }
 }
 
 if (app.Environment.IsDevelopment())
@@ -212,6 +284,22 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// 401, 403, a route that does not exist, a wrong method: they have no body, give them the same JSON shape as every other failure
+app.UseStatusCodePages(async context =>
+{
+    var response = context.HttpContext.Response;
+    var message = response.StatusCode switch
+    {
+        StatusCodes.Status401Unauthorized => "You need to sign in.",
+        StatusCodes.Status403Forbidden => "You are not allowed to do that.",
+        StatusCodes.Status404NotFound => "Not found.",
+        StatusCodes.Status405MethodNotAllowed => "That method is not allowed here.",
+        _ => "The request failed."
+    };
+    response.ContentType = "application/json; charset=utf-8";
+    await response.WriteAsJsonAsync(new { isSuccess = false, errors = new[] { message }, traceId = context.HttpContext.TraceIdentifier });
+});
 app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
