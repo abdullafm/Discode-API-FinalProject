@@ -1702,12 +1702,6 @@ namespace Repository.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<bool>("VoiceDeafened")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("VoiceMuted")
-                        .HasColumnType("bit");
-
                     b.HasKey("Id");
 
                     b.HasIndex("UserId");
@@ -1959,6 +1953,44 @@ namespace Repository.Migrations
                         .IsUnique();
 
                     b.ToTable("ServerRoles");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerVoiceRestriction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ByUserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("Deafened")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Muted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ServerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServerId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("ServerVoiceRestrictions", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.ServerVoiceState", b =>
@@ -3074,6 +3106,17 @@ namespace Repository.Migrations
                 {
                     b.HasOne("Domain.Entities.Server", "Server")
                         .WithMany("Roles")
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Server");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerVoiceRestriction", b =>
+                {
+                    b.HasOne("Domain.Entities.Server", "Server")
+                        .WithMany()
                         .HasForeignKey("ServerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

@@ -16,6 +16,7 @@ namespace Service.Services
         private readonly IServerPermissionService _permissions;
         private readonly IAccountRepository _accounts;
         private readonly IServerAuditService _audit;
+        private readonly IServerVoiceRestrictionRepository _restrictions;
 
         public ServerVoiceService(IServerVoiceStateRepository states,
                                   IServerRepository servers,
@@ -23,7 +24,8 @@ namespace Service.Services
                                   IServerChannelRepository channels,
                                   IServerPermissionService permissions,
                                   IAccountRepository accounts,
-                                  IServerAuditService audit)
+                                  IServerAuditService audit,
+                                  IServerVoiceRestrictionRepository restrictions)
         {
             _states = states;
             _servers = servers;
@@ -32,6 +34,7 @@ namespace Service.Services
             _permissions = permissions;
             _accounts = accounts;
             _audit = audit;
+            _restrictions = restrictions;
         }
 
         public async Task<ServerVoiceDto> GetAsync(string userId, int serverId)
@@ -40,7 +43,7 @@ namespace Service.Services
 
             var memberIds = (await _members.GetUserIdsAsync(serverId)).ToHashSet();
             var result = new ServerVoiceDto { CanModerate = await CanModerateAsync(userId, serverId) };
-            var restrictions = (await _members.GetByUserIdsAsync(serverId, memberIds.ToList())).ToDictionary(x => x.UserId);
+            var restrictions = (await _restrictions.GetForServerAsync(serverId)).ToDictionary(x => x.UserId);
             var visible = new Dictionary<int, bool>();
             var people = new Dictionary<string, ServerVoiceUserDto>();
             foreach (var state in await _states.GetForServerAsync(serverId))
@@ -90,8 +93,8 @@ namespace Service.Services
                 }
 
                 restrictions.TryGetValue(state.UserId, out var restriction);
-                var serverMuted = restriction?.VoiceMuted == true;
-                var serverDeafened = restriction?.VoiceDeafened == true;
+                var serverMuted = restriction?.Muted == true;
+                var serverDeafened = restriction?.Deafened == true;
                 group.Users.Add(new ServerVoiceUserDto
                 {
                     UserId = user.UserId,
@@ -135,12 +138,12 @@ namespace Service.Services
             }
 
             var change = new ServerVoiceChangeDto();
-            var restriction = await _members.GetAsync(serverId, userId);
-            if (restriction is not null && (restriction.VoiceMuted || restriction.VoiceDeafened))
+            var restriction = await _restrictions.GetAsync(serverId, userId);
+            if (restriction is not null && (restriction.Muted || restriction.Deafened))
             {
-                // a moderator's mute / deafen follows the member into every voice channel of the server
-                model.IsMuted = model.IsMuted || restriction.VoiceMuted || restriction.VoiceDeafened;
-                model.IsDeafened = model.IsDeafened || restriction.VoiceDeafened;
+                // a moderator's mute / deafen follows the person into every voice channel of the server, however often they leave and come back
+                model.IsMuted = model.IsMuted || restriction.Muted || restriction.Deafened;
+                model.IsDeafened = model.IsDeafened || restriction.Deafened;
             }
 
             var state = await _states.GetForUserAsync(userId);
@@ -228,23 +231,38 @@ namespace Service.Services
 
         public async Task<ServerVoiceModerationDto> ModerateAsync(string actorId, int serverId, string targetUserId, ModerateServerVoiceDto model)
         {
-            var (state, target, name) = await LoadTargetAsync(actorId, serverId, targetUserId, "change the voice of");
+            // a moderator may also server-mute themselves; for anybody else the role order applies
+            var (state, name) = await LoadTargetAsync(actorId, serverId, targetUserId, "change the voice of", allowSelf: true);
+
+            var found = await _restrictions.GetAsync(serverId, targetUserId);
+            var restriction = found ?? new ServerVoiceRestriction { ServerId = serverId, UserId = targetUserId };
+            var selfLift = targetUserId == actorId && found is not null && found.ByUserId != actorId;
 
             var kind = string.Empty;
-            if (model.ServerMuted is not null && model.ServerMuted != target.VoiceMuted)
+            if (model.ServerMuted is not null && model.ServerMuted != restriction.Muted)
             {
-                target.VoiceMuted = model.ServerMuted.Value;
-                kind = target.VoiceMuted ? "muted" : "unmuted";
-                await _audit.LogAsync(serverId, actorId, target.VoiceMuted ? ServerAuditAction.MemberMute : ServerAuditAction.MemberUnmute, "Member", targetUserId, name,
-                    target.VoiceMuted ? "Server muted in voice" : "Removed the server mute");
+                if (selfLift && !model.ServerMuted.Value)
+                {
+                    throw new ForbiddenException("Someone else muted you here. Only they or a higher role can lift it.");
+                }
+
+                restriction.Muted = model.ServerMuted.Value;
+                kind = restriction.Muted ? "muted" : "unmuted";
+                await _audit.LogAsync(serverId, actorId, restriction.Muted ? ServerAuditAction.MemberMute : ServerAuditAction.MemberUnmute, "Member", targetUserId, name,
+                    restriction.Muted ? "Server muted in voice" : "Removed the server mute");
             }
 
-            if (model.ServerDeafened is not null && model.ServerDeafened != target.VoiceDeafened)
+            if (model.ServerDeafened is not null && model.ServerDeafened != restriction.Deafened)
             {
-                target.VoiceDeafened = model.ServerDeafened.Value;
-                kind = target.VoiceDeafened ? "deafened" : "undeafened";
-                await _audit.LogAsync(serverId, actorId, target.VoiceDeafened ? ServerAuditAction.MemberMute : ServerAuditAction.MemberUnmute, "Member", targetUserId, name,
-                    target.VoiceDeafened ? "Server deafened in voice" : "Removed the server deafen");
+                if (selfLift && !model.ServerDeafened.Value)
+                {
+                    throw new ForbiddenException("Someone else deafened you here. Only they or a higher role can lift it.");
+                }
+
+                restriction.Deafened = model.ServerDeafened.Value;
+                kind = restriction.Deafened ? "deafened" : "undeafened";
+                await _audit.LogAsync(serverId, actorId, restriction.Deafened ? ServerAuditAction.MemberMute : ServerAuditAction.MemberUnmute, "Member", targetUserId, name,
+                    restriction.Deafened ? "Server deafened in voice" : "Removed the server deafen");
             }
 
             var result = new ServerVoiceModerationDto { TargetUserId = targetUserId, Kind = kind };
@@ -253,10 +271,25 @@ namespace Service.Services
                 return result;
             }
 
-            await _members.UpdateAsync(target);
+            if (restriction.Muted || restriction.Deafened)
+            {
+                restriction.ByUserId = actorId;
+                if (found is null)
+                {
+                    await _restrictions.AddAsync(restriction);
+                }
+                else
+                {
+                    await _restrictions.UpdateAsync(restriction);
+                }
+            }
+            else if (found is not null)
+            {
+                await _restrictions.DeleteAsync(found);
+            }
 
             // the room list reads the effective state, so a server deafen also marks the stored state
-            if (target.VoiceDeafened && !state.IsDeafened)
+            if (restriction.Deafened && !state.IsDeafened)
             {
                 state.IsDeafened = true;
                 await _states.UpdateAsync(state);
@@ -268,7 +301,7 @@ namespace Service.Services
 
         public async Task<ServerVoiceModerationDto> DisconnectAsync(string actorId, int serverId, string targetUserId)
         {
-            var (state, _, name) = await LoadTargetAsync(actorId, serverId, targetUserId, "disconnect");
+            var (state, name) = await LoadTargetAsync(actorId, serverId, targetUserId, "disconnect", allowSelf: false);
 
             await _states.DeleteAsync(state);
             await _audit.LogAsync(serverId, actorId, ServerAuditAction.MemberVoiceDisconnect, "Member", targetUserId, name, "Disconnected from voice");
@@ -306,9 +339,9 @@ namespace Service.Services
                 return null;
             }
 
-            var mine = await _members.GetAsync(state.ServerId, userId);
-            var serverMuted = mine?.VoiceMuted == true;
-            var serverDeafened = mine?.VoiceDeafened == true;
+            var mine = await _restrictions.GetAsync(state.ServerId, userId);
+            var serverMuted = mine?.Muted == true;
+            var serverDeafened = mine?.Deafened == true;
             return new ServerVoiceCurrentDto
             {
                 ServerId = server.Id,
@@ -330,28 +363,32 @@ namespace Service.Services
             return (await _permissions.GetAsync(userId, serverId) & ServerPermission.MuteMembers) == ServerPermission.MuteMembers;
         }
 
-        // the actor needs Mute Members and a higher role than the target, and the target must be in voice on this server
-        private async Task<(ServerVoiceState State, ServerMember Member, string Name)> LoadTargetAsync(string actorId, int serverId, string targetUserId, string verb)
+        // the actor needs Mute Members; for another person a higher role too, and the target must be in voice on this server
+        private async Task<(ServerVoiceState State, string Name)> LoadTargetAsync(string actorId, int serverId, string targetUserId, string verb, bool allowSelf)
         {
             await EnsureMemberAsync(actorId, serverId);
             await _permissions.EnsureAsync(actorId, serverId, ServerPermission.MuteMembers);
 
             if (targetUserId == actorId)
             {
-                throw new BadRequestException("Use your own microphone and headphone buttons for that.");
+                if (!allowSelf)
+                {
+                    throw new BadRequestException("Use your own microphone and headphone buttons for that.");
+                }
+            }
+            else
+            {
+                await _permissions.EnsureCanActOnAsync(actorId, serverId, targetUserId, verb);
             }
 
-            await _permissions.EnsureCanActOnAsync(actorId, serverId, targetUserId, verb);
-
-            var member = await _members.GetAsync(serverId, targetUserId);
             var state = await _states.GetForUserAsync(targetUserId);
-            if (member is null || state is null || state.ServerId != serverId)
+            if (await _members.GetAsync(serverId, targetUserId) is null || state is null || state.ServerId != serverId)
             {
                 throw new NotFoundException("That member is not in a voice channel of this server.");
             }
 
             var account = await _accounts.GetByIdAsync(targetUserId);
-            return (state, member, account?.UserName ?? targetUserId);
+            return (state, account?.UserName ?? targetUserId);
         }
 
         private async Task EnsureMemberAsync(string userId, int serverId)

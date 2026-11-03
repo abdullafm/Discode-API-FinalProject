@@ -15,9 +15,6 @@ namespace Domain.Entities
         public DateTime? MutedUntil { get; set; }
         public bool MutedIndefinitely { get; set; }
         public DateTime? TimeoutUntil { get; set; }
-        // set by a moderator in voice: the member cannot speak / hear in this server's voice channels until it is lifted
-        public bool VoiceMuted { get; set; }
-        public bool VoiceDeafened { get; set; }
         public ServerNotificationLevel NotificationLevel { get; set; } = ServerNotificationLevel.Mentions;
         public bool HideMutedChannels { get; set; }
         public bool ShowAllChannels { get; set; } = true;
