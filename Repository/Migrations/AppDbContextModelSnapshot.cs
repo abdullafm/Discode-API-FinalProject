@@ -1702,6 +1702,12 @@ namespace Repository.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<bool>("VoiceDeafened")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("VoiceMuted")
+                        .HasColumnType("bit");
+
                     b.HasKey("Id");
 
                     b.HasIndex("UserId");

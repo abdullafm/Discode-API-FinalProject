@@ -57,6 +57,30 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok();
         }
 
+        [HttpPut("server/{serverId:int}/voice/{targetUserId}/moderation")]
+        public async Task<IActionResult> Moderate(int serverId, string targetUserId, [FromBody] ModerateServerVoiceDto model)
+        {
+            await TellAsync(serverId, await _voiceService.ModerateAsync(UserId, serverId, targetUserId, model ?? new ModerateServerVoiceDto()));
+            return Ok();
+        }
+
+        [HttpDelete("server/{serverId:int}/voice/{targetUserId}")]
+        public async Task<IActionResult> Disconnect(int serverId, string targetUserId)
+        {
+            await TellAsync(serverId, await _voiceService.DisconnectAsync(UserId, serverId, targetUserId));
+            return Ok();
+        }
+
+        // everyone sees the new room list; the person it happened to is also told directly, so their client can obey it
+        private async Task TellAsync(int serverId, ServerVoiceModerationDto result)
+        {
+            await NotifyAsync(result.Change);
+            if (result.Kind.Length > 0)
+            {
+                await _hubContext.Clients.User(result.TargetUserId).SendAsync("ServerVoiceModerated", new { serverId, kind = result.Kind });
+            }
+        }
+
         private async Task NotifyAsync(ServerVoiceChangeDto change)
         {
             foreach (var serverId in change.ServerIds.Distinct())

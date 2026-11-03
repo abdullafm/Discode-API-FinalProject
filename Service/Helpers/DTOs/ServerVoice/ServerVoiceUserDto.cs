@@ -10,5 +10,7 @@ namespace Service.Helpers.DTOs.ServerVoice
         public bool IsCameraOn { get; set; }
         public bool IsStreaming { get; set; }
         public bool IsSelf { get; set; }
+        public bool IsServerMuted { get; set; }
+        public bool IsServerDeafened { get; set; }
     }
 }
