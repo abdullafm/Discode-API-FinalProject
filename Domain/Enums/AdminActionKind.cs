@@ -20,6 +20,7 @@ namespace Domain.Enums
         ReportReopened = 15,
         LiveBan = 16,
         LiveUnban = 17,
-        LiveEnd = 18
+        LiveEnd = 18,
+        ContentDelete = 19
     }
 }

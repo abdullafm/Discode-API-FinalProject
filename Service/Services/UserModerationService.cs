@@ -235,6 +235,21 @@ namespace Service.Services
             return new ModerationResultDto { UserId = userId };
         }
 
+        public async Task<ModerationResultDto> LogContentActionAsync(ModerationActor actor, string userId, AdminActionKind kind, string reason, string details)
+        {
+            var text = (reason ?? string.Empty).Trim();
+            if (text.Length == 0 || text.Length > 300)
+            {
+                throw new BadRequestException("Write a reason of up to 300 characters.");
+            }
+
+            var user = await LoadForActionAsync(actor, userId);
+            await LogAsync(actor, user, kind, text, details);
+            await _moderation.SaveChangesAsync();
+
+            return new ModerationResultDto { UserId = userId, Reason = text };
+        }
+
         public async Task<ModerationResultDto> LogLiveEndAsync(ModerationActor actor, string userId, string reason, string streamTitle)
         {
             var text = (reason ?? string.Empty).Trim();

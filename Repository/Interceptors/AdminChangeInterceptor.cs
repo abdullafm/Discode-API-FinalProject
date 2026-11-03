@@ -122,6 +122,7 @@ namespace Repository.Interceptors
                         _topics.Add("live");
                         break;
                     case Post when added || deleted:
+                    case Story when added || deleted:
                     case Comment when added || deleted:
                         _topics.Add("content");
                         break;
