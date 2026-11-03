@@ -10,6 +10,7 @@ namespace Repository.Repositories.Interfaces
         Task<AppUser?> GetTrackedUserAsync(string userId);
         Task SaveChangesAsync();
         Task SetRoleAsync(string userId, string role);
+        Task DeleteAccountAsync(AppUser user, string actorId, AdminAction log);
         Task AddWarningAsync(UserWarning warning);
         Task AddActionAsync(AdminAction action);
         Task<int> CountWarningsAsync(string userId);

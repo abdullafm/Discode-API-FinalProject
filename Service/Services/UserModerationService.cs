@@ -335,41 +335,18 @@ namespace Service.Services
             }
 
             var reason = model.Reason.Trim();
-            var original = user.UserName ?? userId;
-            var tag = user.Id.Replace("-", string.Empty);
-            tag = tag.Length > 10 ? tag.Substring(0, 10) : tag;
 
-            // the account is removed but its content keeps working, so the personal data is scrubbed instead of dropping rows
-            user.IsDeleted = true;
-            user.IsBanned = true;
-            user.BannedUntil = null;
-            user.BannedAt = DateTime.UtcNow;
-            user.BanReason = "Account deleted";
-            user.BannedById = actor.UserId;
-            user.ForcedLogoutAt = DateTime.UtcNow;
-            user.UserName = "deleted_" + tag;
-            user.NormalizedUserName = user.UserName.ToUpperInvariant();
-            user.Email = "deleted_" + tag + "@deleted.invalid";
-            user.NormalizedEmail = user.Email.ToUpperInvariant();
-            user.DisplayName = "Deleted user";
-            user.PasswordHash = null;
-            user.AvatarUrl = string.Empty;
-            user.Bio = string.Empty;
-            user.Pronouns = string.Empty;
-            user.CustomStatus = string.Empty;
-            user.PhoneNumber = null;
-
-            await _moderation.AddActionAsync(new AdminAction
+            // the log keeps the old username: the repository scrubs the account right after
+            await _moderation.DeleteAccountAsync(user, actor.UserId, new AdminAction
             {
                 AdminId = actor.UserId,
                 TargetType = AdminTargetType.User,
                 TargetId = userId,
-                TargetName = original,
+                TargetName = user.UserName ?? userId,
                 Kind = AdminActionKind.Delete,
                 Reason = reason,
                 Details = "Account deleted"
             });
-            await _moderation.SaveChangesAsync();
 
             return new ModerationResultDto { UserId = userId, ForceLogout = true, Reason = reason };
         }

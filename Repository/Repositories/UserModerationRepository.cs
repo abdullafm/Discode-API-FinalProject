@@ -22,6 +22,36 @@ namespace Repository.Repositories
 
         public Task SaveChangesAsync() => _dbContext.SaveChangesAsync();
 
+        // The account is removed but its content keeps working, so the personal data is scrubbed instead of dropping rows
+        public async Task DeleteAccountAsync(AppUser user, string actorId, AdminAction log)
+        {
+            var now = DateTime.UtcNow;
+            var tag = user.Id.Replace("-", string.Empty);
+            tag = tag.Length > 10 ? tag.Substring(0, 10) : tag;
+
+            user.IsDeleted = true;
+            user.IsBanned = true;
+            user.BannedUntil = null;
+            user.BannedAt = now;
+            user.BanReason = "Account deleted";
+            user.BannedById = actorId;
+            user.ForcedLogoutAt = now;
+            user.UserName = "deleted_" + tag;
+            user.NormalizedUserName = user.UserName.ToUpperInvariant();
+            user.Email = "deleted_" + tag + "@deleted.invalid";
+            user.NormalizedEmail = user.Email.ToUpperInvariant();
+            user.DisplayName = "Deleted user";
+            user.PasswordHash = null;
+            user.AvatarUrl = string.Empty;
+            user.Bio = string.Empty;
+            user.Pronouns = string.Empty;
+            user.CustomStatus = string.Empty;
+            user.PhoneNumber = null;
+
+            await _dbContext.AdminActions.AddAsync(log);
+            await _dbContext.SaveChangesAsync();
+        }
+
         // every account holds exactly one role
         public async Task SetRoleAsync(string userId, string role)
         {
