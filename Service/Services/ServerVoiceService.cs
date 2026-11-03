@@ -69,6 +69,7 @@ namespace Service.Services
                     user = new ServerVoiceUserDto
                     {
                         UserId = state.UserId,
+                        UserName = account?.UserName ?? string.Empty,
                         DisplayName = account is null ? string.Empty : string.IsNullOrWhiteSpace(account.DisplayName) ? account.UserName ?? string.Empty : account.DisplayName,
                         AvatarUrl = account?.AvatarUrl ?? string.Empty
                     };
@@ -94,6 +95,7 @@ namespace Service.Services
                 group.Users.Add(new ServerVoiceUserDto
                 {
                     UserId = user.UserId,
+                    UserName = user.UserName,
                     DisplayName = user.DisplayName,
                     AvatarUrl = user.AvatarUrl,
                     IsMuted = state.IsMuted || state.IsDeafened || serverMuted || serverDeafened,
