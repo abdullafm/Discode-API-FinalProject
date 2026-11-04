@@ -131,7 +131,7 @@ namespace Service.Services
             var server = await _servers.GetByInviteCodeAsync(ExtractCode(model.Invite));
             if (server is null)
             {
-                throw new NotFoundException("That invite is invalid or has expired.");
+                throw new BadRequestException("That invite is invalid or has expired.");
             }
 
             if (server.Members.Any(m => m.UserId == userId))
@@ -403,7 +403,7 @@ namespace Service.Services
             var server = await _servers.GetByInviteCodeAsync(ExtractCode(invite ?? string.Empty));
             if (server is null)
             {
-                throw new NotFoundException("That invite is invalid or has expired.");
+                throw new BadRequestException("That invite is invalid or has expired.");
             }
 
             if (await _bans.IsBannedAsync(server.Id, userId))

@@ -115,6 +115,14 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [Authorize]
+        [HttpPut("settings")]
+        public async Task<IActionResult> UpdateSettings([FromBody] UpdateSettingsDto model)
+        {
+            await _accountService.UpdateSettingsAsync(UserId, model ?? new UpdateSettingsDto());
+            return NoContent();
+        }
+
+        [Authorize]
         [HttpPut("myprofileupdate")]
         [HttpPut("profile")]
         public async Task<IActionResult> MyProfileUpdate([FromBody] UpdateProfileDto model)

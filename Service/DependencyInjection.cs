@@ -17,6 +17,7 @@ namespace Service
             services.AddScoped<IPostService, PostService>();
             services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<IStoryService, StoryService>();
+            services.AddScoped<IConversationPinService, ConversationPinService>();
             services.AddScoped<ILiveStreamService, LiveStreamService>();
             services.AddScoped<IEmojiCategoryService, EmojiCategoryService>();
             services.AddScoped<INotificationService, NotificationService>();

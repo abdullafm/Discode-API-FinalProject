@@ -18,6 +18,7 @@ namespace Service.Services
         private const int HistoryLimit = 50;
 
         private static readonly Regex EveryoneMention = new(@"(?<![\w@])@everyone\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex PersonalMention = new(@"(?<![\w@])@([A-Za-z0-9._+-]{2,64})", RegexOptions.Compiled);
         private static readonly Regex HereMention = new(@"(?<![\w@])@here\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         private readonly IServerMessageRepository _messages;
@@ -176,6 +177,44 @@ namespace Service.Services
             return await ViewsAsync(serverId, channel, messageId);
         }
 
+        public async Task<ServerMessageUpdateDto> EditAsync(string userId, int serverId, int channelId, int messageId, EditServerMessageDto model)
+        {
+            var (channel, _) = await RequireViewAsync(userId, serverId, channelId);
+            await EnsureNotTimedOutAsync(userId, serverId);
+
+            var message = await _messages.GetByIdAsync(messageId);
+            if (message is null || message.ChannelId != channelId)
+            {
+                throw new NotFoundException("Message not found.");
+            }
+
+            // only the author edits a message; a poll is not text
+            if (message.SenderId != userId)
+            {
+                throw new ForbiddenException("You can only edit your own messages.");
+            }
+
+            var text = (model?.Text ?? string.Empty).Trim();
+            if (text.Length == 0)
+            {
+                throw new BadRequestException("Write a message.");
+            }
+
+            if (text.Length > 2000)
+            {
+                throw new BadRequestException("The message can be at most 2000 characters.");
+            }
+
+            if (text != message.Text)
+            {
+                message.Text = text;
+                message.EditedAt = DateTime.UtcNow;
+                await _messages.UpdateAsync(message);
+            }
+
+            return await ViewsAsync(serverId, channel, messageId);
+        }
+
         public async Task<ServerMessageDeletedDto> DeleteAsync(string userId, int serverId, int channelId, int messageId)
         {
             var (channel, perms) = await RequireViewAsync(userId, serverId, channelId);
@@ -279,9 +318,16 @@ namespace Service.Services
 
         private async Task<Dictionary<string, int>> CountMentionsAsync(string senderId, int serverId, ServerPermission perms, string text, List<string> viewerIds)
         {
-            var everyone = EveryoneMention.IsMatch(text);
-            var here = HereMention.IsMatch(text);
-            if ((!everyone && !here) || (perms & ServerPermission.MentionEveryone) != ServerPermission.MentionEveryone)
+            var canEveryone = (perms & ServerPermission.MentionEveryone) == ServerPermission.MentionEveryone;
+            var everyone = canEveryone && EveryoneMention.IsMatch(text);
+            var here = canEveryone && HereMention.IsMatch(text);
+
+            // @username: anybody may mention one member
+            var named = PersonalMention.Matches(text)
+                .Select(m => m.Groups[1].Value.ToLowerInvariant())
+                .Where(name => name != "everyone" && name != "here")
+                .ToHashSet();
+            if (!everyone && !here && named.Count == 0)
             {
                 return new Dictionary<string, int>();
             }
@@ -296,12 +342,12 @@ namespace Service.Services
                     continue;
                 }
 
-                if (!everyone && await _presence.ResolveAsync(member.User) == "offline")
+                var byName = member.User.UserName is not null && named.Contains(member.User.UserName.ToLowerInvariant());
+                var hereAndOnline = here && await _presence.ResolveAsync(member.User) != "offline";
+                if (everyone || byName || hereAndOnline)
                 {
-                    continue;
+                    targets.Add(member.UserId);
                 }
-
-                targets.Add(member.UserId);
             }
 
             return await _members.AddMentionAsync(serverId, targets);

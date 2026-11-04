@@ -13,5 +13,10 @@ namespace Service.Helpers.DTOs.Accounts
         public string Pronouns { get; set; } = string.Empty;
         public string CustomStatus { get; set; } = string.Empty;
         public bool IsPublic { get; set; } = true;
+        public string Theme { get; set; } = "light";
+        public bool NotifyAll { get; set; } = true;
+        public bool NotifyDm { get; set; } = true;
+        public bool NotifyFriends { get; set; } = true;
+        public bool NotifySound { get; set; } = true;
     }
 }

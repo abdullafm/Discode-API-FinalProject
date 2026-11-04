@@ -19,5 +19,6 @@ namespace Service.Helpers.DTOs.ServerMessages
         public List<MessageAttachmentDto> Attachments { get; set; } = new();
         public List<ReactionDto> Reactions { get; set; } = new();
         public DateTime CreatedAt { get; set; }
+        public DateTime? EditedAt { get; set; }
     }
 }

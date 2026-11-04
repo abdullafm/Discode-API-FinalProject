@@ -70,6 +70,18 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(update.Views.TryGetValue(UserId, out var mine) ? mine : null);
         }
 
+        [HttpPut("{messageId:int}")]
+        public async Task<IActionResult> Edit(int serverId, int channelId, int messageId, [FromBody] EditServerMessageDto model)
+        {
+            var update = await _messageService.EditAsync(UserId, serverId, channelId, messageId, model);
+            foreach (var view in update.Views)
+            {
+                await _hubContext.Clients.User(view.Key).SendAsync("ServerMessageUpdated", new { serverId, channelId, message = view.Value });
+            }
+
+            return Ok(update.Views.TryGetValue(UserId, out var mine) ? mine : null);
+        }
+
         [HttpDelete("{messageId:int}")]
         public async Task<IActionResult> Delete(int serverId, int channelId, int messageId)
         {

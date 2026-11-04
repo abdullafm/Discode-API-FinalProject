@@ -248,7 +248,9 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.LikedByMe, o => o.MapFrom((s, d, m, context) =>
                     context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.Likes.Any(l => l.UserId == (string?)viewer)))
                 .ForMember(d => d.ViewCount, o => o.MapFrom((s, d, m, context) =>
-                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.AuthorId == (string?)viewer ? s.Views.Count : 0));
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.AuthorId == (string?)viewer ? s.Views.Count : 0))
+                .ForMember(d => d.SeenByMe, o => o.MapFrom((s, d, m, context) =>
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && (s.AuthorId == (string?)viewer || s.Views.Any(v => v.UserId == (string?)viewer))));
 
             CreateMap<StoryView, StoryViewerDto>()
                 .ForMember(d => d.UserName, o => o.MapFrom(s => s.User.UserName ?? string.Empty))

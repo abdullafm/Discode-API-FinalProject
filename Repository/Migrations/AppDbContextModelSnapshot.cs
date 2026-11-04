@@ -196,6 +196,18 @@ namespace Repository.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<bool>("NotifyAll")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifyDm")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifyFriends")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotifySound")
+                        .HasColumnType("bit");
+
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
 
@@ -221,6 +233,10 @@ namespace Repository.Migrations
                         .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("SecurityStamp")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Theme")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TimeoutReason")
@@ -450,6 +466,35 @@ namespace Repository.Migrations
                         .IsUnique();
 
                     b.ToTable("Conversations");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ConversationPin", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Key")
+                        .IsUnique();
+
+                    b.ToTable("ConversationPins");
                 });
 
             modelBuilder.Entity("Domain.Entities.Emoji", b =>
@@ -1753,6 +1798,9 @@ namespace Repository.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("EditedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("PublicId")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -2507,6 +2555,17 @@ namespace Repository.Migrations
                     b.Navigation("UserA");
 
                     b.Navigation("UserB");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ConversationPin", b =>
+                {
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.Entities.Emoji", b =>

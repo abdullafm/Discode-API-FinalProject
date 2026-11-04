@@ -12,6 +12,7 @@ namespace Service.Services.Interfaces
         Task<RegisterResponse> ResetPasswordAsync(ResetPasswordDto model);
         Task<LoginResponse> LoginAsync(LoginDto model);
         Task<ProfileDto> GetProfileAsync(string userId);
+        Task UpdateSettingsAsync(string userId, UpdateSettingsDto model);
         Task<UpdateProfileResponse> UpdateProfileAsync(string userId, UpdateProfileDto model);
         Task<UpdateProfileResponse> ChangeUsernameAsync(string userId, ChangeUsernameDto model);
         Task<UpdateProfileResponse> ChangePasswordAsync(string userId, ChangePasswordDto model);

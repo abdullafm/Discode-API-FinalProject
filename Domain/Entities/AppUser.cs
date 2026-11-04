@@ -14,6 +14,12 @@ namespace Domain.Entities
         public string CustomStatus { get; set; } = string.Empty;
         public bool IsPublic { get; set; } = true;
         public string Language { get; set; } = "en";
+        // "light" or "dark"
+        public string Theme { get; set; } = "light";
+        public bool NotifyAll { get; set; } = true;
+        public bool NotifyDm { get; set; } = true;
+        public bool NotifyFriends { get; set; } = true;
+        public bool NotifySound { get; set; } = true;
         public bool IsBanned { get; set; }
         public DateTime? BannedUntil { get; set; }
         public DateTime? BannedAt { get; set; }
