@@ -27,7 +27,6 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return Ok(await _reports.GetAsync(status, search, page, pageSize));
         }
 
-        [Authorize(Roles = Roles.SuperAdmin)]
         [HttpPost("{id:int}/status")]
         public async Task<IActionResult> SetStatus(int id, [FromBody] SetReportStatusDto model)
         {
