@@ -215,6 +215,46 @@ namespace Service.Services
             return await ViewsAsync(serverId, channel, messageId);
         }
 
+        private const int MaxPinnedMessages = 50;
+
+        // pinning needs Manage Messages (the owner has it); everybody who can see the channel can read the pins
+        public async Task<ServerMessageUpdateDto> PinAsync(string userId, int serverId, int channelId, int messageId, PinServerMessageDto model)
+        {
+            var (channel, perms) = await RequireViewAsync(userId, serverId, channelId);
+            await EnsureNotTimedOutAsync(userId, serverId);
+            if ((perms & ServerPermission.ManageMessages) != ServerPermission.ManageMessages)
+            {
+                throw new ForbiddenException("You need the Manage Messages permission to pin messages.");
+            }
+
+            var message = await _messages.GetByIdAsync(messageId);
+            if (message is null || message.ChannelId != channelId)
+            {
+                throw new NotFoundException("Message not found.");
+            }
+
+            var pinned = model?.Pinned ?? false;
+            if (pinned && message.PinnedAt is null && await _messages.CountPinnedAsync(channelId) >= MaxPinnedMessages)
+            {
+                throw new BadRequestException("This channel already has " + MaxPinnedMessages + " pinned messages. Unpin one first.");
+            }
+
+            if (pinned != (message.PinnedAt is not null))
+            {
+                message.PinnedAt = pinned ? DateTime.UtcNow : null;
+                await _messages.UpdateAsync(message);
+            }
+
+            return await ViewsAsync(serverId, channel, messageId);
+        }
+
+        public async Task<IEnumerable<ServerMessageDto>> GetPinsAsync(string userId, int serverId, int channelId)
+        {
+            await RequireViewAsync(userId, serverId, channelId);
+            var pinned = await _messages.GetPinnedAsync(channelId);
+            return _mapper.Map<IEnumerable<ServerMessageDto>>(pinned, options => options.Items[MappingProfile.ViewerIdKey] = userId);
+        }
+
         public async Task<ServerMessageDeletedDto> DeleteAsync(string userId, int serverId, int channelId, int messageId)
         {
             var (channel, perms) = await RequireViewAsync(userId, serverId, channelId);

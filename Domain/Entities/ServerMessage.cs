@@ -13,6 +13,7 @@ namespace Domain.Entities
         public AppUser Sender { get; set; } = null!;
         public string Text { get; set; } = string.Empty;
         public DateTime? EditedAt { get; set; }
+        public DateTime? PinnedAt { get; set; }
         public int? ReplyToMessageId { get; set; }
         public ServerMessage? ReplyTo { get; set; }
         public Poll? Poll { get; set; }

@@ -20,5 +20,6 @@ namespace Service.Helpers.DTOs.ServerMessages
         public List<ReactionDto> Reactions { get; set; } = new();
         public DateTime CreatedAt { get; set; }
         public DateTime? EditedAt { get; set; }
+        public DateTime? PinnedAt { get; set; }
     }
 }

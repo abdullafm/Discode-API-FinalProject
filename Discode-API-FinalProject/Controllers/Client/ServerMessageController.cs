@@ -82,6 +82,24 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(update.Views.TryGetValue(UserId, out var mine) ? mine : null);
         }
 
+        [HttpGet("pins")]
+        public async Task<IActionResult> Pins(int serverId, int channelId)
+        {
+            return Ok(await _messageService.GetPinsAsync(UserId, serverId, channelId));
+        }
+
+        [HttpPut("{messageId:int}/pin")]
+        public async Task<IActionResult> Pin(int serverId, int channelId, int messageId, [FromBody] PinServerMessageDto model)
+        {
+            var update = await _messageService.PinAsync(UserId, serverId, channelId, messageId, model);
+            foreach (var view in update.Views)
+            {
+                await _hubContext.Clients.User(view.Key).SendAsync("ServerMessageUpdated", new { serverId, channelId, message = view.Value });
+            }
+
+            return Ok(update.Views.TryGetValue(UserId, out var mine) ? mine : null);
+        }
+
         [HttpDelete("{messageId:int}")]
         public async Task<IActionResult> Delete(int serverId, int channelId, int messageId)
         {

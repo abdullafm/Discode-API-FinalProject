@@ -43,6 +43,20 @@ namespace Repository.Repositories
             return await WithDetails().FirstOrDefaultAsync(x => x.Id == id);
         }
 
+        // newest pin first
+        public async Task<List<ServerMessage>> GetPinnedAsync(int channelId)
+        {
+            return await WithDetails()
+                .Where(x => x.ChannelId == channelId && x.PinnedAt != null)
+                .OrderByDescending(x => x.PinnedAt)
+                .ToListAsync();
+        }
+
+        public async Task<int> CountPinnedAsync(int channelId)
+        {
+            return await _dbSet.CountAsync(x => x.ChannelId == channelId && x.PinnedAt != null);
+        }
+
         public async Task ClearRepliesAsync(int messageId)
         {
             await _dbSet.Where(x => x.ReplyToMessageId == messageId).ExecuteUpdateAsync(s => s.SetProperty(x => x.ReplyToMessageId, (int?)null));

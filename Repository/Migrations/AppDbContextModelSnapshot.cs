@@ -1801,6 +1801,9 @@ namespace Repository.Migrations
                     b.Property<DateTime?>("EditedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("PinnedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("PublicId")
                         .IsRequired()
                         .HasMaxLength(20)
