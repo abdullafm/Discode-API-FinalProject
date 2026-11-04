@@ -56,6 +56,7 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return Ok();
         }
 
+        [Authorize(Roles = Roles.SuperAdmin)]
         [HttpPost("{type}/{id:int}/delete")]
         public async Task<IActionResult> Delete(string type, int id, [FromBody] LiveReasonDto model)
         {

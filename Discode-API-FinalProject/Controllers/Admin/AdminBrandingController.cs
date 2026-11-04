@@ -28,12 +28,14 @@ namespace Discode_API_FinalProject.Controllers.Admin
 
         private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
 
+        [Authorize(Roles = Roles.SuperAdmin)]
         [HttpPut("{slot}")]
         public async Task<IActionResult> Set(string slot, [FromBody] SetBrandingDto model)
         {
             return await DoneAsync(await _branding.SetAsync(UserId, slot, model));
         }
 
+        [Authorize(Roles = Roles.SuperAdmin)]
         [HttpDelete("{slot}")]
         public async Task<IActionResult> Reset(string slot)
         {

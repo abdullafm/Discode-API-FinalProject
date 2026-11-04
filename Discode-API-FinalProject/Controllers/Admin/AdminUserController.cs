@@ -68,12 +68,14 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return await DoneAsync(result);
         }
 
+        [Authorize(Roles = Roles.SuperAdmin)]
         [HttpPost("{id}/role")]
         public async Task<IActionResult> ChangeRole(string id, [FromBody] ChangeRoleDto model)
         {
             return await DoneAsync(await _moderation.ChangeRoleAsync(Actor, id, model));
         }
 
+        [Authorize(Roles = Roles.SuperAdmin)]
         [HttpPost("{id}/live-ban")]
         public async Task<IActionResult> LiveBan(string id, [FromBody] LiveBanDto model, [FromServices] ILiveStreamService live)
         {
@@ -94,6 +96,7 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return await DoneAsync(result);
         }
 
+        [Authorize(Roles = Roles.SuperAdmin)]
         [HttpPost("{id}/live-unban")]
         public async Task<IActionResult> LiveUnban(string id)
         {
@@ -108,18 +111,21 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return await DoneAsync(await _moderation.KickAsync(Actor, id, model));
         }
 
+        [Authorize(Roles = Roles.SuperAdmin)]
         [HttpPost("{id}/ban")]
         public async Task<IActionResult> Ban(string id, [FromBody] BanUserDto model)
         {
             return await DoneAsync(await _moderation.BanAsync(Actor, id, model));
         }
 
+        [Authorize(Roles = Roles.SuperAdmin)]
         [HttpPost("{id}/unban")]
         public async Task<IActionResult> Unban(string id)
         {
             return await DoneAsync(await _moderation.UnbanAsync(Actor, id));
         }
 
+        [Authorize(Roles = Roles.SuperAdmin)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id, [FromBody] DeleteUserDto model)
         {

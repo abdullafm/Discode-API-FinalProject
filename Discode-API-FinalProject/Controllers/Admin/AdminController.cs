@@ -63,6 +63,7 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return Ok();
         }
 
+        [Authorize(Roles = Roles.SuperAdmin)]
         [HttpPost("servers/{id:int}/ban")]
         public async Task<IActionResult> BanServer(int id, [FromBody] Service.Helpers.DTOs.Admin.BanServerDto model)
         {
@@ -74,6 +75,7 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return Ok();
         }
 
+        [Authorize(Roles = Roles.SuperAdmin)]
         [HttpPost("servers/{id:int}/unban")]
         public async Task<IActionResult> UnbanServer(int id)
         {
@@ -84,6 +86,7 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return Ok();
         }
 
+        [Authorize(Roles = Roles.SuperAdmin)]
         [HttpDelete("servers/{id:int}")]
         public async Task<IActionResult> DeleteServer(int id)
         {

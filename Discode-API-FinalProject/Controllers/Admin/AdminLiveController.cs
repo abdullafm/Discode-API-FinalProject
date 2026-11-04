@@ -57,6 +57,7 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return Ok();
         }
 
+        [Authorize(Roles = Roles.SuperAdmin)]
         [HttpPost("{id:int}/end")]
         public async Task<IActionResult> End(int id, [FromBody] LiveReasonDto model)
         {

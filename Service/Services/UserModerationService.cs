@@ -83,6 +83,7 @@ namespace Service.Services
                 Comments = await _moderation.CountCommentsByAsync(userId),
                 CanModerate = allowed && !user.IsDeleted,
                 CanDelete = allowed && actor.IsSuperAdmin && !user.IsDeleted,
+                CanBan = allowed && actor.IsSuperAdmin && !user.IsDeleted,
                 LiveBanned = ModerationMessages.IsLiveBanActive(user.LiveBanned, user.LiveBannedUntil, now),
                 LiveBannedUntil = ModerationMessages.IsLiveBanActive(user.LiveBanned, user.LiveBannedUntil, now) ? user.LiveBannedUntil : null,
                 LiveBanReason = ModerationMessages.IsLiveBanActive(user.LiveBanned, user.LiveBannedUntil, now) ? user.LiveBanReason : string.Empty,

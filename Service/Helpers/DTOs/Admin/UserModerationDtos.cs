@@ -115,6 +115,8 @@ namespace Service.Helpers.DTOs.Admin
         public int Comments { get; set; }
         public bool CanModerate { get; set; }
         public bool CanDelete { get; set; }
+        // ban, unban and the live ban: SuperAdmin only. An Admin may warn, time out and kick.
+        public bool CanBan { get; set; }
         public bool CanChangeRole { get; set; }
         public bool LiveBanned { get; set; }
         public DateTime? LiveBannedUntil { get; set; }
