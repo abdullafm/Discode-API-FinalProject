@@ -87,7 +87,10 @@ namespace Service.Services
             var change = _mapper.Map<PresenceChangeDto>(user);
             change.Status = await ResolveAsync(user);
             change.ShouldBroadcast = shouldBroadcast;
-            change.FriendIds = await _presenceRepository.GetFriendIdsAsync(user.Id);
+            // everybody who shows this person's status: friends, but also the people in the same servers and groups (their member lists)
+            var friends = await _presenceRepository.GetFriendIdsAsync(user.Id);
+            var sharedSpaces = await _presenceRepository.GetSharedSpaceIdsAsync(user.Id);
+            change.FriendIds = friends.Union(sharedSpaces).Where(id => id != user.Id).Distinct().ToList();
             return change;
         }
     }
