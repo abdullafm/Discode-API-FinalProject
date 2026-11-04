@@ -222,6 +222,7 @@ namespace Service.Services
                     DisplayName = string.IsNullOrWhiteSpace(member.User.DisplayName) ? member.User.UserName ?? string.Empty : member.User.DisplayName,
                     AvatarUrl = member.User.AvatarUrl,
                     CustomStatus = member.User.CustomStatus,
+                    Bio = member.User.IsPublic || member.UserId == viewerId ? member.User.Bio : string.Empty,
                     Status = await _presence.ResolveAsync(member.User),
                     IsOwner = member.UserId == server.OwnerId,
                     IsSelf = member.UserId == viewerId,
