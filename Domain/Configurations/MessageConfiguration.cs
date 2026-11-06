@@ -8,6 +8,9 @@ namespace Domain.Configurations
     {
         public void Configure(EntityTypeBuilder<Message> builder)
         {
+            builder.Property(x => x.PublicId).IsRequired().HasMaxLength(20);
+            builder.HasIndex(x => x.PublicId).IsUnique();
+
             builder.Property(x => x.SenderId)
                 .IsRequired()
                 .HasMaxLength(450);
@@ -15,6 +18,9 @@ namespace Domain.Configurations
             builder.Property(x => x.Text)
                 .IsRequired()
                 .HasMaxLength(2000);
+
+            builder.Property(x => x.StoryImageUrl)
+                .HasMaxLength(200);
 
             builder.HasOne(x => x.Conversation)
                 .WithMany(c => c.Messages)

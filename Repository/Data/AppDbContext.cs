@@ -9,9 +9,31 @@ namespace Repository.Data
     {
         public DbSet<FriendRequest> FriendRequests { get; set; }
         public DbSet<UserBlock> UserBlocks { get; set; }
+        public DbSet<Report> Reports { get; set; }
+        public DbSet<Translation> Translations { get; set; }
+        public DbSet<SiteSetting> SiteSettings { get; set; }
+        public DbSet<UserWarning> UserWarnings { get; set; }
+        public DbSet<AdminAction> AdminActions { get; set; }
+        public DbSet<UserIgnore> UserIgnores { get; set; }
+        public DbSet<Server> Servers { get; set; }
+        public DbSet<ServerMember> ServerMembers { get; set; }
+        public DbSet<ServerRole> ServerRoles { get; set; }
+        public DbSet<ServerAuditLog> ServerAuditLogs { get; set; }
+        public DbSet<ServerBan> ServerBans { get; set; }
+        public DbSet<ServerCategory> ServerCategories { get; set; }
+        public DbSet<ServerChannel> ServerChannels { get; set; }
+        public DbSet<ServerOverwrite> ServerOverwrites { get; set; }
+        public DbSet<ServerVoiceState> ServerVoiceStates { get; set; }
+        public DbSet<ConversationPin> ConversationPins { get; set; }
+        public DbSet<ServerVoiceRestriction> ServerVoiceRestrictions { get; set; }
+        public DbSet<ServerMessage> ServerMessages { get; set; }
+        public DbSet<ServerMessageAttachment> ServerMessageAttachments { get; set; }
+        public DbSet<ServerMessageReaction> ServerMessageReactions { get; set; }
+        public DbSet<ServerMemberRole> ServerMemberRoles { get; set; }
         public DbSet<Post> Posts { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<PostLike> PostLikes { get; set; }
+        public DbSet<PostRepost> PostReposts { get; set; }
         public DbSet<CommentLike> CommentLikes { get; set; }
         public DbSet<Story> Stories { get; set; }
         public DbSet<StoryLike> StoryLikes { get; set; }
@@ -23,6 +45,19 @@ namespace Repository.Data
         public DbSet<Conversation> Conversations { get; set; }
         public DbSet<Message> Messages { get; set; }
         public DbSet<MessageReaction> MessageReactions { get; set; }
+        public DbSet<MessageForward> MessageForwards { get; set; }
+        public DbSet<MessageAttachment> MessageAttachments { get; set; }
+        public DbSet<Call> Calls { get; set; }
+        public DbSet<Group> Groups { get; set; }
+        public DbSet<GroupMember> GroupMembers { get; set; }
+        public DbSet<GroupMessage> GroupMessages { get; set; }
+        public DbSet<GroupMessageAttachment> GroupMessageAttachments { get; set; }
+        public DbSet<GroupMessageReaction> GroupMessageReactions { get; set; }
+        public DbSet<GroupCall> GroupCalls { get; set; }
+        public DbSet<GroupCallParticipant> GroupCallParticipants { get; set; }
+        public DbSet<Poll> Polls { get; set; }
+        public DbSet<PollOption> PollOptions { get; set; }
+        public DbSet<PollVote> PollVotes { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {

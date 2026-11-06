@@ -1,0 +1,16 @@
+using Service.Helpers.DTOs.DirectMessages;
+
+namespace Service.Helpers.DTOs.Calls
+{
+    public class CallEndedDto
+    {
+        public string CallId { get; set; } = string.Empty;
+        public string Reason { get; set; } = "ended";
+        public string CallerId { get; set; } = string.Empty;
+        public string CalleeId { get; set; } = string.Empty;
+        public string? LeftUserId { get; set; }
+        public int MessageId { get; set; }
+        public CallDto? LeftUserCall { get; set; }
+        public EditedMessageDto? Message { get; set; }
+    }
+}

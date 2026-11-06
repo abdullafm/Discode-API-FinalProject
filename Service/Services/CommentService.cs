@@ -18,6 +18,7 @@ namespace Service.Services
         private readonly IPostRepository _posts;
         private readonly INotificationService _notifications;
         private readonly IAccountRepository _accounts;
+        private readonly IMentionService _mentions;
         private readonly IValidator<CreateCommentDto> _validator;
         private readonly IMapper _mapper;
 
@@ -26,6 +27,7 @@ namespace Service.Services
                               IPostRepository posts,
                               INotificationService notifications,
                               IAccountRepository accounts,
+                              IMentionService mentions,
                               IValidator<CreateCommentDto> validator,
                               IMapper mapper)
         {
@@ -34,6 +36,7 @@ namespace Service.Services
             _posts = posts;
             _notifications = notifications;
             _accounts = accounts;
+            _mentions = mentions;
             _validator = validator;
             _mapper = mapper;
         }
@@ -53,22 +56,63 @@ namespace Service.Services
                 throw new NotFoundException("User not found.");
             }
 
+            Comment? parent = null;
+            if (model.ParentCommentId.HasValue)
+            {
+                parent = await _comments.GetByIdAsync(model.ParentCommentId.Value);
+                if (parent is null || parent.PostId != postId)
+                {
+                    throw new BadRequestException("You can only reply to a comment on this post.");
+                }
+            }
+
             var comment = new Comment
             {
                 PostId = postId,
                 AuthorId = userId,
-                Text = model.Text.Trim()
+                Text = model.Text.Trim(),
+                ParentCommentId = parent?.Id
             };
 
             await _comments.AddAsync(comment);
             comment.Author = author;
 
             var post = await _posts.GetByIdAsync(postId);
-            if (post is not null)
+            if (parent is not null)
+            {
+                await _notifications.AddAsync(NotificationType.CommentReply, userId, parent.AuthorId, postId: postId, commentId: comment.Id, snippet: comment.Text);
+            }
+
+            if (post is not null && (parent is null || parent.AuthorId != post.AuthorId))
             {
                 await _notifications.AddAsync(NotificationType.PostComment, userId, post.AuthorId, postId: postId, commentId: comment.Id, snippet: comment.Text);
             }
 
+            await _mentions.NotifyAsync(NotificationType.CommentMention, userId, comment.Text, postId: postId, commentId: comment.Id);
+
+            return _mapper.Map<CommentDto>(comment, options => options.Items[MappingProfile.ViewerIdKey] = userId);
+        }
+
+        public async Task<CommentDto> UpdateAsync(string userId, int commentId, UpdateTextDto model)
+        {
+            var comment = await _comments.GetByIdAsync(commentId);
+            if (comment is null || comment.AuthorId != userId)
+            {
+                throw new NotFoundException("Comment not found.");
+            }
+
+            await _validator.EnsureValidAsync(new CreateCommentDto { Text = model.Text });
+
+            var text = model.Text.Trim();
+            if (!string.Equals(text, comment.Text, StringComparison.Ordinal))
+            {
+                comment.Text = text;
+                comment.EditedAt = DateTime.UtcNow;
+                await _comments.UpdateAsync(comment);
+                await _mentions.NotifyAsync(NotificationType.CommentMention, userId, text, postId: comment.PostId, commentId: comment.Id);
+            }
+
+            comment.Author = (await _accounts.GetByIdAsync(userId))!;
             return _mapper.Map<CommentDto>(comment, options => options.Items[MappingProfile.ViewerIdKey] = userId);
         }
 
@@ -81,8 +125,11 @@ namespace Service.Services
                 throw new NotFoundException("Comment not found.");
             }
 
-            await _comments.DeleteAsync(comment);
-            await _notifications.RemoveForCommentAsync(commentId);
+            foreach (var item in await _comments.GetThreadAsync(commentId))
+            {
+                await _notifications.RemoveForCommentAsync(item.Id);
+                await _comments.DeleteAsync(item);
+            }
         }
 
         public async Task<LikeDto> ToggleLikeAsync(string userId, int commentId)

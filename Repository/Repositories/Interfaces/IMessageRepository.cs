@@ -8,5 +8,6 @@ namespace Repository.Repositories.Interfaces
         Task<Message?> GetWithDetailsAsync(int id);
         Task<IEnumerable<Message>> GetPinnedAsync(int conversationId);
         Task<int> CountPinnedAsync(int conversationId);
+        Task ClearRepliesToAsync(int messageId);
     }
 }

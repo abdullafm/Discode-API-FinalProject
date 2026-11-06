@@ -64,6 +64,22 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(await _postService.GetByUserAsync(UserId, userName));
         }
 
+        [HttpPut("{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateTextDto model)
+        {
+            var result = await _postService.UpdateAsync(UserId, id, model);
+            await NotifyAsync();
+            return Ok(result);
+        }
+
+        [HttpPut("comments/{commentId:int}")]
+        public async Task<IActionResult> UpdateComment(int commentId, [FromBody] UpdateTextDto model)
+        {
+            var result = await _commentService.UpdateAsync(UserId, commentId, model);
+            await NotifyAsync();
+            return Ok(result);
+        }
+
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
@@ -78,6 +94,20 @@ namespace Discode_API_FinalProject.Controllers.Client
             var result = await _postService.ToggleLikeAsync(UserId, id);
             await NotifyAsync();
             return Ok(result);
+        }
+
+        [HttpPost("{id:int}/repost")]
+        public async Task<IActionResult> Repost(int id)
+        {
+            var result = await _postService.ToggleRepostAsync(UserId, id);
+            await NotifyAsync();
+            return Ok(result);
+        }
+
+        [HttpGet("reposts/{userName}")]
+        public async Task<IActionResult> Reposts(string userName)
+        {
+            return Ok(await _postService.GetRepostsAsync(UserId, userName));
         }
 
         [HttpPost("{id:int}/comments")]

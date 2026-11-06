@@ -14,11 +14,13 @@ namespace Discode_API_FinalProject.Controllers.Client
     public class AccountController : ControllerBase
     {
         private readonly IAccountService _accountService;
+        private readonly IPresenceService _presenceService;
         private readonly IHubContext<PresenceHub> _hubContext;
 
-        public AccountController(IAccountService accountService, IHubContext<PresenceHub> hubContext)
+        public AccountController(IAccountService accountService, IPresenceService presenceService, IHubContext<PresenceHub> hubContext)
         {
             _accountService = accountService;
+            _presenceService = presenceService;
             _hubContext = hubContext;
         }
 
@@ -113,6 +115,14 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [Authorize]
+        [HttpPut("settings")]
+        public async Task<IActionResult> UpdateSettings([FromBody] UpdateSettingsDto model)
+        {
+            await _accountService.UpdateSettingsAsync(UserId, model ?? new UpdateSettingsDto());
+            return NoContent();
+        }
+
+        [Authorize]
         [HttpPut("myprofileupdate")]
         [HttpPut("profile")]
         public async Task<IActionResult> MyProfileUpdate([FromBody] UpdateProfileDto model)
@@ -124,6 +134,8 @@ namespace Discode_API_FinalProject.Controllers.Client
             }
 
             await _hubContext.Clients.Group(PresenceHub.ProfileGroup(UserId)).SendAsync("ProfileChanged", new { userId = UserId });
+            var audience = (await _presenceService.GetFriendIdsAsync(UserId)).Union(await _presenceService.GetSharedSpaceIdsAsync(UserId)).Append(UserId).Distinct().ToList();
+            await _hubContext.Clients.Users(audience).SendAsync("ProfileChanged", new { userId = UserId });
             await _hubContext.Clients.All.SendAsync("PostsChanged");
             return Ok(result);
         }

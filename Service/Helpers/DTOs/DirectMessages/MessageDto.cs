@@ -3,6 +3,7 @@ namespace Service.Helpers.DTOs.DirectMessages
     public class MessageDto
     {
         public int Id { get; set; }
+        public string PublicId { get; set; } = string.Empty;
         public int ConversationId { get; set; }
         public string SenderUserName { get; set; } = string.Empty;
         public string SenderDisplayName { get; set; } = string.Empty;
@@ -14,5 +15,19 @@ namespace Service.Helpers.DTOs.DirectMessages
         public List<ReactionDto> Reactions { get; set; } = new();
         public ReplyDto? ReplyTo { get; set; }
         public DateTime? PinnedAt { get; set; }
+        public bool Forwarded { get; set; }
+        public bool Undelivered { get; set; }
+        public bool IsCall { get; set; }
+        public int? CallSeconds { get; set; }
+        public bool CallMissed { get; set; }
+        public List<MessageAttachmentDto> Attachments { get; set; } = new();
+        public bool IsPoll { get; set; }
+        public int? StoryId { get; set; }
+        public string StoryImageUrl { get; set; } = string.Empty;
+        public int? LiveStreamId { get; set; }
+        public string LiveTitle { get; set; } = string.Empty;
+        public string LiveHostName { get; set; } = string.Empty;
+        public string LiveImageUrl { get; set; } = string.Empty;
+        public PollDto? Poll { get; set; }
     }
 }

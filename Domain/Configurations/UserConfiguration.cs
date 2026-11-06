@@ -9,6 +9,9 @@ namespace Domain.Configurations
     {
         public void Configure(EntityTypeBuilder<AppUser> builder)
         {
+            builder.Property(u => u.PublicId).IsRequired().HasMaxLength(20);
+            builder.HasIndex(u => u.PublicId).IsUnique();
+
             builder.Property(u => u.DisplayName)
                 .IsRequired()
                 .HasMaxLength(32);
@@ -31,6 +34,18 @@ namespace Domain.Configurations
             builder.Property(u => u.IsPublic)
                 .IsRequired()
                 .HasDefaultValue(true);
+
+            builder.Property(u => u.IsBanned).IsRequired().HasDefaultValue(false);
+            builder.Property(u => u.IsDeleted).IsRequired().HasDefaultValue(false);
+            builder.Property(u => u.BanReason).IsRequired().HasMaxLength(300).HasDefaultValue(string.Empty);
+            builder.Property(u => u.TimeoutReason).IsRequired().HasMaxLength(300).HasDefaultValue(string.Empty);
+            builder.Property(u => u.BannedById).HasMaxLength(450);
+            builder.HasIndex(u => u.IsBanned);
+
+            builder.Property(u => u.Language)
+                .IsRequired()
+                .HasMaxLength(8)
+                .HasDefaultValue("en");
 
             builder.Property(u => u.PreferredStatus)
                 .IsRequired()

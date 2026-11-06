@@ -11,15 +11,25 @@ namespace Repository.Repositories
         {
         }
 
+        public async Task ClearRepliesToAsync(int messageId)
+        {
+            await _dbSet.Where(x => x.ReplyToId == messageId).ExecuteUpdateAsync(s => s.SetProperty(x => x.ReplyToId, (int?)null));
+        }
+
         public async Task<IEnumerable<Message>> GetLatestAsync(int conversationId, int count)
         {
             var latest = await _dbSet
                 .AsNoTracking()
                 .Include(x => x.Sender)
                 .Include(x => x.Reactions)
+                .Include(x => x.Forward)
+                .Include(x => x.Attachments)
+                .Include(x => x.Poll)
+                    .ThenInclude(p => p!.Options)
+                        .ThenInclude(o => o.Votes)
                 .Include(x => x.ReplyTo)
                     .ThenInclude(r => r!.Sender)
-                .Where(x => x.ConversationId == conversationId)
+                .Where(x => x.ConversationId == conversationId && !x.Undelivered)
                 .OrderByDescending(x => x.CreatedAt)
                 .ThenByDescending(x => x.Id)
                 .Take(count)
@@ -35,6 +45,11 @@ namespace Repository.Repositories
                 .AsNoTracking()
                 .Include(x => x.Sender)
                 .Include(x => x.Reactions)
+                .Include(x => x.Forward)
+                .Include(x => x.Attachments)
+                .Include(x => x.Poll)
+                    .ThenInclude(p => p!.Options)
+                        .ThenInclude(o => o.Votes)
                 .Include(x => x.ReplyTo)
                     .ThenInclude(r => r!.Sender)
                 .Where(x => x.ConversationId == conversationId && x.PinnedAt != null)
@@ -52,6 +67,11 @@ namespace Repository.Repositories
             return await _dbSet
                 .Include(x => x.Sender)
                 .Include(x => x.Reactions)
+                .Include(x => x.Forward)
+                .Include(x => x.Attachments)
+                .Include(x => x.Poll)
+                    .ThenInclude(p => p!.Options)
+                        .ThenInclude(o => o.Votes)
                 .Include(x => x.ReplyTo)
                     .ThenInclude(r => r!.Sender)
                 .Include(x => x.Conversation)

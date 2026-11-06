@@ -4,11 +4,14 @@ namespace Domain.Constants
     {
         public const string Member = "Member";
         public const string Admin = "Admin";
+        public const string SuperAdmin = "SuperAdmin";
+        public const string Staff = SuperAdmin + "," + Admin;
 
         public static readonly string[] All =
         {
             Member,
-            Admin
+            Admin,
+            SuperAdmin
         };
     }
 }

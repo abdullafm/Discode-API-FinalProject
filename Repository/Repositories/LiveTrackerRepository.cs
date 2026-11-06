@@ -34,7 +34,7 @@ namespace Repository.Repositories
             }
         }
 
-        public Task<int> AddViewerAsync(int streamId, string connectionId)
+        public Task<int> AddViewerAsync(int streamId, string connectionId, string userId = "")
         {
             lock (_lock)
             {
@@ -44,6 +44,7 @@ namespace Repository.Repositories
                 }
 
                 room.Viewers.Add(connectionId);
+                room.ViewerUsers[connectionId] = userId;
                 return Task.FromResult(room.Viewers.Count);
             }
         }
@@ -58,6 +59,12 @@ namespace Repository.Repositories
                 }
 
                 room.Viewers.Remove(connectionId);
+                room.ViewerUsers.Remove(connectionId);
+                if (room.GuestConnectionId == connectionId)
+                {
+                    room.GuestConnectionId = string.Empty;
+                }
+
                 return Task.FromResult(room.Viewers.Count);
             }
         }
@@ -67,6 +74,74 @@ namespace Repository.Repositories
             lock (_lock)
             {
                 return Task.FromResult(_rooms.TryGetValue(streamId, out var room) ? room.Viewers.Count : 0);
+            }
+        }
+
+        public Task<string?> GetViewerUserIdAsync(int streamId, string connectionId)
+        {
+            lock (_lock)
+            {
+                string? id = null;
+                if (_rooms.TryGetValue(streamId, out var room) && room.ViewerUsers.TryGetValue(connectionId, out var found) && found.Length > 0)
+                {
+                    id = found;
+                }
+
+                return Task.FromResult(id);
+            }
+        }
+
+        public Task<bool> SetGuestAsync(int streamId, string connectionId)
+        {
+            lock (_lock)
+            {
+                if (!_rooms.TryGetValue(streamId, out var room) || !room.Viewers.Contains(connectionId) || room.GuestConnectionId.Length > 0)
+                {
+                    return Task.FromResult(false);
+                }
+
+                room.GuestConnectionId = connectionId;
+                return Task.FromResult(true);
+            }
+        }
+
+        public Task<string?> GetGuestAsync(int streamId)
+        {
+            lock (_lock)
+            {
+                string? id = null;
+                if (_rooms.TryGetValue(streamId, out var room) && room.GuestConnectionId.Length > 0)
+                {
+                    id = room.GuestConnectionId;
+                }
+
+                return Task.FromResult(id);
+            }
+        }
+
+        public Task<string?> ClearGuestAsync(int streamId)
+        {
+            lock (_lock)
+            {
+                string? id = null;
+                if (_rooms.TryGetValue(streamId, out var room) && room.GuestConnectionId.Length > 0)
+                {
+                    id = room.GuestConnectionId;
+                    room.GuestConnectionId = string.Empty;
+                }
+
+                return Task.FromResult(id);
+            }
+        }
+
+        public Task<IEnumerable<string>> GetViewerUserIdsAsync(int streamId)
+        {
+            lock (_lock)
+            {
+                IEnumerable<string> ids = _rooms.TryGetValue(streamId, out var room)
+                    ? room.ViewerUsers.Values.Where(x => x.Length > 0).Distinct().ToList()
+                    : new List<string>();
+                return Task.FromResult(ids);
             }
         }
 
@@ -98,6 +173,15 @@ namespace Repository.Repositories
             lock (_lock)
             {
                 var viewed = _rooms.Where(x => x.Value.Viewers.Remove(connectionId)).Select(x => x.Key).ToList();
+                foreach (var room in _rooms.Values)
+                {
+                    room.ViewerUsers.Remove(connectionId);
+                    if (room.GuestConnectionId == connectionId)
+                    {
+                        room.GuestConnectionId = string.Empty;
+                    }
+                }
+
                 return Task.FromResult<IEnumerable<int>>(viewed);
             }
         }

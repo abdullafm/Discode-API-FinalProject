@@ -21,14 +21,14 @@ namespace Service.Services
             _mapper = mapper;
         }
 
-        public async Task AddAsync(NotificationType type, string actorId, string recipientId, int? postId = null, int? commentId = null, int? storyId = null, string? snippet = null)
+        public async Task AddAsync(NotificationType type, string actorId, string recipientId, int? postId = null, int? commentId = null, int? storyId = null, string? snippet = null, int? liveStreamId = null)
         {
             if (actorId == recipientId)
             {
                 return;
             }
 
-            if (await _notifications.FindAsync(type, actorId, recipientId, postId, commentId, storyId) is not null)
+            if (await _notifications.FindAsync(type, actorId, recipientId, postId, commentId, storyId, liveStreamId) is not null)
             {
                 return;
             }
@@ -41,6 +41,7 @@ namespace Service.Services
                 PostId = postId,
                 CommentId = commentId,
                 StoryId = storyId,
+                LiveStreamId = liveStreamId,
                 Snippet = Shorten(snippet)
             });
         }

@@ -170,3 +170,12 @@ C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-F
 C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ec619b8-a8eb-4bea-afd2-9c276ba7c886\scratchpad\api\Discode-API-FinalProject.runtimeconfig.json
 C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ec619b8-a8eb-4bea-afd2-9c276ba7c886\scratchpad\api\Discode-API-FinalProject.dll
 C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ec619b8-a8eb-4bea-afd2-9c276ba7c886\scratchpad\api\Discode-API-FinalProject.pdb
+C:\Users\User\AppData\Local\Temp\chk_api\appsettings.Development.json
+C:\Users\User\AppData\Local\Temp\chk_api\appsettings.json
+C:\Users\User\AppData\Local\Temp\chk_api\Discode-API-FinalProject.staticwebassets.runtime.json
+C:\Users\User\AppData\Local\Temp\chk_api\Discode-API-FinalProject.staticwebassets.endpoints.json
+C:\Users\User\AppData\Local\Temp\chk_api\Discode-API-FinalProject.exe
+C:\Users\User\AppData\Local\Temp\chk_api\Discode-API-FinalProject.deps.json
+C:\Users\User\AppData\Local\Temp\chk_api\Discode-API-FinalProject.runtimeconfig.json
+C:\Users\User\AppData\Local\Temp\chk_api\Discode-API-FinalProject.dll
+C:\Users\User\AppData\Local\Temp\chk_api\Discode-API-FinalProject.pdb

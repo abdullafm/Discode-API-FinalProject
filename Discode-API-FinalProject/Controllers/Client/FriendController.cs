@@ -15,11 +15,13 @@ namespace Discode_API_FinalProject.Controllers.Client
     {
         private readonly IFriendRequestService _friendRequestService;
         private readonly IHubContext<PresenceHub> _hubContext;
+        private readonly ICallService _callService;
 
-        public FriendController(IFriendRequestService friendRequestService, IHubContext<PresenceHub> hubContext)
+        public FriendController(IFriendRequestService friendRequestService, IHubContext<PresenceHub> hubContext, ICallService callService)
         {
             _friendRequestService = friendRequestService;
             _hubContext = hubContext;
+            _callService = callService;
         }
 
         private string UserId
@@ -30,9 +32,12 @@ namespace Discode_API_FinalProject.Controllers.Client
             }
         }
 
-        private Task NotifyAsync(string otherUserId)
+        private async Task NotifyAsync(string otherUserId)
         {
-            return _hubContext.Clients.Users(UserId, otherUserId).SendAsync("FriendsChanged");
+            await _hubContext.Clients.Users(UserId, otherUserId).SendAsync("FriendsChanged");
+            await _hubContext.Clients.Users(UserId, otherUserId).SendAsync("NotificationsChanged");
+            await _hubContext.Clients.Group(PresenceHub.ProfileGroup(UserId)).SendAsync("ProfileChanged", new { userId = UserId });
+            await _hubContext.Clients.Group(PresenceHub.ProfileGroup(otherUserId)).SendAsync("ProfileChanged", new { userId = otherUserId });
         }
 
         [HttpPost("request")]
@@ -49,6 +54,12 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(await _friendRequestService.GetAllAsync(UserId));
         }
 
+        [HttpGet("user/{userName}")]
+        public async Task<IActionResult> ByUser(string userName)
+        {
+            return Ok(await _friendRequestService.GetUserFriendsAsync(UserId, userName));
+        }
+
         [HttpGet("pending")]
         public async Task<IActionResult> Pending()
         {
@@ -60,6 +71,10 @@ namespace Discode_API_FinalProject.Controllers.Client
         {
             var otherUserId = await _friendRequestService.RemoveAsync(UserId, id);
             await NotifyAsync(otherUserId);
+            foreach (var ended in await _callService.EndIfNotAllowedAsync(UserId, otherUserId))
+            {
+                await PresenceHub.AnnounceCallEndAsync(_hubContext.Clients, ended);
+            }
             return Ok();
         }
 

@@ -14,3 +14,6 @@ C:\Users\User\source\repos\Discode-API-FinalProject\Domain\obj\Release\net8.0\re
 C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ec619b8-a8eb-4bea-afd2-9c276ba7c886\scratchpad\api\Domain.deps.json
 C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ec619b8-a8eb-4bea-afd2-9c276ba7c886\scratchpad\api\Domain.dll
 C:\Users\User\AppData\Local\Temp\claude\c--Users-User-source-repos-Discode-API-FinalProject\4ec619b8-a8eb-4bea-afd2-9c276ba7c886\scratchpad\api\Domain.pdb
+C:\Users\User\AppData\Local\Temp\chk_api\Domain.deps.json
+C:\Users\User\AppData\Local\Temp\chk_api\Domain.dll
+C:\Users\User\AppData\Local\Temp\chk_api\Domain.pdb

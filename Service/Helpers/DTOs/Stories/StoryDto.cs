@@ -11,5 +11,7 @@ namespace Service.Helpers.DTOs.Stories
         public int LikeCount { get; set; }
         public bool LikedByMe { get; set; }
         public int ViewCount { get; set; }
+        // the viewer opened it before (their own stories count as seen)
+        public bool SeenByMe { get; set; }
     }
 }

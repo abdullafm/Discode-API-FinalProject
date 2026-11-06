@@ -4,5 +4,6 @@ namespace Service.Helpers.DTOs.DirectMessages
     {
         public string Text { get; set; } = string.Empty;
         public int? ReplyToMessageId { get; set; }
+        public List<MessageAttachmentDto> Attachments { get; set; } = new();
     }
 }

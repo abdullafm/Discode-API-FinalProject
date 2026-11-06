@@ -1,5 +1,6 @@
 using AutoMapper;
 using Domain.Entities;
+using Service.Helpers.DTOs.Groups;
 using Service.Helpers.DTOs.Accounts;
 using Service.Helpers.DTOs.DirectMessages;
 using Service.Helpers.DTOs.Emojis;
@@ -8,6 +9,9 @@ using Service.Helpers.DTOs.Notifications;
 using Service.Helpers.DTOs.Live;
 using Service.Helpers.DTOs.Posts;
 using Service.Helpers.DTOs.Presence;
+using Service.Helpers.DTOs.Servers;
+using Service.Helpers.DTOs.ServerRoles;
+using Service.Helpers.DTOs.ServerMessages;
 using Service.Helpers.DTOs.Stories;
 using Service.Helpers.Responses;
 using System;
@@ -21,6 +25,28 @@ namespace Service.Helpers.Mappings
     public class MappingProfile : Profile
     {
         public const string ViewerIdKey = "viewerId";
+
+        private static PollDto BuildPoll(Poll poll, string? viewerId)
+        {
+            var options = poll.Options.OrderBy(o => o.Position).ThenBy(o => o.Id).ToList();
+            return new PollDto
+            {
+                Question = poll.Question,
+                AllowMultiple = poll.AllowMultiple,
+                ExpiresAt = poll.ExpiresAt,
+                Ended = poll.ExpiresAt <= DateTime.UtcNow,
+                TotalVoters = options.SelectMany(o => o.Votes).Select(v => v.UserId).Distinct().Count(),
+                Voted = viewerId != null && options.Any(o => o.Votes.Any(v => v.UserId == viewerId)),
+                Options = options.Select(o => new PollOptionDto
+                {
+                    Id = o.Id,
+                    Text = o.Text,
+                    Emoji = o.Emoji,
+                    Votes = o.Votes.Count,
+                    Voted = viewerId != null && o.Votes.Any(v => v.UserId == viewerId)
+                }).ToList()
+            };
+        }
 
         private static AppUser OtherParticipant(Conversation conversation, ResolutionContext context)
         {
@@ -43,6 +69,96 @@ namespace Service.Helpers.Mappings
 
             CreateMap<AppUser, ProfileDto>();
 
+            CreateMap<GroupMember, GroupMemberDto>()
+                .ForMember(d => d.UserName, o => o.MapFrom(s => s.User.UserName ?? string.Empty))
+                .ForMember(d => d.DisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.User.DisplayName) ? s.User.UserName ?? string.Empty : s.User.DisplayName))
+                .ForMember(d => d.AvatarUrl, o => o.MapFrom(s => s.User.AvatarUrl ?? string.Empty))
+                .ForMember(d => d.IsOwner, o => o.Ignore());
+
+            CreateMap<GroupMessageAttachment, MessageAttachmentDto>();
+
+            CreateMap<GroupCall, GroupCallBriefDto>();
+
+            CreateMap<GroupMessage, GroupMessageDto>()
+                .ForMember(d => d.IsPoll, o => o.MapFrom(s => s.Poll != null))
+                .ForMember(d => d.IsCall, o => o.MapFrom(s => s.Call != null))
+                .ForMember(d => d.ReplyTo, o => o.MapFrom(s => s.ReplyTo == null ? null : new ReplyDto
+                {
+                    MessageId = s.ReplyTo.Id,
+                    SenderUserName = s.ReplyTo.Sender.UserName ?? string.Empty,
+                    SenderDisplayName = string.IsNullOrWhiteSpace(s.ReplyTo.Sender.DisplayName) ? s.ReplyTo.Sender.UserName ?? string.Empty : s.ReplyTo.Sender.DisplayName,
+                    SenderAvatarUrl = s.ReplyTo.Sender.AvatarUrl ?? string.Empty,
+                    Text = s.ReplyTo.Text
+                }))
+                .ForMember(d => d.Poll, o => o.MapFrom((s, d, m, context) => s.Poll == null
+                    ? null
+                    : BuildPoll(s.Poll, context.Items.TryGetValue(ViewerIdKey, out var voter) ? (string?)voter : null)))
+                .ForMember(d => d.Reactions, o => o.MapFrom((s, d, m, context) => s.Reactions
+                    .OrderBy(r => r.CreatedAt)
+                    .ThenBy(r => r.Id)
+                    .GroupBy(r => r.Emoji)
+                    .Select(g => new ReactionDto
+                    {
+                        Emoji = g.Key,
+                        Count = g.Count(),
+                        Reacted = context.Items.TryGetValue(ViewerIdKey, out var viewer) && g.Any(r => r.UserId == (string?)viewer)
+                    })
+                    .ToList()))
+                .ForMember(d => d.SenderUserName, o => o.MapFrom(s => s.Sender.UserName ?? string.Empty))
+                .ForMember(d => d.SenderDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Sender.DisplayName) ? s.Sender.UserName ?? string.Empty : s.Sender.DisplayName))
+                .ForMember(d => d.SenderAvatarUrl, o => o.MapFrom(s => s.Sender.AvatarUrl ?? string.Empty));
+
+            CreateMap<ServerMessageAttachment, MessageAttachmentDto>();
+
+            CreateMap<ServerMessage, ServerMessageDto>()
+                .ForMember(d => d.IsPoll, o => o.MapFrom(s => s.Poll != null))
+                .ForMember(d => d.Poll, o => o.MapFrom((s, d, m, context) => s.Poll == null
+                    ? null
+                    : BuildPoll(s.Poll, context.Items.TryGetValue(ViewerIdKey, out var voter) ? (string?)voter : null)))
+                .ForMember(d => d.ReplyTo, o => o.MapFrom(s => s.ReplyTo == null ? null : new ReplyDto
+                {
+                    MessageId = s.ReplyTo.Id,
+                    SenderUserName = s.ReplyTo.Sender.UserName ?? string.Empty,
+                    SenderDisplayName = string.IsNullOrWhiteSpace(s.ReplyTo.Sender.DisplayName) ? s.ReplyTo.Sender.UserName ?? string.Empty : s.ReplyTo.Sender.DisplayName,
+                    SenderAvatarUrl = s.ReplyTo.Sender.AvatarUrl ?? string.Empty,
+                    Text = s.ReplyTo.Text
+                }))
+                .ForMember(d => d.Reactions, o => o.MapFrom((s, d, m, context) => s.Reactions
+                    .OrderBy(r => r.CreatedAt)
+                    .ThenBy(r => r.Id)
+                    .GroupBy(r => r.Emoji)
+                    .Select(g => new ReactionDto
+                    {
+                        Emoji = g.Key,
+                        Count = g.Count(),
+                        Reacted = context.Items.TryGetValue(ViewerIdKey, out var viewer) && g.Any(r => r.UserId == (string?)viewer)
+                    })
+                    .ToList()))
+                .ForMember(d => d.SenderUserName, o => o.MapFrom(s => s.Sender.UserName ?? string.Empty))
+                .ForMember(d => d.SenderDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Sender.DisplayName) ? s.Sender.UserName ?? string.Empty : s.Sender.DisplayName))
+                .ForMember(d => d.SenderAvatarUrl, o => o.MapFrom(s => s.Sender.AvatarUrl ?? string.Empty));
+
+            CreateMap<Group, GroupDto>()
+                .ForMember(d => d.OwnerUserName, o => o.Ignore())
+                .ForMember(d => d.MemberCount, o => o.Ignore())
+                .ForMember(d => d.MaxMembers, o => o.Ignore())
+                .ForMember(d => d.Existing, o => o.Ignore());
+
+            CreateMap<Server, ServerDto>()
+                .ForMember(d => d.OwnerUserName, o => o.MapFrom(s => s.Owner.UserName ?? string.Empty))
+                .ForMember(d => d.MemberCount, o => o.MapFrom(s => s.Members.Count))
+                .ForMember(d => d.Members, o => o.Ignore())
+                .ForMember(d => d.Permissions, o => o.Ignore())
+                .ForMember(d => d.IsOwner, o => o.MapFrom((s, d, m, context) =>
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.OwnerId == (string?)viewer));
+
+            CreateMap<ServerRole, ServerRoleDto>()
+                .ForMember(d => d.MemberCount, o => o.MapFrom(s => s.MemberRoles.Count));
+
+            CreateMap<ServerRole, ServerRoleRefDto>();
+
+            CreateMap<MessageAttachment, MessageAttachmentDto>();
+
             CreateMap<Message, MessageDto>()
                 .ForMember(d => d.SenderUserName, o => o.MapFrom(s => s.Sender.UserName ?? string.Empty))
                 .ForMember(d => d.SenderDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Sender.DisplayName)
@@ -51,6 +167,16 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.SenderAvatarUrl, o => o.MapFrom(s => s.Sender.AvatarUrl ?? string.Empty))
                 .ForMember(d => d.Mine, o => o.MapFrom((s, d, m, context) =>
                     context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.SenderId == (string?)viewer))
+                .ForMember(d => d.Forwarded, o => o.MapFrom(s => s.Forward != null))
+                .ForMember(d => d.StoryImageUrl, o => o.MapFrom(s => s.StoryImageUrl ?? string.Empty))
+                .ForMember(d => d.LiveTitle, o => o.MapFrom(s => s.LiveTitle ?? string.Empty))
+                .ForMember(d => d.LiveHostName, o => o.MapFrom(s => s.LiveHostName ?? string.Empty))
+                .ForMember(d => d.LiveImageUrl, o => o.MapFrom(s => s.LiveImageUrl ?? string.Empty))
+                .ForMember(d => d.IsCall, o => o.MapFrom(s => s.Kind == Domain.Enums.MessageKind.Call))
+                .ForMember(d => d.IsPoll, o => o.MapFrom(s => s.Kind == Domain.Enums.MessageKind.Poll))
+                .ForMember(d => d.Poll, o => o.MapFrom((s, d, m, context) => s.Poll == null
+                    ? null
+                    : BuildPoll(s.Poll, context.Items.TryGetValue(ViewerIdKey, out var voter) ? (string?)voter : null)))
                 .ForMember(d => d.ReplyTo, o => o.MapFrom((s, d, m, context) => s.ReplyTo == null ? null : new ReplyDto
                 {
                     MessageId = s.ReplyTo.Id,
@@ -122,7 +248,9 @@ namespace Service.Helpers.Mappings
                 .ForMember(d => d.LikedByMe, o => o.MapFrom((s, d, m, context) =>
                     context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.Likes.Any(l => l.UserId == (string?)viewer)))
                 .ForMember(d => d.ViewCount, o => o.MapFrom((s, d, m, context) =>
-                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.AuthorId == (string?)viewer ? s.Views.Count : 0));
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.AuthorId == (string?)viewer ? s.Views.Count : 0))
+                .ForMember(d => d.SeenByMe, o => o.MapFrom((s, d, m, context) =>
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && (s.AuthorId == (string?)viewer || s.Views.Any(v => v.UserId == (string?)viewer))));
 
             CreateMap<StoryView, StoryViewerDto>()
                 .ForMember(d => d.UserName, o => o.MapFrom(s => s.User.UserName ?? string.Empty))
@@ -144,9 +272,13 @@ namespace Service.Helpers.Mappings
                     context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.Likes.Any(l => l.UserId == (string?)viewer)));
 
             CreateMap<Post, PostDto>()
+                .ForMember(d => d.Visibility, o => o.MapFrom(s => s.Author != null && !s.Author.IsPublic ? "friends" : "public"))
                 .ForMember(d => d.LikeCount, o => o.MapFrom(s => s.Likes.Count))
                 .ForMember(d => d.LikedByMe, o => o.MapFrom((s, d, m, context) =>
                     context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.Likes.Any(l => l.UserId == (string?)viewer)))
+                .ForMember(d => d.RepostCount, o => o.MapFrom(s => s.Reposts.Count))
+                .ForMember(d => d.RepostedByMe, o => o.MapFrom((s, d, m, context) =>
+                    context.Items.TryGetValue(ViewerIdKey, out var viewer) && s.Reposts.Any(l => l.UserId == (string?)viewer)))
                 .ForMember(d => d.Comments, o => o.MapFrom(s => s.Comments.OrderBy(c => c.CreatedAt)))
                 .ForMember(d => d.AuthorUserName, o => o.MapFrom(s => s.Author.UserName ?? string.Empty))
                 .ForMember(d => d.AuthorDisplayName, o => o.MapFrom(s => string.IsNullOrWhiteSpace(s.Author.DisplayName)

@@ -15,6 +15,7 @@ namespace Discode_API_FinalProject.Hubs
         {
             try
             {
+                await EnsureNotTimedOutAsync();
                 await EndOwnStreamsAsync();
                 var stream = await _liveStreamService.StartAsync(UserId, Context.ConnectionId, model);
                 await Groups.AddToGroupAsync(Context.ConnectionId, LiveGroup(stream.Id));
@@ -58,7 +59,8 @@ namespace Discode_API_FinalProject.Hubs
         {
             try
             {
-                var join = await _liveStreamService.JoinAsync(UserId, Context.ConnectionId, streamId);
+                var staff = Context.User?.IsInRole(Domain.Constants.Roles.SuperAdmin) == true || Context.User?.IsInRole(Domain.Constants.Roles.Admin) == true;
+                var join = await _liveStreamService.JoinAsync(UserId, Context.ConnectionId, streamId, staff);
                 await Groups.AddToGroupAsync(Context.ConnectionId, LiveGroup(streamId));
                 await Clients.Client(join.HostConnectionId).SendAsync("ViewerJoined", streamId, Context.ConnectionId);
                 await Clients.All.SendAsync("LiveViewers", streamId, join.Stream.ViewerCount);
@@ -72,6 +74,65 @@ namespace Discode_API_FinalProject.Hubs
             catch (NotFoundException ex)
             {
                 throw new HubException(ex.Message);
+            }
+        }
+
+        public async Task<IEnumerable<LiveViewerDto>> GetLiveViewers(int streamId)
+        {
+            try
+            {
+                return await _liveStreamService.GetViewersAsync(Context.ConnectionId, streamId);
+            }
+            catch (NotFoundException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+        }
+
+        public async Task RequestLiveGuest(int streamId)
+        {
+            try
+            {
+                var request = await _liveStreamService.RequestGuestAsync(Context.ConnectionId, streamId);
+                await Clients.Client(request.HostConnectionId).SendAsync("GuestRequested", request.Guest);
+            }
+            catch (BadRequestException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+            catch (NotFoundException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+        }
+
+        public async Task RespondLiveGuest(int streamId, string targetConnectionId, bool accept)
+        {
+            try
+            {
+                var guest = await _liveStreamService.RespondGuestAsync(Context.ConnectionId, streamId, targetConnectionId, accept);
+                await Clients.Client(targetConnectionId).SendAsync("GuestResponse", streamId, guest is not null);
+                if (guest is not null)
+                {
+                    await Clients.Group(LiveGroup(streamId)).SendAsync("GuestStarted", guest);
+                }
+            }
+            catch (BadRequestException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+            catch (NotFoundException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+        }
+
+        public async Task EndLiveGuest(int streamId)
+        {
+            var ended = await _liveStreamService.EndGuestAsync(Context.ConnectionId, streamId);
+            if (ended is not null)
+            {
+                await Clients.Group(LiveGroup(streamId)).SendAsync("GuestEnded", streamId, ended);
             }
         }
 
@@ -93,10 +154,29 @@ namespace Discode_API_FinalProject.Hubs
             await Clients.Client(targetConnectionId).SendAsync("ReceiveSignal", streamId, Context.ConnectionId, payload);
         }
 
+        public async Task SendLiveReply(int streamId, string text, string replyUserName, string replyText)
+        {
+            try
+            {
+                await EnsureNotTimedOutAsync();
+                var message = await _liveStreamService.CreateMessageAsync(UserId, Context.ConnectionId, streamId, text, replyUserName, replyText);
+                await Clients.Group(LiveGroup(streamId)).SendAsync("LiveMessage", message);
+            }
+            catch (BadRequestException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+            catch (NotFoundException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+        }
+
         public async Task SendLiveMessage(int streamId, string text)
         {
             try
             {
+                await EnsureNotTimedOutAsync();
                 var message = await _liveStreamService.CreateMessageAsync(UserId, Context.ConnectionId, streamId, text);
                 await Clients.Group(LiveGroup(streamId)).SendAsync("LiveMessage", message);
             }

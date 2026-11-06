@@ -361,6 +361,43 @@
   },
   {
     "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "DeleteMessage",
+    "RelativePath": "api/dm/messages/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
+    "Method": "Forward",
+    "RelativePath": "api/dm/messages/{id}/forward",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "Service.Helpers.DTOs.DirectMessages.ForwardMessageDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Discode_API_FinalProject.Controllers.Client.DirectMessageController",
     "Method": "Pin",
     "RelativePath": "api/dm/messages/{id}/pin",
     "HttpMethod": "PUT",

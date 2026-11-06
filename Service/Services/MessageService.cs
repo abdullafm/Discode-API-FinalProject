@@ -1,5 +1,6 @@
 using AutoMapper;
 using Domain.Entities;
+using Domain.Enums;
 using Repository.Repositories.Interfaces;
 using Service.Helpers.DTOs.DirectMessages;
 using Service.Helpers.Exceptions;
@@ -22,15 +23,21 @@ namespace Service.Services
         public async Task<MessageDto?> GetAsync(int messageId, string viewerId)
         {
             var message = await _messages.GetWithDetailsAsync(messageId);
-            return message is null ? null : _mapper.Map<MessageDto>(message, ForViewer(viewerId));
+            if (message is null || (message.Undelivered && message.SenderId != viewerId))
+            {
+                return null;
+            }
+
+            return _mapper.Map<MessageDto>(message, ForViewer(viewerId));
         }
 
-        public async Task<MessageDto> CreateAsync(int conversationId, string senderId, string text, int? replyToMessageId)
+        public async Task<MessageDto> CreateAsync(int conversationId, string senderId, string text, int? replyToMessageId, bool undelivered, IEnumerable<MessageAttachmentDto>? attachments = null, int? storyId = null, string? storyImageUrl = null, LiveShareDto? live = null)
         {
-            if (replyToMessageId.HasValue)
+            int? replyId = replyToMessageId is > 0 ? replyToMessageId : null;
+            if (replyId.HasValue)
             {
-                var target = await _messages.GetWithDetailsAsync(replyToMessageId.Value);
-                if (target is null || target.ConversationId != conversationId)
+                var target = await _messages.GetWithDetailsAsync(replyId.Value);
+                if (target is null || target.ConversationId != conversationId || target.Kind != MessageKind.Text)
                 {
                     throw new BadRequestException("You can only reply to a message in this chat.");
                 }
@@ -41,7 +48,17 @@ namespace Service.Services
                 ConversationId = conversationId,
                 SenderId = senderId,
                 Text = text,
-                ReplyToId = replyToMessageId
+                ReplyToId = replyId,
+                Undelivered = undelivered,
+                StoryId = storyId,
+                StoryImageUrl = storyImageUrl,
+                LiveStreamId = live?.StreamId,
+                LiveTitle = live?.Title,
+                LiveHostName = live?.HostName,
+                LiveImageUrl = live?.ImageUrl,
+                Attachments = (attachments ?? Enumerable.Empty<MessageAttachmentDto>())
+                    .Select(a => new MessageAttachment { Url = a.Url, FileName = a.FileName, ContentType = a.ContentType, Size = a.Size })
+                    .ToList()
             };
             await _messages.AddAsync(message);
 
@@ -61,6 +78,71 @@ namespace Service.Services
             message.EditedAt = DateTime.UtcNow;
             await _messages.UpdateAsync(message);
             return _mapper.Map<MessageDto>(message, ForViewer(viewerId));
+        }
+
+        public async Task<MessageDto> CreatePollAsync(int conversationId, string senderId, CreatePollDto model, bool undelivered)
+        {
+            var message = new Message
+            {
+                ConversationId = conversationId,
+                SenderId = senderId,
+                Text = string.Empty,
+                Kind = MessageKind.Poll,
+                Undelivered = undelivered,
+                Poll = new Poll
+                {
+                    Question = model.Question.Trim(),
+                    AllowMultiple = model.AllowMultiple,
+                    ExpiresAt = DateTime.UtcNow.AddHours(model.DurationHours),
+                    Options = model.Options
+                        .Select((o, index) => new PollOption { Text = o.Text.Trim(), Emoji = (o.Emoji ?? string.Empty).Trim(), Position = index })
+                        .ToList()
+                }
+            };
+            await _messages.AddAsync(message);
+
+            var saved = await _messages.GetWithDetailsAsync(message.Id);
+            return _mapper.Map<MessageDto>(saved, ForViewer(senderId));
+        }
+
+        public async Task<MessageDto> CreateCallAsync(int conversationId, string senderId)
+        {
+            var message = new Message
+            {
+                ConversationId = conversationId,
+                SenderId = senderId,
+                Text = string.Empty,
+                Kind = MessageKind.Call
+            };
+            await _messages.AddAsync(message);
+
+            var saved = await _messages.GetWithDetailsAsync(message.Id);
+            return _mapper.Map<MessageDto>(saved, ForViewer(senderId));
+        }
+
+        public async Task FinishCallAsync(int messageId, int? seconds, bool missed)
+        {
+            var message = await _messages.GetWithDetailsAsync(messageId);
+            if (message is null || message.Kind != MessageKind.Call)
+            {
+                return;
+            }
+
+            message.CallSeconds = seconds;
+            message.CallMissed = missed;
+            await _messages.UpdateAsync(message);
+        }
+
+        public async Task DeleteAsync(int messageId)
+        {
+            var message = await _messages.GetWithDetailsAsync(messageId);
+            if (message is null)
+            {
+                return;
+            }
+
+            await _messages.ClearRepliesToAsync(messageId);
+            await _messages.DeleteAsync(message);
         }
 
         public async Task<int?> GetLatestIdAsync(int conversationId)

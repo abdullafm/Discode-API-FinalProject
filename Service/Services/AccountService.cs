@@ -6,6 +6,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Repository.Repositories.Interfaces;
+using Service.Helpers;
 using Service.Helpers.DTOs.Accounts;
 using Service.Helpers.Exceptions;
 using Service.Helpers.Responses;
@@ -314,6 +315,16 @@ namespace Service.Services
                 return FailLogin(InvalidCredentials);
             }
 
+            if (user.IsDeleted)
+            {
+                return FailLogin(InvalidCredentials);
+            }
+
+            if (ModerationMessages.IsBanActive(user.IsBanned, user.BannedUntil, DateTime.UtcNow))
+            {
+                return FailLogin(ModerationMessages.Banned(user.BannedUntil, user.BanReason));
+            }
+
             await _accountRepository.ResetFailedAttemptsAsync(user);
             var roles = await _accountRepository.GetRolesAsync(user);
             var (token, expiresAt) = _tokenService.CreateToken(user, roles);
@@ -334,6 +345,31 @@ namespace Service.Services
             }
 
             return _mapper.Map<ProfileDto>(user);
+        }
+
+        public async Task UpdateSettingsAsync(string userId, UpdateSettingsDto model)
+        {
+            var user = await _accountRepository.GetByIdAsync(userId);
+            if (user is null)
+            {
+                throw new NotFoundException("User not found.");
+            }
+
+            if (model.Theme is not null)
+            {
+                if (model.Theme != "light" && model.Theme != "dark")
+                {
+                    throw new BadRequestException("Choose light or dark.");
+                }
+
+                user.Theme = model.Theme;
+            }
+
+            user.NotifyAll = model.NotifyAll ?? user.NotifyAll;
+            user.NotifyDm = model.NotifyDm ?? user.NotifyDm;
+            user.NotifyFriends = model.NotifyFriends ?? user.NotifyFriends;
+            user.NotifySound = model.NotifySound ?? user.NotifySound;
+            await _accountRepository.UpdateAsync(user);
         }
 
         public async Task<UpdateProfileResponse> UpdateProfileAsync(string userId, UpdateProfileDto model)
@@ -479,6 +515,10 @@ namespace Service.Services
             else
             {
                 profile.Status = await _presence.ResolveAsync(user);
+                if (profile.Status == "offline" && profile.Relation != "self")
+                {
+                    profile.CustomStatus = string.Empty;
+                }
             }
 
             return profile;

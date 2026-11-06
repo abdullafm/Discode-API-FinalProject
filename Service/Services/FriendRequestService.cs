@@ -16,6 +16,7 @@ namespace Service.Services
         private readonly IUserBlockRepository _blocks;
         private readonly IAccountRepository _accounts;
         private readonly IPresenceService _presence;
+        private readonly INotificationService _notifications;
         private readonly IValidator<SendFriendRequestDto> _validator;
         private readonly IMapper _mapper;
 
@@ -23,12 +24,14 @@ namespace Service.Services
                              IUserBlockRepository blocks,
                              IAccountRepository accounts,
                              IPresenceService presence,
+                             INotificationService notifications,
                              IValidator<SendFriendRequestDto> validator,
                              IMapper mapper)
         {
             _friendRequests = friendRequests;
             _blocks = blocks;
             _presence = presence;
+            _notifications = notifications;
             _accounts = accounts;
             _validator = validator;
             _mapper = mapper;
@@ -87,6 +90,7 @@ namespace Service.Services
             };
 
             await _friendRequests.AddAsync(request);
+            await _notifications.AddAsync(NotificationType.FriendRequest, senderId, receiver.Id);
             return MapFriend(request.Id, receiver);
         }
 
@@ -127,6 +131,7 @@ namespace Service.Services
             }
 
             await _friendRequests.DeleteAsync(request);
+            await _notifications.RemoveAsync(NotificationType.FriendRequest, request.SenderId, request.ReceiverId);
             return GetOtherUserId(request, userId);
         }
 
@@ -140,6 +145,8 @@ namespace Service.Services
 
             request.Status = FriendRequestStatus.Accepted;
             await _friendRequests.UpdateAsync(request);
+            await _notifications.RemoveAsync(NotificationType.FriendRequest, request.SenderId, request.ReceiverId);
+            await _notifications.AddAsync(NotificationType.FriendAccepted, userId, request.SenderId);
             return GetOtherUserId(request, userId);
         }
 
@@ -152,7 +159,47 @@ namespace Service.Services
             }
 
             await _friendRequests.DeleteAsync(request);
+            await _notifications.RemoveAsync(NotificationType.FriendRequest, request.SenderId, request.ReceiverId);
             return GetOtherUserId(request, userId);
+        }
+
+        public async Task<IEnumerable<FriendRequestDto>> GetUserFriendsAsync(string viewerId, string userName)
+        {
+            var target = await _accounts.GetByUserNameAsync((userName ?? string.Empty).Trim());
+            if (target is null)
+            {
+                throw new NotFoundException("User not found.");
+            }
+
+            if (target.Id != viewerId)
+            {
+                if (await _blocks.IsBlockedEitherWayAsync(viewerId, target.Id))
+                {
+                    throw new NotFoundException("User not found.");
+                }
+
+                var between = await _friendRequests.GetBetweenAsync(viewerId, target.Id);
+                var friends = between is not null && between.Status == FriendRequestStatus.Accepted;
+                if (!target.IsPublic && !friends)
+                {
+                    throw new BadRequestException("This profile is private.");
+                }
+            }
+
+            var rows = await _friendRequests.GetAcceptedAsync(target.Id);
+            var list = new List<FriendRequestDto>();
+            foreach (var item in rows)
+            {
+                var other = item.SenderId == target.Id ? item.Receiver : item.Sender;
+                if (await _blocks.IsBlockedEitherWayAsync(viewerId, other.Id))
+                {
+                    continue;
+                }
+
+                list.Add(MapFriend(item.Id, other));
+            }
+
+            return list;
         }
 
         public async Task<string> RemoveAsync(string userId, int requestId)

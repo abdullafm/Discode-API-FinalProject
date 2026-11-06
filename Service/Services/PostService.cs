@@ -15,22 +15,28 @@ namespace Service.Services
     {
         private readonly IPostRepository _posts;
         private readonly IPostLikeService _postLikes;
+        private readonly IPostRepostRepository _reposts;
         private readonly INotificationService _notifications;
         private readonly IAccountRepository _accounts;
+        private readonly IMentionService _mentions;
         private readonly IValidator<CreatePostDto> _validator;
         private readonly IMapper _mapper;
 
         public PostService(IPostRepository posts,
                            IPostLikeService postLikes,
+                           IPostRepostRepository reposts,
                            INotificationService notifications,
                            IAccountRepository accounts,
+                           IMentionService mentions,
                            IValidator<CreatePostDto> validator,
                            IMapper mapper)
         {
             _posts = posts;
             _postLikes = postLikes;
+            _reposts = reposts;
             _notifications = notifications;
             _accounts = accounts;
+            _mentions = mentions;
             _validator = validator;
             _mapper = mapper;
         }
@@ -53,6 +59,7 @@ namespace Service.Services
             };
 
             await _posts.AddAsync(post);
+            await _mentions.NotifyAsync(NotificationType.PostMention, userId, post.Text, postId: post.Id);
             post.Author = author;
             return _mapper.Map<PostDto>(post, ForViewer(userId));
         }
@@ -103,6 +110,66 @@ namespace Service.Services
             }
 
             return like;
+        }
+
+        public async Task<RepostDto> ToggleRepostAsync(string userId, int postId)
+        {
+            if (!await _posts.IsVisibleAsync(userId, postId))
+            {
+                throw new NotFoundException("Post not found.");
+            }
+
+            var existing = await _reposts.GetByUserAsync(postId, userId);
+            if (existing is null)
+            {
+                await _reposts.AddAsync(new PostRepost { PostId = postId, UserId = userId });
+            }
+            else
+            {
+                await _reposts.DeleteAsync(existing);
+            }
+
+            return new RepostDto
+            {
+                Reposted = existing is null,
+                Count = await _reposts.CountAsync(postId)
+            };
+        }
+
+        public async Task<IEnumerable<PostDto>> GetRepostsAsync(string viewerId, string userName)
+        {
+            var user = await _accounts.GetByUserNameAsync(userName.Trim());
+            if (user is null)
+            {
+                throw new NotFoundException("User not found.");
+            }
+
+            var posts = await _posts.GetRepostedByAsync(viewerId, user.Id);
+            return _mapper.Map<IEnumerable<PostDto>>(posts, ForViewer(viewerId));
+        }
+
+        public async Task<PostDto> UpdateAsync(string userId, int postId, UpdateTextDto model)
+        {
+            var post = await _posts.GetByIdAsync(postId);
+            if (post is null || post.AuthorId != userId)
+            {
+                throw new NotFoundException("Post not found.");
+            }
+
+            await _validator.EnsureValidAsync(new CreatePostDto { Text = model.Text, ImageUrl = post.ImageUrl });
+
+            var text = model.Text?.Trim() ?? string.Empty;
+            if (!string.Equals(text, post.Text, StringComparison.Ordinal))
+            {
+                post.Text = text;
+                post.EditedAt = DateTime.UtcNow;
+                await _posts.UpdateAsync(post);
+                await _mentions.NotifyAsync(NotificationType.PostMention, userId, text, postId: post.Id);
+            }
+
+            var author = await _accounts.GetByIdAsync(userId);
+            post.Author = author!;
+            return _mapper.Map<PostDto>(post, ForViewer(userId));
         }
 
         public async Task DeleteAsync(string userId, int postId)

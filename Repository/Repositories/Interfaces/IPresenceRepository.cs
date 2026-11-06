@@ -8,5 +8,6 @@ namespace Repository.Repositories.Interfaces
         Task<AppUser?> GetUserAsync(string userId);
         Task<bool> SetPreferredStatusAsync(string userId, PresenceStatus status);
         Task<IEnumerable<string>> GetFriendIdsAsync(string userId);
+        Task<IEnumerable<string>> GetSharedSpaceIdsAsync(string userId);
     }
 }

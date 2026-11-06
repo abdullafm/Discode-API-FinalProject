@@ -14,11 +14,13 @@ namespace Discode_API_FinalProject.Controllers.Client
     public class DirectMessageController : ControllerBase
     {
         private readonly IDirectMessageService _directMessages;
+        private readonly ICallService _callService;
         private readonly IHubContext<PresenceHub> _hubContext;
 
-        public DirectMessageController(IDirectMessageService directMessages, IHubContext<PresenceHub> hubContext)
+        public DirectMessageController(IDirectMessageService directMessages, ICallService callService, IHubContext<PresenceHub> hubContext)
         {
             _directMessages = directMessages;
+            _callService = callService;
             _hubContext = hubContext;
         }
 
@@ -39,7 +41,15 @@ namespace Discode_API_FinalProject.Controllers.Client
         [HttpGet("{userName}")]
         public async Task<IActionResult> GetChat(string userName)
         {
-            return Ok(await _directMessages.GetChatAsync(UserId, userName));
+            var chat = await _directMessages.GetChatAsync(UserId, userName);
+            chat.OngoingCallMessageId = await _callService.GetOngoingMessageIdAsync(UserId, chat.UserId);
+            return Ok(chat);
+        }
+
+        [HttpGet("{userName}/relation")]
+        public async Task<IActionResult> GetRelation(string userName)
+        {
+            return Ok(await _directMessages.GetRelationAsync(UserId, userName));
         }
 
         [HttpPost("{userName}")]
@@ -52,13 +62,49 @@ namespace Discode_API_FinalProject.Controllers.Client
                 message = sent.MessageForSender,
                 conversation = sent.ConversationForSender
             });
-            await _hubContext.Clients.User(sent.RecipientId).SendAsync("DirectMessage", new
+            if (!sent.MessageForSender.Undelivered)
             {
-                message = sent.MessageForRecipient,
-                conversation = sent.ConversationForRecipient
-            });
+                await _hubContext.Clients.User(sent.RecipientId).SendAsync("DirectMessage", new
+                {
+                    message = sent.MessageForRecipient,
+                    conversation = sent.ConversationForRecipient
+                });
+            }
 
             return Ok(sent.MessageForSender);
+        }
+
+        [HttpPost("{userName}/polls")]
+        public async Task<IActionResult> SendPoll(string userName, [FromBody] CreatePollDto model)
+        {
+            var sent = await _directMessages.SendPollAsync(UserId, userName, model);
+
+            await _hubContext.Clients.User(sent.SenderId).SendAsync("DirectMessage", new
+            {
+                message = sent.MessageForSender,
+                conversation = sent.ConversationForSender
+            });
+            if (!sent.MessageForSender.Undelivered)
+            {
+                await _hubContext.Clients.User(sent.RecipientId).SendAsync("DirectMessage", new
+                {
+                    message = sent.MessageForRecipient,
+                    conversation = sent.ConversationForRecipient
+                });
+            }
+
+            return Ok(sent.MessageForSender);
+        }
+
+        [HttpPut("messages/{id:int}/poll-votes")]
+        public async Task<IActionResult> VotePoll(int id, [FromBody] VotePollDto model)
+        {
+            var updated = await _directMessages.VotePollAsync(UserId, id, model);
+
+            await _hubContext.Clients.User(updated.UserId).SendAsync("DirectMessagePoll", new { messageId = id, poll = updated.ForUser });
+            await _hubContext.Clients.User(updated.RecipientId).SendAsync("DirectMessagePoll", new { messageId = id, poll = updated.ForRecipient });
+
+            return Ok(updated.ForUser);
         }
 
         [HttpPut("messages/{id:int}")]
@@ -70,6 +116,32 @@ namespace Discode_API_FinalProject.Controllers.Client
             await _hubContext.Clients.User(edited.RecipientId).SendAsync("DirectMessageEdited", new { message = edited.MessageForRecipient });
 
             return Ok(edited.MessageForSender);
+        }
+
+        [HttpPost("messages/{id:int}/forward")]
+        public async Task<IActionResult> Forward(int id, [FromBody] ForwardMessageDto model)
+        {
+            var sent = await _directMessages.ForwardAsync(UserId, id, model);
+
+            foreach (var item in sent)
+            {
+                await _hubContext.Clients.User(item.SenderId).SendAsync("DirectMessage", new { message = item.MessageForSender, conversation = item.ConversationForSender });
+                await _hubContext.Clients.User(item.RecipientId).SendAsync("DirectMessage", new { message = item.MessageForRecipient, conversation = item.ConversationForRecipient });
+            }
+
+            return Ok(new { forwarded = model.UserNames.Count });
+        }
+
+        [HttpDelete("messages/{id:int}")]
+        public async Task<IActionResult> DeleteMessage(int id)
+        {
+            var deleted = await _directMessages.DeleteAsync(UserId, id);
+
+            var payload = new { messageId = deleted.MessageId, conversationId = deleted.ConversationId, preview = deleted.Preview };
+            await _hubContext.Clients.User(deleted.SenderId).SendAsync("DirectMessageDeleted", payload);
+            await _hubContext.Clients.User(deleted.RecipientId).SendAsync("DirectMessageDeleted", payload);
+
+            return NoContent();
         }
 
         [HttpPut("messages/{id:int}/reactions")]

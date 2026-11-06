@@ -8,5 +8,7 @@ namespace Service.Services.Interfaces
         Task<PresenceChangeDto> GetChangeAsync(string userId, bool shouldBroadcast);
         Task<PresenceChangeDto> SetStatusAsync(string userId, string status);
         Task<string> ResolveAsync(AppUser user);
+        Task<IEnumerable<string>> GetFriendIdsAsync(string userId);
+        Task<IEnumerable<string>> GetSharedSpaceIdsAsync(string userId);
     }
 }

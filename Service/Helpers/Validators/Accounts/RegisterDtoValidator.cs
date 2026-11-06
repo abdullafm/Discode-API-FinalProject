@@ -28,7 +28,24 @@ namespace Service.Helpers.Validators.Accounts
                 .NotEmpty().WithMessage("Enter your date of birth.")
                 .Must(BeOldEnough).WithMessage($"You must be {MinAge} or older to create an account.");
 
+            RuleFor(x => x.Bio)
+                .MaximumLength(190).WithMessage("Bio can be at most 190 characters.");
+
+            RuleFor(x => x.AvatarUrl)
+                .Must(BeUploadedPhoto).WithMessage("The profile photo is not valid.")
+                .When(x => !string.IsNullOrWhiteSpace(x.AvatarUrl));
+
             RuleFor(x => x.Password).MustBeStrongPassword();
+        }
+
+        private static bool BeUploadedPhoto(string url)
+        {
+            const string folder = "/uploads/avatars/";
+            return url.Length <= 200 &&
+                   url.StartsWith(folder, StringComparison.Ordinal) &&
+                   !url.Contains("..") &&
+                   !url.Contains('\\') &&
+                   url.IndexOf('/', folder.Length) == -1;
         }
 
         private static bool BeOldEnough(DateTime birthDay)

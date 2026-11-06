@@ -26,7 +26,13 @@ namespace Domain.Configurations
                 .HasForeignKey(x => x.AuthorId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.HasOne(x => x.ParentComment)
+                .WithMany(c => c.Replies)
+                .HasForeignKey(x => x.ParentCommentId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.HasIndex(x => x.PostId);
+            builder.HasIndex(x => x.ParentCommentId);
         }
     }
 }

@@ -13,12 +13,32 @@ namespace Discode_API_FinalProject.Hubs
         private readonly IPresenceService _presenceService;
         private readonly IPresenceTrackerService _trackerService;
         private readonly ILiveStreamService _liveStreamService;
+        private readonly ICallService _callService;
+        private readonly IGroupCallService _groupCallService;
+        private readonly IServerVoiceService _voiceService;
+        private readonly IServiceScopeFactory _scopes;
+        private readonly IHubContext<PresenceHub> _hubContext;
+        private readonly ILogger<PresenceHub> _logger;
 
-        public PresenceHub(IPresenceService presenceService, IPresenceTrackerService trackerService, ILiveStreamService liveStreamService)
+        public PresenceHub(IPresenceService presenceService,
+                           IPresenceTrackerService trackerService,
+                           ILiveStreamService liveStreamService,
+                           ICallService callService,
+                           IGroupCallService groupCallService,
+                           IServerVoiceService voiceService,
+                           IServiceScopeFactory scopes,
+                           IHubContext<PresenceHub> hubContext,
+                           ILogger<PresenceHub> logger)
         {
             _presenceService = presenceService;
             _trackerService = trackerService;
             _liveStreamService = liveStreamService;
+            _callService = callService;
+            _groupCallService = groupCallService;
+            _voiceService = voiceService;
+            _scopes = scopes;
+            _hubContext = hubContext;
+            _logger = logger;
         }
 
         private string UserId
@@ -29,8 +49,21 @@ namespace Discode_API_FinalProject.Hubs
             }
         }
 
+        public const string AdminGroup = "admins";
+
         public override async Task OnConnectedAsync()
         {
+            if (await IsBlockedAccountAsync())
+            {
+                Context.Abort();
+                return;
+            }
+
+            if (Context.User?.IsInRole(Domain.Constants.Roles.Admin) == true || Context.User?.IsInRole(Domain.Constants.Roles.SuperAdmin) == true)
+            {
+                await Groups.AddToGroupAsync(Context.ConnectionId, AdminGroup);
+            }
+
             var change = await _trackerService.ConnectAsync(UserId, Context.ConnectionId);
             await Clients.Caller.SendAsync("StatusChanged", change.PreferredStatus);
 
@@ -39,6 +72,8 @@ namespace Discode_API_FinalProject.Hubs
                 await NotifyFriendsAsync(change);
             }
 
+            await DeliverWarningsAsync();
+            await DeliverTimeoutAsync();
             await base.OnConnectedAsync();
         }
 
@@ -48,8 +83,10 @@ namespace Discode_API_FinalProject.Hubs
             if (change is not null)
             {
                 await NotifyFriendsAsync(change);
+                _ = EndCallsAfterGraceAsync(UserId, _scopes, _hubContext);
             }
 
+            ForgetDiscoverWatcher();
             await ReleaseLiveAsync();
 
             await base.OnDisconnectedAsync(exception);
@@ -90,13 +127,15 @@ namespace Discode_API_FinalProject.Hubs
             }
         }
 
-        private Task NotifyFriendsAsync(PresenceChangeDto change)
+        private async Task NotifyFriendsAsync(PresenceChangeDto change)
         {
-            return Clients.Users(change.FriendIds).SendAsync("PresenceChanged", new
+            await Clients.Users(change.FriendIds).SendAsync("PresenceChanged", new
             {
                 userId = change.UserId,
                 status = change.Status
             });
+
+            _ = PublishDiscoverForUserAsync(change.UserId);
         }
     }
 }
