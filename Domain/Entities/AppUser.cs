@@ -14,6 +14,8 @@ namespace Domain.Entities
         public string BannerUrl { get; set; } = string.Empty;
         public string Pronouns { get; set; } = string.Empty;
         public string CustomStatus { get; set; } = string.Empty;
+        // when the status line clears itself (null: it stays until the person changes it)
+        public DateTime? CustomStatusClearAt { get; set; }
         public bool IsPublic { get; set; } = true;
         public string Language { get; set; } = "en";
         // "light" or "dark"

@@ -57,6 +57,7 @@ builder.Services.AddSignalR(options =>
 });
 builder.Services.AddHostedService<VoiceGhostSweeper>();
 builder.Services.AddHostedService<NitroExpiryWorker>();
+builder.Services.AddHostedService<StatusClearWorker>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {

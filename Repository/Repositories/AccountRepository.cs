@@ -27,6 +27,23 @@ namespace Repository.Repositories
             return _userManager.AddToRoleAsync(user, role);
         }
 
+        public async Task<List<string>> ClearExpiredStatusesAsync(DateTime now)
+        {
+            var users = await _dbContext.Users.Where(x => x.CustomStatusClearAt != null && x.CustomStatusClearAt <= now).ToListAsync();
+            foreach (var user in users)
+            {
+                user.CustomStatus = string.Empty;
+                user.CustomStatusClearAt = null;
+            }
+
+            if (users.Count > 0)
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+
+            return users.Select(x => x.Id).ToList();
+        }
+
         public Task<AppUser?> GetByIdAsync(string id)
         {
             return _userManager.FindByIdAsync(id);

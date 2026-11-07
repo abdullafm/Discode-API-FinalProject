@@ -15,6 +15,7 @@ namespace Service.Helpers.DTOs.Accounts
         public bool IsBooster { get; set; }
         public string Pronouns { get; set; } = string.Empty;
         public string CustomStatus { get; set; } = string.Empty;
+        public DateTime? CustomStatusClearAt { get; set; }
         public bool IsPublic { get; set; } = true;
         public string Theme { get; set; } = "light";
         public bool NotifyAll { get; set; } = true;

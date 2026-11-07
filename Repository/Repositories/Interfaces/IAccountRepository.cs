@@ -16,6 +16,8 @@ namespace Repository.Repositories.Interfaces
         Task RegisterFailedAttemptAsync(AppUser user);
         Task ResetFailedAttemptsAsync(AppUser user);
         Task<IdentityResult> UpdateAsync(AppUser user);
+        // empties the status line of everybody whose clear time has come and says who they are
+        Task<List<string>> ClearExpiredStatusesAsync(DateTime now);
         Task<IdentityResult> ChangePasswordAsync(AppUser user, string currentPassword, string newPassword);
         Task<string> GeneratePasswordResetTokenAsync(AppUser user);
         Task<IdentityResult> ResetPasswordAsync(AppUser user, string token, string newPassword);

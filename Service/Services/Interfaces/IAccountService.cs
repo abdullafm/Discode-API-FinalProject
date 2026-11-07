@@ -6,6 +6,7 @@ namespace Service.Services.Interfaces
     public interface IAccountService
     {
         Task<RegisterResponse> RegisterAsync(RegisterDto model);
+        Task<List<string>> ClearExpiredStatusesAsync();
         Task<RegisterResponse> VerifyEmailAsync(VerifyEmailDto model);
         Task<RegisterResponse> ResendCodeAsync(ResendCodeDto model);
         Task<RegisterResponse> ForgotPasswordAsync(ForgotPasswordDto model);

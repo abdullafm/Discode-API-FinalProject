@@ -352,6 +352,7 @@ namespace Service.Services
             }
 
             var profile = _mapper.Map<ProfileDto>(user);
+            profile.CustomStatusClearAt = user.CustomStatusClearAt is null ? null : DateTime.SpecifyKind(user.CustomStatusClearAt.Value, DateTimeKind.Utc);
             profile.HasNitro = await _nitro.HasNitroAsync(userId);
             profile.IsBooster = await _boosts.IsBoosterAsync(userId);
             return profile;
@@ -380,6 +381,11 @@ namespace Service.Services
             user.NotifyFriends = model.NotifyFriends ?? user.NotifyFriends;
             user.NotifySound = model.NotifySound ?? user.NotifySound;
             await _accountRepository.UpdateAsync(user);
+        }
+
+        public Task<List<string>> ClearExpiredStatusesAsync()
+        {
+            return _accountRepository.ClearExpiredStatusesAsync(DateTime.UtcNow);
         }
 
         public async Task<UpdateProfileResponse> UpdateProfileAsync(string userId, UpdateProfileDto model)
@@ -411,6 +417,20 @@ namespace Service.Services
             user.AvatarUrl = avatar;
             user.BannerUrl = banner;
             user.CustomStatus = (model.CustomStatus ?? string.Empty).Trim();
+            if (user.CustomStatus.Length == 0)
+            {
+                user.CustomStatusClearAt = null;
+            }
+            else if (model.StatusClearMinutes is int minutes)
+            {
+                if (minutes < 0 || minutes > 7 * 24 * 60)
+                {
+                    return FailProfile(new[] { "Choose a time up to a week." });
+                }
+
+                user.CustomStatusClearAt = minutes == 0 ? null : DateTime.UtcNow.AddMinutes(minutes);
+            }
+
             user.Pronouns = (model.Pronouns ?? string.Empty).Trim();
             user.Bio = (model.Bio ?? string.Empty).Trim();
             user.IsPublic = model.IsPublic;
@@ -427,6 +447,7 @@ namespace Service.Services
             }
 
             var updated = _mapper.Map<ProfileDto>(user);
+            updated.CustomStatusClearAt = user.CustomStatusClearAt is null ? null : DateTime.SpecifyKind(user.CustomStatusClearAt.Value, DateTimeKind.Utc);
             updated.HasNitro = await _nitro.HasNitroAsync(userId);
             updated.IsBooster = await _boosts.IsBoosterAsync(userId);
             return new UpdateProfileResponse
