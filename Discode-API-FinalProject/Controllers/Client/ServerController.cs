@@ -120,6 +120,11 @@ namespace Discode_API_FinalProject.Controllers.Client
             var memberIds = await _timeoutService.GetMemberIdsAsync(id);
             await _hubContext.Clients.Users(memberIds).SendAsync("ServerRolesChanged", new { serverId = id });
             await _hubContext.Clients.Users(memberIds).SendAsync("ServerAuditChanged", new { serverId = id });
+            await _hubContext.Clients.Users(memberIds).SendAsync("ServerVoiceChanged", new { serverId = id });
+            if ((long)model.Minutes * 60 + model.Seconds > 0)
+            {
+                await _hubContext.Clients.User(userId).SendAsync("ServerVoiceModerated", new { serverId = id, kind = "disconnected" });
+            }
             return Ok();
         }
 

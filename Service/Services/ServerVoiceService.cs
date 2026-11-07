@@ -130,6 +130,12 @@ namespace Service.Services
                 throw new BadRequestException("That is not a voice channel.");
             }
 
+            var membership = await _members.GetAsync(serverId, userId);
+            if (membership?.TimeoutUntil is not null && membership.TimeoutUntil > DateTime.UtcNow)
+            {
+                throw new ForbiddenException("You are timed out and can't join voice channels right now.");
+            }
+
             var perms = await _permissions.GetInChannelAsync(userId, serverId, channel);
             if ((perms & ServerPermission.ViewChannels) != ServerPermission.ViewChannels
                 || (perms & ServerPermission.Connect) != ServerPermission.Connect)

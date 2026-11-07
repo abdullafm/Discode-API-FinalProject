@@ -209,11 +209,17 @@ namespace Service.Services
                 .GroupBy(link => link.ServerMember.UserId)
                 .ToDictionary(group => group.Key, group => group.Select(link => link.Role).OrderByDescending(role => role.Position).ToList());
             var viewerTop = await _permissions.GetTopPositionAsync(viewerId, server.Id);
+            var viewerMayTimeout = (await _permissions.GetAsync(viewerId, server.Id) & ServerPermission.ModerateMembers) == ServerPermission.ModerateMembers;
+            var viewerIsOwner = viewerId == server.OwnerId;
             foreach (var member in server.Members)
             {
+                // staff can only be timed out by the owner; everybody else by someone whose top role is higher
+                var canTimeout = viewerMayTimeout && member.UserId != viewerId && member.UserId != server.OwnerId
+                    && (viewerIsOwner || await IsLowerNonStaffAsync(server.Id, member.UserId, viewerTop, roleLinks));
                 var memberTop = member.UserId == server.OwnerId ? int.MaxValue : roleLinks.TryGetValue(member.UserId, out var tops) && tops.Count > 0 ? tops.Max(r => r.Position) : 0;
                 members.Add(new ServerMemberDto
                 {
+                    CanTimeout = canTimeout,
                     CanModerate = member.UserId != viewerId && member.UserId != server.OwnerId && viewerTop > memberTop,
                     TimeoutUntil = member.TimeoutUntil is not null && member.TimeoutUntil > DateTime.UtcNow ? DateTime.SpecifyKind(member.TimeoutUntil.Value, DateTimeKind.Utc) : null,
                     Id = member.UserId,
@@ -234,6 +240,12 @@ namespace Service.Services
             }
 
             return members;
+        }
+
+        private async Task<bool> IsLowerNonStaffAsync(int serverId, string memberId, int viewerTop, Dictionary<string, List<ServerRole>> roleLinks)
+        {
+            var top = roleLinks.TryGetValue(memberId, out var tops) && tops.Count > 0 ? tops.Max(r => r.Position) : 0;
+            return viewerTop > top && !await _permissions.IsStaffAsync(memberId, serverId);
         }
 
         public async Task<ServerChangeDto> UpdateProfileAsync(string userId, int serverId, UpdateServerProfileDto model)

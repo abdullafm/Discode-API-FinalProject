@@ -20,6 +20,7 @@ namespace Service.Helpers.DTOs.Servers
         public List<ServerRoleRefDto> Roles { get; set; } = new();
         public bool IsSelf { get; set; }
         public bool CanModerate { get; set; }
+        public bool CanTimeout { get; set; }
         public DateTime? TimeoutUntil { get; set; }
     }
 }
