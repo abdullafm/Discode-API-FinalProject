@@ -10,6 +10,8 @@ namespace Domain.Entities
         public DateTime BirthDay { get; set; }
         public string AvatarUrl { get; set; } = string.Empty;
         public string Bio { get; set; } = string.Empty;
+        // a profile banner: a Nitro perk
+        public string BannerUrl { get; set; } = string.Empty;
         public string Pronouns { get; set; } = string.Empty;
         public string CustomStatus { get; set; } = string.Empty;
         public bool IsPublic { get; set; } = true;

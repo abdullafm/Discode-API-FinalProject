@@ -25,6 +25,9 @@ namespace Repository.Data
         public DbSet<ServerOverwrite> ServerOverwrites { get; set; }
         public DbSet<ServerVoiceState> ServerVoiceStates { get; set; }
         public DbSet<ConversationPin> ConversationPins { get; set; }
+        public DbSet<NitroSubscription> NitroSubscriptions { get; set; }
+        public DbSet<NitroEvent> NitroEvents { get; set; }
+        public DbSet<ServerBoost> ServerBoosts { get; set; }
         public DbSet<ServerVoiceRestriction> ServerVoiceRestrictions { get; set; }
         public DbSet<ServerMessage> ServerMessages { get; set; }
         public DbSet<ServerMessageAttachment> ServerMessageAttachments { get; set; }

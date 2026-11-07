@@ -36,6 +36,9 @@ namespace Repository
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<IStoryRepository, StoryRepository>();
             services.AddScoped<IConversationPinRepository, ConversationPinRepository>();
+            services.AddScoped<INitroSubscriptionRepository, NitroSubscriptionRepository>();
+            services.AddScoped<INitroEventRepository, NitroEventRepository>();
+            services.AddScoped<IServerBoostRepository, ServerBoostRepository>();
             services.AddScoped<IStoryLikeRepository, StoryLikeRepository>();
             services.AddScoped<IStoryViewRepository, StoryViewRepository>();
             services.AddScoped<ILiveStreamRepository, LiveStreamRepository>();

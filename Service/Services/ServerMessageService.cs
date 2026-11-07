@@ -21,6 +21,7 @@ namespace Service.Services
         private static readonly Regex PersonalMention = new(@"(?<![\w@])@([A-Za-z0-9._+-]{2,64})", RegexOptions.Compiled);
         private static readonly Regex HereMention = new(@"(?<![\w@])@here\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+        private readonly INitroAccessService _nitro;
         private readonly IServerMessageRepository _messages;
         private readonly IServerChannelRepository _channels;
         private readonly IServerMemberRepository _members;
@@ -33,7 +34,8 @@ namespace Service.Services
         private readonly IPresenceService _presence;
         private readonly IMapper _mapper;
 
-        public ServerMessageService(IServerMessageRepository messages,
+        public ServerMessageService(INitroAccessService nitro,
+                                    IServerMessageRepository messages,
                                     IServerChannelRepository channels,
                                     IServerMemberRepository members,
                                     IServerOverwriteRepository overwrites,
@@ -45,6 +47,7 @@ namespace Service.Services
                                     IPresenceService presence,
                                     IMapper mapper)
         {
+            _nitro = nitro;
             _pollValidator = pollValidator;
             _polls = polls;
             _messages = messages;
@@ -68,6 +71,7 @@ namespace Service.Services
         public async Task<ServerMessageChangeDto> SendAsync(string userId, int serverId, int channelId, SendServerMessageDto model)
         {
             await _sendValidator.EnsureValidAsync(model);
+            await _nitro.EnsureCanSendAsync(userId, model.Text, model.Attachments.Select(a => a.Size));
             var (channel, perms) = await RequireViewAsync(userId, serverId, channelId);
             await EnsureNotTimedOutAsync(userId, serverId);
             EnsureCanPost(channel, perms);
@@ -200,10 +204,7 @@ namespace Service.Services
                 throw new BadRequestException("Write a message.");
             }
 
-            if (text.Length > 2000)
-            {
-                throw new BadRequestException("The message can be at most 2000 characters.");
-            }
+            await _nitro.EnsureCanSendAsync(userId, text, Array.Empty<long>());
 
             if (text != message.Text)
             {

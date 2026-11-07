@@ -60,6 +60,12 @@ namespace Domain.Configurations
                 .HasForeignKey(x => x.OwnerId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            builder.Property(x => x.CustomLink)
+                .HasMaxLength(32);
+
+            builder.HasIndex(x => x.CustomLink)
+                .IsUnique();
+
             builder.HasIndex(x => x.InviteCode)
                 .IsUnique();
         }

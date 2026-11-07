@@ -15,7 +15,7 @@ namespace Service.Helpers.Validators.DirectMessages
                 .Must(names => names.All(name => !string.IsNullOrWhiteSpace(name))).WithMessage("Choose at least one person.");
 
             RuleFor(x => x.Note)
-                .MaximumLength(2000).WithMessage("The message can be at most 2000 characters.");
+                .MaximumLength(Domain.Common.NitroRules.NitroMessageLength).WithMessage("The message is too long.");
         }
     }
 }

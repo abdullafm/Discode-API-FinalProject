@@ -56,6 +56,7 @@ builder.Services.AddSignalR(options =>
     options.AddFilter<Discode_API_FinalProject.Hubs.HubExceptionFilter>();
 });
 builder.Services.AddHostedService<VoiceGhostSweeper>();
+builder.Services.AddHostedService<NitroExpiryWorker>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -140,6 +141,14 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("App"));
+// the Stripe keys live in "Stripe"; "Logging:Stripe" is read too because that is where an early copy of the key was put
+builder.Services.Configure<StripeSettings>(options =>
+{
+    var section = builder.Configuration.GetSection("Stripe");
+    var early = builder.Configuration.GetSection("Logging:Stripe");
+    options.SecretKey = section["SecretKey"] ?? early["SecretKey"] ?? string.Empty;
+    options.WebhookSecret = section["WebhookSecret"] ?? early["WebhookSecret"] ?? string.Empty;
+});
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 builder.Services.Configure<JwtSettings>(jwtSection);

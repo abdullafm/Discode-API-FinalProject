@@ -22,6 +22,11 @@ namespace Domain.Configurations
             builder.Property(u => u.AvatarUrl)
                 .HasMaxLength(500);
 
+            builder.Property(u => u.BannerUrl)
+                .IsRequired()
+                .HasMaxLength(500)
+                .HasDefaultValue(string.Empty);
+
             builder.Property(u => u.Bio)
                 .HasMaxLength(190);
 

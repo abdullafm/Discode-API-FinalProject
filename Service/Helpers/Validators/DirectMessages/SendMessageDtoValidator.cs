@@ -6,7 +6,6 @@ namespace Service.Helpers.Validators.DirectMessages
     public class SendMessageDtoValidator : AbstractValidator<SendMessageDto>
     {
         private const string AttachmentFolder = "/uploads/dm/";
-        private const long MaxAttachmentSize = 25L * 1024 * 1024;
 
         public SendMessageDtoValidator()
         {
@@ -15,7 +14,7 @@ namespace Service.Helpers.Validators.DirectMessages
                 .WithMessage("Write a message.");
 
             RuleFor(x => x.Text)
-                .MaximumLength(2000).WithMessage("The message can be at most 2000 characters.");
+                .MaximumLength(Domain.Common.NitroRules.NitroMessageLength).WithMessage("The message is too long.");
 
             RuleFor(x => x.Attachments)
                 .Must(list => list.Count <= 10).WithMessage("You can send at most 10 files at once.");
@@ -34,7 +33,7 @@ namespace Service.Helpers.Validators.DirectMessages
                     .MaximumLength(100).WithMessage("The file type is too long.");
 
                 file.RuleFor(a => a.Size)
-                    .InclusiveBetween(1, MaxAttachmentSize).WithMessage("A file can be at most 25 MB.");
+                    .InclusiveBetween(1, Domain.Common.NitroRules.NitroFileBytes).WithMessage("A file can be at most 2 GB.");
             });
         }
 

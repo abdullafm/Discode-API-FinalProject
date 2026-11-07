@@ -18,6 +18,7 @@ namespace Service.Services
 
         private const int HistoryLimit = 100;
 
+        private readonly INitroAccessService _nitro;
         private readonly IDirectMessageService _directMessages;
         private readonly IGroupRepository _groups;
         private readonly IGroupMessageRepository _messages;
@@ -33,7 +34,8 @@ namespace Service.Services
         private readonly IValidator<AddGroupMembersDto> _addValidator;
         private readonly IMapper _mapper;
 
-        public GroupService(IDirectMessageService directMessages,
+        public GroupService(INitroAccessService nitro,
+                            IDirectMessageService directMessages,
                             IGroupRepository groups,
                             IGroupMessageRepository messages,
                             IPollRepository polls,
@@ -48,6 +50,7 @@ namespace Service.Services
                             IValidator<AddGroupMembersDto> addValidator,
                             IMapper mapper)
         {
+            _nitro = nitro;
             _directMessages = directMessages;
             _groups = groups;
             _messages = messages;
@@ -183,6 +186,7 @@ namespace Service.Services
         public async Task<GroupChangeDto> SendMessageAsync(string userId, int groupId, SendGroupMessageDto model)
         {
             await _messageValidator.EnsureValidAsync(model);
+            await _nitro.EnsureCanSendAsync(userId, model.Text, model.Attachments.Select(a => a.Size));
             var group = await EnsureMemberAsync(userId, groupId);
 
             if (model.ReplyToMessageId.HasValue)

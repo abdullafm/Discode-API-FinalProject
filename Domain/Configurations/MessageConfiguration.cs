@@ -17,7 +17,7 @@ namespace Domain.Configurations
 
             builder.Property(x => x.Text)
                 .IsRequired()
-                .HasMaxLength(2000);
+                .HasMaxLength(Domain.Common.NitroRules.NitroMessageLength);
 
             builder.Property(x => x.StoryImageUrl)
                 .HasMaxLength(200);

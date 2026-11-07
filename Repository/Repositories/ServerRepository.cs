@@ -26,7 +26,7 @@ namespace Repository.Repositories
                 .AsNoTracking()
                 .Include(x => x.Owner)
                 .Include(x => x.Members).ThenInclude(m => m.User)
-                .FirstOrDefaultAsync(x => x.InviteCode == inviteCode && !x.IsBanned);
+                .FirstOrDefaultAsync(x => (x.InviteCode == inviteCode || x.CustomLink == inviteCode) && !x.IsBanned);
         }
 
         public async Task<IEnumerable<Server>> GetForUserAsync(string userId)
@@ -48,7 +48,14 @@ namespace Repository.Repositories
 
         public async Task<bool> InviteCodeExistsAsync(string inviteCode)
         {
-            return await _dbSet.AnyAsync(x => x.InviteCode == inviteCode);
+            return await _dbSet.AnyAsync(x => x.InviteCode == inviteCode || x.CustomLink == inviteCode);
+        }
+
+        public async Task<bool> LinkTakenAsync(string link, int exceptServerId)
+        {
+            // links do not care about upper and lower case, whatever the database collation is
+            var lower = link.ToLower();
+            return await _dbSet.AnyAsync(x => x.Id != exceptServerId && (x.InviteCode.ToLower() == lower || (x.CustomLink != null && x.CustomLink.ToLower() == lower)));
         }
     }
 }

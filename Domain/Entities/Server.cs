@@ -10,6 +10,8 @@ namespace Domain.Entities
         public string InviteCode { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public string BannerUrl { get; set; } = string.Empty;
+        // the short link people can type instead of the invite code: a perk of a server with 14 boosts
+        public string? CustomLink { get; set; }
         public string BannerColor { get; set; } = "ink";
         public bool IsPrivate { get; set; }
         public bool IsBanned { get; set; }

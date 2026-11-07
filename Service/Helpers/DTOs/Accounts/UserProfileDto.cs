@@ -8,6 +8,9 @@ namespace Service.Helpers.DTOs.Accounts
         public string DisplayName { get; set; } = string.Empty;
         public string AvatarUrl { get; set; } = string.Empty;
         public string Bio { get; set; } = string.Empty;
+        public string BannerUrl { get; set; } = string.Empty;
+        public bool HasNitro { get; set; }
+        public bool IsBooster { get; set; }
         public string Pronouns { get; set; } = string.Empty;
         public string CustomStatus { get; set; } = string.Empty;
         public string Status { get; set; } = "offline";

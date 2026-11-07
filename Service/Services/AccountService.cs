@@ -1,3 +1,4 @@
+using Domain.Common;
 using AutoMapper;
 using Domain.Constants;
 using Domain.Entities;
@@ -17,6 +18,8 @@ namespace Service.Services
 {
     public class AccountService : IAccountService
     {
+        private readonly IBoostService _boosts;
+        private readonly INitroAccessService _nitro;
         private readonly IAccountRepository _accountRepository;
         private readonly IValidator<RegisterDto> _registerValidator;
         private readonly IValidator<VerifyEmailDto> _verifyValidator;
@@ -33,7 +36,9 @@ namespace Service.Services
 
         private const string InvalidCredentials = "Invalid email or password.";
 
-        public AccountService(IAccountRepository accountRepository,
+        public AccountService(IBoostService boosts,
+                              INitroAccessService nitro,
+                              IAccountRepository accountRepository,
                               IValidator<RegisterDto> registerValidator,
                               IValidator<VerifyEmailDto> verifyValidator,
                               IValidator<LoginDto> loginValidator,
@@ -47,6 +52,8 @@ namespace Service.Services
                               IMapper mapper,
                               IOptions<AppSettings> appSettings)
         {
+            _boosts = boosts;
+            _nitro = nitro;
             _accountRepository = accountRepository;
             _registerValidator = registerValidator;
             _verifyValidator = verifyValidator;
@@ -344,7 +351,10 @@ namespace Service.Services
                 throw new NotFoundException("User not found.");
             }
 
-            return _mapper.Map<ProfileDto>(user);
+            var profile = _mapper.Map<ProfileDto>(user);
+            profile.HasNitro = await _nitro.HasNitroAsync(userId);
+            profile.IsBooster = await _boosts.IsBoosterAsync(userId);
+            return profile;
         }
 
         public async Task UpdateSettingsAsync(string userId, UpdateSettingsDto model)
@@ -382,8 +392,24 @@ namespace Service.Services
 
             var displayName = string.IsNullOrWhiteSpace(model.DisplayName) ? user.DisplayName : model.DisplayName.Trim();
 
+            // an animated avatar and a banner are Nitro perks
+            var avatar = (model.AvatarUrl ?? string.Empty).Trim();
+            var banner = model.BannerUrl is null ? user.BannerUrl : model.BannerUrl.Trim();
+            if (banner.Length > 500 || avatar.Length > 500)
+            {
+                return FailProfile(new[] { "The image address is too long." });
+            }
+
+            var newAnimated = NitroRules.IsAnimatedImage(avatar) && avatar != user.AvatarUrl;
+            var newBanner = banner.Length > 0 && banner != user.BannerUrl;
+            if ((newAnimated || newBanner) && !await _nitro.HasNitroAsync(userId))
+            {
+                return FailProfile(new[] { newAnimated ? "An animated avatar needs Nitro." : "A profile banner needs Nitro." });
+            }
+
             user.DisplayName = displayName;
-            user.AvatarUrl = (model.AvatarUrl ?? string.Empty).Trim();
+            user.AvatarUrl = avatar;
+            user.BannerUrl = banner;
             user.CustomStatus = (model.CustomStatus ?? string.Empty).Trim();
             user.Pronouns = (model.Pronouns ?? string.Empty).Trim();
             user.Bio = (model.Bio ?? string.Empty).Trim();
@@ -400,10 +426,13 @@ namespace Service.Services
                 };
             }
 
+            var updated = _mapper.Map<ProfileDto>(user);
+            updated.HasNitro = await _nitro.HasNitroAsync(userId);
+            updated.IsBooster = await _boosts.IsBoosterAsync(userId);
             return new UpdateProfileResponse
             {
                 IsSuccess = true,
-                Profile = _mapper.Map<ProfileDto>(user)
+                Profile = updated
             };
         }
 
@@ -502,6 +531,8 @@ namespace Service.Services
 
             var (user, request) = result.Value;
             var profile = _mapper.Map<UserProfileDto>(user);
+            profile.HasNitro = await _nitro.HasNitroAsync(user.Id);
+            profile.IsBooster = await _boosts.IsBoosterAsync(user.Id);
             profile.Relation = GetRelation(viewerId, user.Id, request);
             profile.RequestId = profile.Relation == "pending-received" ? request!.Id : null;
             profile.IsPrivate = !user.IsPublic && profile.Relation != "self" && profile.Relation != "friend";

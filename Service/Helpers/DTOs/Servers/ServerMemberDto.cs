@@ -21,6 +21,8 @@ namespace Service.Helpers.DTOs.Servers
         public bool IsSelf { get; set; }
         public bool CanModerate { get; set; }
         public bool CanTimeout { get; set; }
+        public bool HasNitro { get; set; }
+        public bool IsBooster { get; set; }
         public DateTime? TimeoutUntil { get; set; }
     }
 }
