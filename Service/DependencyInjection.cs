@@ -19,6 +19,8 @@ namespace Service
             services.AddScoped<IStoryService, StoryService>();
             services.AddScoped<IConversationPinService, ConversationPinService>();
             services.AddScoped<INitroAccessService, NitroAccessService>();
+            services.AddScoped<IChatReadMarkerService, ChatReadMarkerService>();
+            services.AddScoped<ITypingService, TypingService>();
             services.AddScoped<IBoostService, BoostService>();
             services.AddScoped<INitroService, NitroService>();
             services.AddScoped<IStripeGateway, StripeGateway>();
