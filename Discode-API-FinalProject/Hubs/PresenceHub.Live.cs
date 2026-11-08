@@ -106,6 +106,46 @@ namespace Discode_API_FinalProject.Hubs
             }
         }
 
+        // the host asks someone who is watching to come on stream as a guest
+        public async Task InviteLiveGuest(int streamId, string userName)
+        {
+            try
+            {
+                var invite = await _liveStreamService.InviteGuestAsync(Context.ConnectionId, streamId, userName);
+                await Clients.Client(invite.TargetConnectionId).SendAsync("GuestInvited", invite);
+            }
+            catch (BadRequestException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+            catch (NotFoundException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+        }
+
+        public async Task AnswerLiveGuestInvite(int streamId, bool accept)
+        {
+            try
+            {
+                var answer = await _liveStreamService.AnswerGuestInviteAsync(Context.ConnectionId, streamId, accept);
+                await Clients.Client(answer.HostConnectionId).SendAsync("GuestInviteAnswered", streamId, answer.Guest is not null, answer.DisplayName);
+                if (answer.Guest is not null)
+                {
+                    await Clients.Caller.SendAsync("GuestResponse", streamId, true);
+                    await Clients.Group(LiveGroup(streamId)).SendAsync("GuestStarted", answer.Guest);
+                }
+            }
+            catch (BadRequestException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+            catch (NotFoundException ex)
+            {
+                throw new HubException(ex.Message);
+            }
+        }
+
         public async Task RespondLiveGuest(int streamId, string targetConnectionId, bool accept)
         {
             try

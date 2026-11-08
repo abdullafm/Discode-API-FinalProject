@@ -303,6 +303,73 @@ namespace Service.Services
             return new LiveGuestRequestDto { HostConnectionId = hostConnection, Guest = guest };
         }
 
+        // the host picks someone who is watching and asks them to come on stream
+        public async Task<LiveGuestInviteDto> InviteGuestAsync(string hostConnectionId, int streamId, string userName)
+        {
+            if (await _tracker.GetHostConnectionAsync(streamId) != hostConnectionId)
+            {
+                throw new NotFoundException("This stream is not live.");
+            }
+
+            if (await _tracker.GetGuestAsync(streamId) is not null)
+            {
+                throw new BadRequestException("Someone is already a guest in this stream.");
+            }
+
+            var user = await _accounts.GetByUserNameAsync((userName ?? string.Empty).Trim());
+            var target = user is null ? null : await _tracker.GetViewerConnectionAsync(streamId, user.Id);
+            if (target is null || !await _tracker.AddGuestInviteAsync(streamId, target))
+            {
+                throw new BadRequestException("That person is not watching right now.");
+            }
+
+            var stream = await _streams.GetByIdAsync(streamId);
+            var host = stream is null ? null : await _accounts.GetByIdAsync(stream.HostId);
+            if (stream is null || host is null)
+            {
+                throw new NotFoundException("This stream is not live.");
+            }
+
+            return new LiveGuestInviteDto
+            {
+                StreamId = streamId,
+                TargetConnectionId = target,
+                HostUserName = host.UserName ?? string.Empty,
+                HostDisplayName = string.IsNullOrWhiteSpace(host.DisplayName) ? host.UserName ?? string.Empty : host.DisplayName,
+                HostAvatarUrl = host.AvatarUrl ?? string.Empty,
+                Title = stream.Title
+            };
+        }
+
+        public async Task<LiveGuestInviteAnswerDto> AnswerGuestInviteAsync(string connectionId, int streamId, bool accept)
+        {
+            var hostConnection = await _tracker.GetHostConnectionAsync(streamId);
+            if (hostConnection is null || !await _tracker.TakeGuestInviteAsync(streamId, connectionId))
+            {
+                throw new BadRequestException("This invitation is no longer valid.");
+            }
+
+            var me = await ToGuestDtoAsync(streamId, connectionId);
+            var answer = new LiveGuestInviteAnswerDto
+            {
+                HostConnectionId = hostConnection,
+                UserName = me?.UserName ?? string.Empty,
+                DisplayName = me?.DisplayName ?? string.Empty
+            };
+            if (!accept)
+            {
+                return answer;
+            }
+
+            if (!await _tracker.SetGuestAsync(streamId, connectionId))
+            {
+                throw new BadRequestException("Someone is already a guest in this stream.");
+            }
+
+            answer.Guest = me;
+            return answer;
+        }
+
         public async Task<LiveGuestDto?> RespondGuestAsync(string hostConnectionId, int streamId, string targetConnectionId, bool accept)
         {
             if (await _tracker.GetHostConnectionAsync(streamId) != hostConnectionId)

@@ -12,6 +12,8 @@ namespace Service.Services.Interfaces
         Task SetThumbnailAsync(string userId, LiveThumbnailDto model);
         Task<IEnumerable<LiveViewerDto>> GetViewersAsync(string connectionId, int streamId);
         Task<LiveGuestRequestDto> RequestGuestAsync(string connectionId, int streamId);
+        Task<LiveGuestInviteDto> InviteGuestAsync(string hostConnectionId, int streamId, string userName);
+        Task<LiveGuestInviteAnswerDto> AnswerGuestInviteAsync(string connectionId, int streamId, bool accept);
         Task<LiveGuestDto?> RespondGuestAsync(string hostConnectionId, int streamId, string targetConnectionId, bool accept);
         Task<string?> EndGuestAsync(string connectionId, int streamId);
         Task<int> LeaveAsync(string connectionId, int streamId);
