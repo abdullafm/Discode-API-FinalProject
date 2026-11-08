@@ -25,6 +25,7 @@ namespace Service
             services.AddScoped<INitroService, NitroService>();
             services.AddScoped<IStripeGateway, StripeGateway>();
             services.AddScoped<ILiveStreamService, LiveStreamService>();
+            services.AddScoped<ILiveModerationService, LiveModerationService>();
             services.AddScoped<IEmojiCategoryService, EmojiCategoryService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IDirectMessageService, DirectMessageService>();

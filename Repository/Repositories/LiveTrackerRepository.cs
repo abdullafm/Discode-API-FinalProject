@@ -106,6 +106,20 @@ namespace Repository.Repositories
             }
         }
 
+        public Task<List<string>> GetViewerConnectionsAsync(int streamId, string userId)
+        {
+            lock (_lock)
+            {
+                var found = new List<string>();
+                if (_rooms.TryGetValue(streamId, out var room))
+                {
+                    found = room.ViewerUsers.Where(x => x.Value == userId && room.Viewers.Contains(x.Key)).Select(x => x.Key).ToList();
+                }
+
+                return Task.FromResult(found);
+            }
+        }
+
         public Task<bool> AddGuestInviteAsync(int streamId, string connectionId)
         {
             lock (_lock)

@@ -6,5 +6,7 @@ namespace Service.Helpers.DTOs.Live
         public string HostConnectionId { get; set; } = string.Empty;
         public LiveViewerDto Viewer { get; set; } = null!;
         public LiveGuestDto? Guest { get; set; }
+        public bool IsModerator { get; set; }
+        public LiveMuteDto? Mute { get; set; }
     }
 }

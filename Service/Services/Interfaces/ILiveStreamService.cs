@@ -17,6 +17,7 @@ namespace Service.Services.Interfaces
         Task<LiveGuestDto?> RespondGuestAsync(string hostConnectionId, int streamId, string targetConnectionId, bool accept);
         Task<string?> EndGuestAsync(string connectionId, int streamId);
         Task<int> LeaveAsync(string connectionId, int streamId);
+        Task<List<LiveEjectedDto>> EjectBlockedAsync(string blockerId, string blockedId);
         Task<LiveInviteResultDto> InviteAsync(string userId, int streamId, IEnumerable<string> userNames);
         Task<bool> CanSignalAsync(string connectionId, int streamId, string targetConnectionId);
         Task<LiveMessageDto> CreateMessageAsync(string userId, string connectionId, int streamId, string text, string? replyUserName = null, string? replyText = null);

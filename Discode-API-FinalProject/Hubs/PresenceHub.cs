@@ -13,6 +13,7 @@ namespace Discode_API_FinalProject.Hubs
         private readonly IPresenceService _presenceService;
         private readonly IPresenceTrackerService _trackerService;
         private readonly ILiveStreamService _liveStreamService;
+        private readonly ILiveModerationService _liveModerationService;
         private readonly ICallService _callService;
         private readonly IGroupCallService _groupCallService;
         private readonly IServerVoiceService _voiceService;
@@ -23,6 +24,7 @@ namespace Discode_API_FinalProject.Hubs
         public PresenceHub(IPresenceService presenceService,
                            IPresenceTrackerService trackerService,
                            ILiveStreamService liveStreamService,
+                           ILiveModerationService liveModerationService,
                            ICallService callService,
                            IGroupCallService groupCallService,
                            IServerVoiceService voiceService,
@@ -33,6 +35,7 @@ namespace Discode_API_FinalProject.Hubs
             _presenceService = presenceService;
             _trackerService = trackerService;
             _liveStreamService = liveStreamService;
+            _liveModerationService = liveModerationService;
             _callService = callService;
             _groupCallService = groupCallService;
             _voiceService = voiceService;

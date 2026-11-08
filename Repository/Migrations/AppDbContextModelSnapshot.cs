@@ -950,6 +950,76 @@ namespace Repository.Migrations
                     b.ToTable("GroupMessageReactions");
                 });
 
+            modelBuilder.Entity("Domain.Entities.LiveChatMute", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("HostId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("MutedById")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("HostId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("LiveChatMutes");
+                });
+
+            modelBuilder.Entity("Domain.Entities.LiveModerator", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("HostId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("HostId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("LiveModerators");
+                });
+
             modelBuilder.Entity("Domain.Entities.LiveStream", b =>
                 {
                     b.Property<int>("Id")
@@ -2985,6 +3055,44 @@ namespace Repository.Migrations
                         .IsRequired();
 
                     b.Navigation("GroupMessage");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Domain.Entities.LiveChatMute", b =>
+                {
+                    b.HasOne("Domain.Entities.AppUser", "Host")
+                        .WithMany()
+                        .HasForeignKey("HostId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Host");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Domain.Entities.LiveModerator", b =>
+                {
+                    b.HasOne("Domain.Entities.AppUser", "Host")
+                        .WithMany()
+                        .HasForeignKey("HostId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Host");
 
                     b.Navigation("User");
                 });
