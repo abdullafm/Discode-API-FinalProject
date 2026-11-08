@@ -108,6 +108,21 @@ namespace Service.Services
             return session.Url;
         }
 
+        public async Task CancelSubscriptionAsync(string subscriptionId)
+        {
+            try
+            {
+                await new SubscriptionService(Client()).CancelAsync(subscriptionId);
+            }
+            catch (StripeException failure) when (failure.StripeError?.Code == "resource_missing" || failure.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+            }
+            catch (StripeException failure)
+            {
+                throw Wrap(failure);
+            }
+        }
+
         public StripeEventInfo? ReadWebhook(string payload, string signature)
         {
             if (string.IsNullOrWhiteSpace(_settings.WebhookSecret) || string.IsNullOrWhiteSpace(signature))

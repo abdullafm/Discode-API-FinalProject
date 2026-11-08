@@ -7,6 +7,8 @@ namespace Service.Services.Interfaces
         Task<StripeCheckoutResult?> GetCheckoutAsync(string sessionId);
         Task<StripeSubscriptionInfo?> GetSubscriptionAsync(string subscriptionId);
         Task<string> CreatePortalAsync(string customerId, string returnUrl);
+        // stops the billing at once (used when an account is deleted)
+        Task CancelSubscriptionAsync(string subscriptionId);
         // verifies the signature; null when it is not a valid Stripe delivery
         StripeEventInfo? ReadWebhook(string payload, string signature);
     }

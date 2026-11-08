@@ -204,6 +204,43 @@ namespace Service.Services
             return result;
         }
 
+        public async Task<NitroChangeDto> EndForDeletedAccountAsync(string userId)
+        {
+            await Gate.WaitAsync();
+            try
+            {
+                var row = await _subscriptions.GetByUserAsync(userId);
+                if (row is not null && row.Source == NitroSource.Stripe && row.StripeSubscriptionId.Length > 0 && row.Status != NitroStatus.Ended)
+                {
+                    try
+                    {
+                        await _stripe.CancelSubscriptionAsync(row.StripeSubscriptionId);
+                    }
+                    catch (BadRequestException)
+                    {
+                        // Stripe could not be reached: the account is still closed, the billing has to be stopped in Stripe by hand
+                    }
+                }
+
+                if (row is not null)
+                {
+                    return await EndAsync(row, NitroEventKind.Expired, "The account was deleted", null, null);
+                }
+
+                var change = new NitroChangeDto { UserIds = { userId } };
+                foreach (var serverId in await _boosts.RemoveAllForUserAsync(userId))
+                {
+                    change.ServerIds.Add(serverId);
+                }
+
+                return change;
+            }
+            finally
+            {
+                Gate.Release();
+            }
+        }
+
         public async Task<NitroChangeDto> GrantAsync(string actorId, GrantNitroDto model)
         {
             var name = (model?.UserName ?? string.Empty).Trim();
@@ -480,6 +517,12 @@ namespace Service.Services
                 if (info.Status is "canceled" or "unpaid" or "incomplete_expired")
                 {
                     return await EndAsync(row, NitroEventKind.Expired, "The subscription ended (" + info.Status + ")", info.Id, null);
+                }
+
+                // a late "updated" news must not bring back a subscription that already ended
+                if (row.Status == NitroStatus.Ended)
+                {
+                    return new NitroChangeDto();
                 }
 
                 var wasCancelled = row.CancelAtPeriodEnd;

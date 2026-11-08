@@ -9,6 +9,9 @@ namespace Service.Services
 {
     public class BoostService : IBoostService
     {
+        // two quick clicks must not squeeze a third boost out of two slots
+        private static readonly SemaphoreSlim Gate = new(1, 1);
+
         private readonly IServerBoostRepository _boosts;
         private readonly IBoostCooldownRepository _cooldowns;
         private readonly IServerRepository _servers;
@@ -38,35 +41,53 @@ namespace Service.Services
                 throw new ForbiddenException("Boosting a server needs Nitro.");
             }
 
-            var used = await _boosts.CountForUserAsync(userId);
-            var waiting = await _cooldowns.GetActiveAsync(userId, DateTime.UtcNow);
-            if (used + waiting.Count >= NitroRules.BoostsPerNitro)
+            await Gate.WaitAsync();
+            try
             {
-                if (used >= NitroRules.BoostsPerNitro)
+                var used = await _boosts.CountForUserAsync(userId);
+                var waiting = await _cooldowns.GetActiveAsync(userId, DateTime.UtcNow);
+                if (used + waiting.Count >= NitroRules.BoostsPerNitro)
                 {
-                    throw new BadRequestException("You have already used both of your boosts.");
+                    if (used >= NitroRules.BoostsPerNitro)
+                    {
+                        throw new BadRequestException("You have already used both of your boosts.");
+                    }
+
+                    throw new BadRequestException("Your boost can be used again after " + waiting[0].AvailableAt.ToString("yyyy-MM-dd HH:mm") + " UTC.");
                 }
 
-                throw new BadRequestException("Your boost can be used again after " + waiting[0].AvailableAt.ToString("yyyy-MM-dd HH:mm") + " UTC.");
+                await _boosts.AddAsync(new ServerBoost { ServerId = serverId, UserId = userId });
+            }
+            finally
+            {
+                Gate.Release();
             }
 
-            await _boosts.AddAsync(new ServerBoost { ServerId = serverId, UserId = userId });
             return await ChangeAsync(userId, serverId);
         }
 
         // taking a boost off is allowed at any time, but its place is only free again after the cooldown (so boosts can not hop around at once)
+        // (it also works for a server the person has left: the boost stays there until they take it off)
         public async Task<BoostChangeDto> UnboostAsync(string userId, int serverId)
         {
-            await EnsureMemberAsync(userId, serverId);
-            var mine = await _boosts.GetForUserOnServerAsync(userId, serverId);
-            if (mine.Count == 0)
+            await Gate.WaitAsync();
+            try
             {
-                throw new BadRequestException("You have not boosted this server.");
+                var mine = await _boosts.GetForUserOnServerAsync(userId, serverId);
+                if (mine.Count == 0)
+                {
+                    throw new BadRequestException("You have not boosted this server.");
+                }
+
+                await _boosts.DeleteAsync(mine[0]);
+                await _cooldowns.DeleteForUserAsync(userId, DateTime.UtcNow);
+                await _cooldowns.AddAsync(new BoostCooldown { UserId = userId, AvailableAt = DateTime.UtcNow.AddHours(NitroRules.BoostCooldownHours) });
+            }
+            finally
+            {
+                Gate.Release();
             }
 
-            await _boosts.DeleteAsync(mine[0]);
-            await _cooldowns.DeleteForUserAsync(userId, DateTime.UtcNow);
-            await _cooldowns.AddAsync(new BoostCooldown { UserId = userId, AvailableAt = DateTime.UtcNow.AddHours(NitroRules.BoostCooldownHours) });
             await EnforcePerksAsync(serverId);
             return await ChangeAsync(userId, serverId);
         }

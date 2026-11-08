@@ -11,6 +11,8 @@ namespace Service.Services.Interfaces
         Task<NitroChangeDto> HandleWebhookAsync(string payload, string signature);
         // ends the Nitro of everybody whose paid time is over
         Task<NitroChangeDto> ExpireOverdueAsync();
+        // an account was deleted: its Nitro ends, its boosts go and the Stripe billing stops
+        Task<NitroChangeDto> EndForDeletedAccountAsync(string userId);
         Task<NitroChangeDto> GrantAsync(string actorId, GrantNitroDto model);
         Task<NitroChangeDto> RevokeAsync(string actorId, string userName);
         Task<AdminNitroPageDto> GetAdminPageAsync(string? search, bool activeOnly, int page);
