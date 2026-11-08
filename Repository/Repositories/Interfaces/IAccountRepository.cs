@@ -12,6 +12,8 @@ namespace Repository.Repositories.Interfaces
         Task<AppUser?> GetByUserNameAsync(string userName);
         Task<bool> CheckPasswordAsync(AppUser user, string password);
         Task<IEnumerable<string>> GetRolesAsync(AppUser user);
+        // "admin" or "superadmin" for the staff among these people (everybody else is left out)
+        Task<Dictionary<string, string>> GetStaffRolesAsync(IEnumerable<string> userIds);
         Task<bool> IsLockedOutAsync(AppUser user);
         Task RegisterFailedAttemptAsync(AppUser user);
         Task ResetFailedAttemptsAsync(AppUser user);

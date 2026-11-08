@@ -14,6 +14,8 @@ namespace Service.Helpers.DTOs.Accounts
         public string BannerColor { get; set; } = string.Empty;
         public bool HasNitro { get; set; }
         public bool IsBooster { get; set; }
+        // "admin", "superadmin" or empty: the badge the staff get by themselves
+        public string StaffRole { get; set; } = string.Empty;
         public string Pronouns { get; set; } = string.Empty;
         public string CustomStatus { get; set; } = string.Empty;
         public DateTime? CustomStatusClearAt { get; set; }

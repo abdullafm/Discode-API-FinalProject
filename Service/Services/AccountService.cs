@@ -343,6 +343,11 @@ namespace Service.Services
             return response;
         }
 
+        private async Task<string> StaffRoleAsync(string userId)
+        {
+            return (await _accountRepository.GetStaffRolesAsync(new[] { userId })).TryGetValue(userId, out var role) ? role : string.Empty;
+        }
+
         public async Task<ProfileDto> GetProfileAsync(string userId)
         {
             var user = await _accountRepository.GetByIdAsync(userId);
@@ -355,6 +360,7 @@ namespace Service.Services
             profile.CustomStatusClearAt = user.CustomStatusClearAt is null ? null : DateTime.SpecifyKind(user.CustomStatusClearAt.Value, DateTimeKind.Utc);
             profile.HasNitro = await _nitro.HasNitroAsync(userId);
             profile.IsBooster = await _boosts.IsBoosterAsync(userId);
+            profile.StaffRole = await StaffRoleAsync(userId);
             return profile;
         }
 
@@ -457,6 +463,7 @@ namespace Service.Services
             updated.CustomStatusClearAt = user.CustomStatusClearAt is null ? null : DateTime.SpecifyKind(user.CustomStatusClearAt.Value, DateTimeKind.Utc);
             updated.HasNitro = await _nitro.HasNitroAsync(userId);
             updated.IsBooster = await _boosts.IsBoosterAsync(userId);
+            updated.StaffRole = await StaffRoleAsync(userId);
             return new UpdateProfileResponse
             {
                 IsSuccess = true,
@@ -561,6 +568,7 @@ namespace Service.Services
             var profile = _mapper.Map<UserProfileDto>(user);
             profile.HasNitro = await _nitro.HasNitroAsync(user.Id);
             profile.IsBooster = await _boosts.IsBoosterAsync(user.Id);
+            profile.StaffRole = await StaffRoleAsync(user.Id);
             profile.Relation = GetRelation(viewerId, user.Id, request);
             profile.RequestId = profile.Relation == "pending-received" ? request!.Id : null;
             profile.IsPrivate = !user.IsPublic && profile.Relation != "self" && profile.Relation != "friend";

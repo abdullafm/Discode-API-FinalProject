@@ -57,6 +57,7 @@ namespace Service.Services
                 CancelAtPeriodEnd = has && found!.CancelAtPeriodEnd,
                 CanManageBilling = found is not null && found.Source == NitroSource.Stripe && !string.IsNullOrEmpty(found.StripeCustomerId),
                 IsBooster = used > 0,
+                StaffRole = (await _accounts.GetStaffRolesAsync(new[] { userId })).TryGetValue(userId, out var staff) ? staff : string.Empty,
                 BoostSlots = has ? NitroRules.BoostsPerNitro : 0,
                 BoostsUsed = used,
                 MaxMessageLength = limits.MaxMessageLength,

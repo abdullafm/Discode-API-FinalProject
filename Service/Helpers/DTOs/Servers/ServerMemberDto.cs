@@ -23,6 +23,7 @@ namespace Service.Helpers.DTOs.Servers
         public bool CanTimeout { get; set; }
         public bool HasNitro { get; set; }
         public bool IsBooster { get; set; }
+        public string StaffRole { get; set; } = string.Empty;
         public DateTime? TimeoutUntil { get; set; }
     }
 }

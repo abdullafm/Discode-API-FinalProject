@@ -218,6 +218,7 @@ namespace Service.Services
             var viewerTop = await _permissions.GetTopPositionAsync(viewerId, server.Id);
             var nitroIds = await _nitro.GetNitroUserIdsAsync(server.Members.Select(m => m.UserId));
             var boosterIds = await _boosts.GetBoostersAmongAsync(server.Members.Select(m => m.UserId));
+            var staffRoles = await _accounts.GetStaffRolesAsync(server.Members.Select(m => m.UserId));
             var viewerMayTimeout = (await _permissions.GetAsync(viewerId, server.Id) & ServerPermission.ModerateMembers) == ServerPermission.ModerateMembers;
             var viewerIsOwner = viewerId == server.OwnerId;
             foreach (var member in server.Members)
@@ -231,6 +232,7 @@ namespace Service.Services
                     CanTimeout = canTimeout,
                     HasNitro = nitroIds.Contains(member.UserId),
                     IsBooster = boosterIds.Contains(member.UserId),
+                    StaffRole = staffRoles.TryGetValue(member.UserId, out var staff) ? staff : string.Empty,
                     CanModerate = member.UserId != viewerId && member.UserId != server.OwnerId && viewerTop > memberTop,
                     TimeoutUntil = member.TimeoutUntil is not null && member.TimeoutUntil > DateTime.UtcNow ? DateTime.SpecifyKind(member.TimeoutUntil.Value, DateTimeKind.Utc) : null,
                     Id = member.UserId,

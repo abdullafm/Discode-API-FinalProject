@@ -9,6 +9,7 @@ namespace Service.Helpers.DTOs.Nitro
         public bool CancelAtPeriodEnd { get; set; }
         public bool CanManageBilling { get; set; }
         public bool IsBooster { get; set; }
+        public string StaffRole { get; set; } = string.Empty;
         public int BoostSlots { get; set; }
         public int BoostsUsed { get; set; }
         public int MaxMessageLength { get; set; }
