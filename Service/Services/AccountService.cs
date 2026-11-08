@@ -413,9 +413,16 @@ namespace Service.Services
                 return FailProfile(new[] { newAnimated ? "An animated avatar needs Nitro." : "A profile banner needs Nitro." });
             }
 
+            var color = model.BannerColor is null ? user.BannerColor : model.BannerColor.Trim();
+            if (color.Length > 0 && !System.Text.RegularExpressions.Regex.IsMatch(color, "^#[0-9a-fA-F]{6}$"))
+            {
+                return FailProfile(new[] { "Choose a colour like #5865f2." });
+            }
+
             user.DisplayName = displayName;
             user.AvatarUrl = avatar;
             user.BannerUrl = banner;
+            user.BannerColor = color.ToLowerInvariant();
             user.CustomStatus = (model.CustomStatus ?? string.Empty).Trim();
             if (user.CustomStatus.Length == 0)
             {

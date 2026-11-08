@@ -105,6 +105,13 @@ namespace Repository.Migrations
                     b.Property<DateTime?>("BannedUntil")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("BannerColor")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(7)
+                        .HasColumnType("nvarchar(7)")
+                        .HasDefaultValue("");
+
                     b.Property<string>("BannerUrl")
                         .IsRequired()
                         .ValueGeneratedOnAdd()

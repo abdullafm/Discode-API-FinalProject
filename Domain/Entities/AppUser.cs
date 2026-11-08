@@ -12,6 +12,8 @@ namespace Domain.Entities
         public string Bio { get; set; } = string.Empty;
         // a profile banner: a Nitro perk
         public string BannerUrl { get; set; } = string.Empty;
+        // the colour of the profile banner when there is no picture (#rrggbb), empty: the default colour
+        public string BannerColor { get; set; } = string.Empty;
         public string Pronouns { get; set; } = string.Empty;
         public string CustomStatus { get; set; } = string.Empty;
         // when the status line clears itself (null: it stays until the person changes it)
