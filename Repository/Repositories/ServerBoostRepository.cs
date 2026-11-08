@@ -51,6 +51,18 @@ namespace Repository.Repositories
             return await _dbSet.Where(x => x.UserId == userId && x.ServerId == serverId).OrderByDescending(x => x.Id).ToListAsync();
         }
 
+        public async Task<HashSet<string>> GetBoosterIdsAmongAsync(IEnumerable<string> userIds)
+        {
+            var ids = userIds.Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                return new HashSet<string>();
+            }
+
+            var found = await _dbSet.AsNoTracking().Where(x => ids.Contains(x.UserId)).Select(x => x.UserId).Distinct().ToListAsync();
+            return found.ToHashSet();
+        }
+
         public async Task<List<ServerBoost>> GetForServerAsync(int serverId)
         {
             return await _dbSet.AsNoTracking().Include(x => x.User).Where(x => x.ServerId == serverId).OrderBy(x => x.Id).ToListAsync();

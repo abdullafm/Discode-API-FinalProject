@@ -217,7 +217,7 @@ namespace Service.Services
                 .ToDictionary(group => group.Key, group => group.Select(link => link.Role).OrderByDescending(role => role.Position).ToList());
             var viewerTop = await _permissions.GetTopPositionAsync(viewerId, server.Id);
             var nitroIds = await _nitro.GetNitroUserIdsAsync(server.Members.Select(m => m.UserId));
-            var boosterIds = await _boosts.GetBoosterIdsAsync(server.Id);
+            var boosterIds = await _boosts.GetBoostersAmongAsync(server.Members.Select(m => m.UserId));
             var viewerMayTimeout = (await _permissions.GetAsync(viewerId, server.Id) & ServerPermission.ModerateMembers) == ServerPermission.ModerateMembers;
             var viewerIsOwner = viewerId == server.OwnerId;
             foreach (var member in server.Members)

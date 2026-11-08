@@ -92,6 +92,11 @@ namespace Service.Services
             return (await _boosts.GetBoosterIdsAsync(serverId)).ToHashSet();
         }
 
+        public Task<HashSet<string>> GetBoostersAmongAsync(IEnumerable<string> userIds)
+        {
+            return _boosts.GetBoosterIdsAmongAsync(userIds);
+        }
+
         public async Task<bool> IsBoosterAsync(string userId)
         {
             return await _boosts.CountForUserAsync(userId) > 0;

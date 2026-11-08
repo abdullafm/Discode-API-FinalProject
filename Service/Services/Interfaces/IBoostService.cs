@@ -12,6 +12,8 @@ namespace Service.Services.Interfaces
         Task<bool> PerksUnlockedAsync(int serverId);
         Task<Dictionary<int, int>> GetCountsAsync(IEnumerable<int> serverIds);
         Task<HashSet<string>> GetBoosterIdsAsync(int serverId);
+        // who among these people boosts any server (the Boost badge shows everywhere, not only on the server they boosted)
+        Task<HashSet<string>> GetBoostersAmongAsync(IEnumerable<string> userIds);
         Task<bool> IsBoosterAsync(string userId);
         Task<List<string>> GetMemberIdsAsync(int serverId);
     }

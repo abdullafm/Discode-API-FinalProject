@@ -12,6 +12,8 @@ namespace Repository.Repositories.Interfaces
         Task<List<ServerBoost>> GetForUserOnServerAsync(string userId, int serverId);
         Task<List<string>> GetBoosterIdsAsync(int serverId);
         Task<List<ServerBoost>> GetForServerAsync(int serverId);
+        // which of these people boost any server at all
+        Task<HashSet<string>> GetBoosterIdsAmongAsync(IEnumerable<string> userIds);
         Task DeleteRangeAsync(IEnumerable<ServerBoost> boosts);
     }
 }
