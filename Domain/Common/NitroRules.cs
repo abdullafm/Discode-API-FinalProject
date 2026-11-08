@@ -10,6 +10,8 @@ namespace Domain.Common
         public const long NitroFileBytes = 2L * 1024 * 1024 * 1024;
         public const int BoostsPerNitro = 2;
         public const int BoostsForPerks = 14;
+        // a boost can be moved to another server after this long, and a boost that was taken off is back after it
+        public const int BoostCooldownHours = 24;
         public const int MonthlyPriceCents = 299;
         public const string Currency = "usd";
 

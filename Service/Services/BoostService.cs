@@ -10,13 +10,15 @@ namespace Service.Services
     public class BoostService : IBoostService
     {
         private readonly IServerBoostRepository _boosts;
+        private readonly IBoostCooldownRepository _cooldowns;
         private readonly IServerRepository _servers;
         private readonly IServerMemberRepository _members;
         private readonly INitroAccessService _access;
 
-        public BoostService(IServerBoostRepository boosts, IServerRepository servers, IServerMemberRepository members, INitroAccessService access)
+        public BoostService(IServerBoostRepository boosts, IBoostCooldownRepository cooldowns, IServerRepository servers, IServerMemberRepository members, INitroAccessService access)
         {
             _boosts = boosts;
+            _cooldowns = cooldowns;
             _servers = servers;
             _members = members;
             _access = access;
@@ -36,15 +38,23 @@ namespace Service.Services
                 throw new ForbiddenException("Boosting a server needs Nitro.");
             }
 
-            if (await _boosts.CountForUserAsync(userId) >= NitroRules.BoostsPerNitro)
+            var used = await _boosts.CountForUserAsync(userId);
+            var waiting = await _cooldowns.GetActiveAsync(userId, DateTime.UtcNow);
+            if (used + waiting.Count >= NitroRules.BoostsPerNitro)
             {
-                throw new BadRequestException("You have already used both of your boosts.");
+                if (used >= NitroRules.BoostsPerNitro)
+                {
+                    throw new BadRequestException("You have already used both of your boosts.");
+                }
+
+                throw new BadRequestException("Your boost can be used again after " + waiting[0].AvailableAt.ToString("yyyy-MM-dd HH:mm") + " UTC.");
             }
 
             await _boosts.AddAsync(new ServerBoost { ServerId = serverId, UserId = userId });
             return await ChangeAsync(userId, serverId);
         }
 
+        // taking a boost off is allowed at any time, but its place is only free again after the cooldown (so boosts can not hop around at once)
         public async Task<BoostChangeDto> UnboostAsync(string userId, int serverId)
         {
             await EnsureMemberAsync(userId, serverId);
@@ -55,12 +65,105 @@ namespace Service.Services
             }
 
             await _boosts.DeleteAsync(mine[0]);
+            await _cooldowns.DeleteForUserAsync(userId, DateTime.UtcNow);
+            await _cooldowns.AddAsync(new BoostCooldown { UserId = userId, AvailableAt = DateTime.UtcNow.AddHours(NitroRules.BoostCooldownHours) });
             await EnforcePerksAsync(serverId);
             return await ChangeAsync(userId, serverId);
         }
 
+        // one boost goes to another server (it has to have stayed where it is for the cooldown time); the old server may lose its perks
+        public async Task<BoostChangeDto> MoveAsync(string userId, MoveBoostDto model)
+        {
+            var from = model?.FromServerId ?? 0;
+            var to = model?.ToServerId ?? 0;
+            if (from <= 0 || to <= 0 || from == to)
+            {
+                throw new BadRequestException("Choose another server to move the boost to.");
+            }
+
+            await EnsureMemberAsync(userId, to);
+            if (!await _access.HasNitroAsync(userId))
+            {
+                throw new ForbiddenException("Boosting a server needs Nitro.");
+            }
+
+            var mine = (await _boosts.GetForUserOnServerAsync(userId, from)).OrderBy(x => x.CreatedAt).ToList();
+            if (mine.Count == 0)
+            {
+                throw new BadRequestException("You have not boosted that server.");
+            }
+
+            var ready = DateTime.UtcNow.AddHours(-NitroRules.BoostCooldownHours);
+            var movable = mine.FirstOrDefault(x => x.CreatedAt <= ready);
+            if (movable is null)
+            {
+                throw new BadRequestException("This boost can be moved after " + mine[0].CreatedAt.AddHours(NitroRules.BoostCooldownHours).ToString("yyyy-MM-dd HH:mm") + " UTC.");
+            }
+
+            movable.ServerId = to;
+            movable.CreatedAt = DateTime.UtcNow;
+            await _boosts.UpdateAsync(movable);
+            await EnforcePerksAsync(from);
+
+            var result = await ChangeAsync(userId, to);
+            result.Change.ServerIds.Add(from);
+            return result;
+        }
+
+        public async Task<MyBoostsDto> GetMineAsync(string userId)
+        {
+            var now = DateTime.UtcNow;
+            var has = await _access.HasNitroAsync(userId);
+            var mine = (await _boosts.GetForUserAsync(userId)).OrderBy(x => x.CreatedAt).ToList();
+            var waiting = await _cooldowns.GetActiveAsync(userId, now);
+            var servers = (await _servers.GetForUserAsync(userId)).ToList();
+            var counts = await _boosts.CountForServersAsync(servers.Select(s => s.Id));
+            var names = servers.ToDictionary(s => s.Id, s => s.Name);
+
+            var result = new MyBoostsDto
+            {
+                HasNitro = has,
+                Slots = has ? NitroRules.BoostsPerNitro : 0,
+                Used = mine.Count,
+                Required = NitroRules.BoostsForPerks,
+                CooldownHours = NitroRules.BoostCooldownHours,
+                Cooldowns = waiting.Select(x => DateTime.SpecifyKind(x.AvailableAt, DateTimeKind.Utc)).ToList()
+            };
+            result.Free = has ? Math.Max(0, result.Slots - mine.Count - waiting.Count) : 0;
+
+            foreach (var boost in mine)
+            {
+                var movableAt = boost.CreatedAt.AddHours(NitroRules.BoostCooldownHours);
+                result.Boosts.Add(new MyBoostDto
+                {
+                    ServerId = boost.ServerId,
+                    ServerName = names.TryGetValue(boost.ServerId, out var name) ? name : "A server you left",
+                    BoostedAt = DateTime.SpecifyKind(boost.CreatedAt, DateTimeKind.Utc),
+                    MovableAt = DateTime.SpecifyKind(movableAt, DateTimeKind.Utc),
+                    CanMove = movableAt <= now
+                });
+            }
+
+            foreach (var server in servers.OrderByDescending(s => counts.TryGetValue(s.Id, out var c) ? c : 0).ThenBy(s => s.Name))
+            {
+                var total = counts.TryGetValue(server.Id, out var count) ? count : 0;
+                result.Servers.Add(new BoostableServerDto
+                {
+                    ServerId = server.Id,
+                    Name = server.Name,
+                    IconUrl = server.IconUrl,
+                    Boosts = total,
+                    PerksUnlocked = total >= NitroRules.BoostsForPerks,
+                    MyBoosts = mine.Count(x => x.ServerId == server.Id)
+                });
+            }
+
+            return result;
+        }
+
         public async Task<List<int>> RemoveAllForUserAsync(string userId)
         {
+            await _cooldowns.DeleteForUserAsync(userId);
             var all = await _boosts.GetForUserAsync(userId);
             if (all.Count == 0)
             {
@@ -167,8 +270,9 @@ namespace Service.Services
         {
             var all = await _boosts.GetForServerAsync(serverId);
             var used = await _boosts.CountForUserAsync(userId);
+            var waiting = await _cooldowns.GetActiveAsync(userId, DateTime.UtcNow);
             var has = await _access.HasNitroAsync(userId);
-            var left = has ? Math.Max(0, NitroRules.BoostsPerNitro - used) : 0;
+            var left = has ? Math.Max(0, NitroRules.BoostsPerNitro - used - waiting.Count) : 0;
             return new BoostInfoDto
             {
                 ServerId = serverId,
@@ -178,6 +282,7 @@ namespace Service.Services
                 MyBoosts = all.Count(x => x.UserId == userId),
                 MyBoostsLeft = left,
                 CanBoost = left > 0,
+                CooldownUntil = has && waiting.Count > 0 ? DateTime.SpecifyKind(waiting[0].AvailableAt, DateTimeKind.Utc) : null,
                 Boosters = all.GroupBy(x => x.UserId).Select(group => new BoosterDto
                 {
                     UserName = group.First().User.UserName ?? string.Empty,

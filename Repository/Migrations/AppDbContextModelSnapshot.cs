@@ -294,6 +294,32 @@ namespace Repository.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("Domain.Entities.BoostCooldown", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("AvailableAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "AvailableAt");
+
+                    b.ToTable("BoostCooldowns");
+                });
+
             modelBuilder.Entity("Domain.Entities.Call", b =>
                 {
                     b.Property<int>("Id")
@@ -2683,6 +2709,17 @@ namespace Repository.Migrations
                         .IsRequired();
 
                     b.Navigation("Admin");
+                });
+
+            modelBuilder.Entity("Domain.Entities.BoostCooldown", b =>
+                {
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Domain.Entities.Call", b =>

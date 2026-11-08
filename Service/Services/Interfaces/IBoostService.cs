@@ -7,6 +7,8 @@ namespace Service.Services.Interfaces
         Task<BoostInfoDto> GetInfoAsync(string userId, int serverId);
         Task<BoostChangeDto> BoostAsync(string userId, int serverId);
         Task<BoostChangeDto> UnboostAsync(string userId, int serverId);
+        Task<BoostChangeDto> MoveAsync(string userId, MoveBoostDto model);
+        Task<MyBoostsDto> GetMineAsync(string userId);
         // the person lost Nitro: all their boosts go. Returns the servers that were boosted by them
         Task<List<int>> RemoveAllForUserAsync(string userId);
         Task<bool> PerksUnlockedAsync(int serverId);

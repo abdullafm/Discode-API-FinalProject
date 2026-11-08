@@ -29,6 +29,7 @@ namespace Repository.Data
         public DbSet<NitroEvent> NitroEvents { get; set; }
         public DbSet<ChatReadMarker> ChatReadMarkers { get; set; }
         public DbSet<ServerBoost> ServerBoosts { get; set; }
+        public DbSet<BoostCooldown> BoostCooldowns { get; set; }
         public DbSet<ServerVoiceRestriction> ServerVoiceRestrictions { get; set; }
         public DbSet<ServerMessage> ServerMessages { get; set; }
         public DbSet<ServerMessageAttachment> ServerMessageAttachments { get; set; }
