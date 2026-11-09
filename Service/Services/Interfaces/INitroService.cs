@@ -16,5 +16,15 @@ namespace Service.Services.Interfaces
         Task<NitroChangeDto> GrantAsync(string actorId, GrantNitroDto model);
         Task<NitroChangeDto> RevokeAsync(string actorId, string userName);
         Task<AdminNitroPageDto> GetAdminPageAsync(string? search, bool activeOnly, int page);
+
+        // ---- gifts
+        Task<CheckoutDto> CreateGiftCheckoutAsync(string userId, CreateCheckoutDto model);
+        Task<NitroGiftDto> ConfirmGiftAsync(string userId, ConfirmCheckoutDto model);
+        Task<List<NitroGiftDto>> GetMyGiftsAsync(string userId);
+        Task<NitroGiftInfoDto> GetGiftAsync(string viewerId, string code);
+        Task<(NitroStatusDto Status, NitroChangeDto Change)> RedeemGiftAsync(string userId, string code);
+        Task<NitroGiftDto> CreateFreeGiftAsync(string actorId, CreateFreeGiftDto model);
+        Task RevokeGiftAsync(string actorId, int giftId);
+        Task<AdminNitroGiftPageDto> GetAdminGiftsAsync(string? search, int page);
     }
 }

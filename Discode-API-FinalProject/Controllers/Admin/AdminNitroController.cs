@@ -35,6 +35,28 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return Ok(await _nitro.GetAdminPageAsync(search, activeOnly, page));
         }
 
+        // every admin can read the gift links too
+        [HttpGet("gifts")]
+        public async Task<IActionResult> Gifts([FromQuery] string? search, [FromQuery] int page = 1)
+        {
+            return Ok(await _nitro.GetAdminGiftsAsync(search, page));
+        }
+
+        [Authorize(Roles = Roles.SuperAdmin)]
+        [HttpPost("gifts")]
+        public async Task<IActionResult> CreateGift([FromBody] CreateFreeGiftDto model)
+        {
+            return Ok(await _nitro.CreateFreeGiftAsync(UserId, model));
+        }
+
+        [Authorize(Roles = Roles.SuperAdmin)]
+        [HttpDelete("gifts/{id:int}")]
+        public async Task<IActionResult> RevokeGift(int id)
+        {
+            await _nitro.RevokeGiftAsync(UserId, id);
+            return NoContent();
+        }
+
         // giving and taking Nitro away by hand is for the super admin only
         [Authorize(Roles = Roles.SuperAdmin)]
         [HttpPost("grant")]

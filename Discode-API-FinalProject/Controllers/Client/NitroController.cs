@@ -69,6 +69,40 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(result.Status);
         }
 
+        // ---- gifts: one month of Nitro for somebody else, paid once
+
+        [HttpPost("gift/checkout")]
+        public async Task<IActionResult> GiftCheckout([FromBody] CreateCheckoutDto model)
+        {
+            return Ok(await _nitro.CreateGiftCheckoutAsync(UserId, model));
+        }
+
+        [HttpPost("gift/confirm")]
+        public async Task<IActionResult> GiftConfirm([FromBody] ConfirmCheckoutDto model)
+        {
+            return Ok(await _nitro.ConfirmGiftAsync(UserId, model));
+        }
+
+        [HttpGet("gifts")]
+        public async Task<IActionResult> MyGifts()
+        {
+            return Ok(await _nitro.GetMyGiftsAsync(UserId));
+        }
+
+        [HttpGet("gift/{code}")]
+        public async Task<IActionResult> GiftInfo(string code)
+        {
+            return Ok(await _nitro.GetGiftAsync(UserId, code));
+        }
+
+        [HttpPost("gift/{code}/redeem")]
+        public async Task<IActionResult> Redeem(string code)
+        {
+            var result = await _nitro.RedeemGiftAsync(UserId, code);
+            await TellAsync(result.Change);
+            return Ok(result.Status);
+        }
+
         // Stripe calls this one itself: it has no login, the signature is what proves it is Stripe
         [AllowAnonymous]
         [HttpPost("webhook")]

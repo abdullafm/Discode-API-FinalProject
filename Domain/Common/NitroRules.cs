@@ -13,6 +13,9 @@ namespace Domain.Common
         // a boost can be moved to another server after this long, and a boost that was taken off is back after it
         public const int BoostCooldownHours = 24;
         public const int MonthlyPriceCents = 299;
+        // a Nitro gift: one month of Nitro for somebody else, paid once
+        public const int GiftPriceCents = 999;
+        public const int GiftDays = 30;
         public const string Currency = "usd";
 
         // GIF avatars and icons are the animated ones

@@ -17,6 +17,7 @@ namespace Service.Services
 
         private readonly INitroSubscriptionRepository _subscriptions;
         private readonly INitroEventRepository _events;
+        private readonly INitroGiftRepository _gifts;
         private readonly IAccountRepository _accounts;
         private readonly IServerBoostRepository _boostRows;
         private readonly INitroAccessService _access;
@@ -26,6 +27,7 @@ namespace Service.Services
 
         public NitroService(INitroSubscriptionRepository subscriptions,
                             INitroEventRepository events,
+                            INitroGiftRepository gifts,
                             IAccountRepository accounts,
                             IServerBoostRepository boostRows,
                             INitroAccessService access,
@@ -35,6 +37,7 @@ namespace Service.Services
         {
             _subscriptions = subscriptions;
             _events = events;
+            _gifts = gifts;
             _accounts = accounts;
             _boostRows = boostRows;
             _access = access;
@@ -52,7 +55,7 @@ namespace Service.Services
             return new NitroStatusDto
             {
                 HasNitro = has,
-                Source = has ? (found!.Source == NitroSource.Admin ? "admin" : "stripe") : string.Empty,
+                Source = has ? SourceName(found!.Source) : string.Empty,
                 ExpiresAt = has ? Utc(found!.CurrentPeriodEnd) : null,
                 CancelAtPeriodEnd = has && found!.CancelAtPeriodEnd,
                 CanManageBilling = found is not null && found.Source == NitroSource.Stripe && !string.IsNullOrEmpty(found.StripeCustomerId),
@@ -143,6 +146,12 @@ namespace Service.Services
             switch (info.Type)
             {
                 case "checkout.session.completed":
+                    if (info.Kind == "gift" && info.SessionId.Length > 0)
+                    {
+                        await CreateGiftFromSessionAsync(info.SessionId, null);
+                        return new NitroChangeDto();
+                    }
+
                     if (info.UserId.Length > 0 && info.SubscriptionId.Length > 0)
                     {
                         return await ActivateAsync(info.UserId, info.CustomerId, info.SubscriptionId, info.Id);
@@ -358,7 +367,7 @@ namespace Service.Services
                     UserName = row.User.UserName ?? string.Empty,
                     DisplayName = Name(row.User),
                     AvatarUrl = row.User.AvatarUrl,
-                    Source = row.Source == NitroSource.Admin ? "admin" : "stripe",
+                    Source = SourceName(row.Source),
                     Status = row.Status.ToString(),
                     IsActive = row.IsActive(now),
                     StartedAt = Utc(row.StartedAt),
@@ -378,7 +387,7 @@ namespace Service.Services
                     UserName = entry.User.UserName ?? string.Empty,
                     DisplayName = Name(entry.User),
                     Kind = entry.Kind.ToString(),
-                    Source = entry.Source == NitroSource.Admin ? "admin" : "stripe",
+                    Source = SourceName(entry.Source),
                     Details = entry.Details,
                     AmountCents = entry.AmountCents,
                     Currency = entry.Currency,
@@ -387,6 +396,293 @@ namespace Service.Services
             }
 
             return result;
+        }
+
+        // ---------- gifts
+
+        private string GiftLink(string code)
+        {
+            return _app.ClientUrl.TrimEnd('/') + "/gift/" + code;
+        }
+
+        private static string GiftStatus(NitroGift gift)
+        {
+            return gift.RevokedAt is not null ? "revoked" : gift.RedeemedAt is not null ? "redeemed" : "available";
+        }
+
+        private NitroGiftDto ToGiftDto(NitroGift gift)
+        {
+            return new NitroGiftDto
+            {
+                Id = gift.Id,
+                Code = gift.Code,
+                Link = GiftLink(gift.Code),
+                Days = gift.Days,
+                Status = GiftStatus(gift),
+                CreatedAt = Utc(gift.CreatedAt),
+                RedeemedByUserName = gift.RedeemedBy?.UserName ?? string.Empty,
+                RedeemedAt = gift.RedeemedAt is null ? null : Utc(gift.RedeemedAt.Value)
+            };
+        }
+
+        private static string NewGiftCode()
+        {
+            return Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(12)).ToLowerInvariant();
+        }
+
+        public async Task<CheckoutDto> CreateGiftCheckoutAsync(string userId, CreateCheckoutDto model)
+        {
+            var successUrl = EnsureOwnUrl(model?.SuccessUrl, "success");
+            var cancelUrl = EnsureOwnUrl(model?.CancelUrl, "cancel");
+            var user = await _accounts.GetByIdAsync(userId) ?? throw new NotFoundException("User not found.");
+
+            if (!successUrl.Contains("{CHECKOUT_SESSION_ID}"))
+            {
+                successUrl += (successUrl.Contains('?') ? "&" : "?") + "session_id={CHECKOUT_SESSION_ID}";
+            }
+
+            var checkout = await _stripe.CreateGiftCheckoutAsync(userId, user.Email ?? string.Empty, successUrl, cancelUrl);
+            if (string.IsNullOrEmpty(checkout.Url))
+            {
+                throw new BadRequestException("The payment page could not be opened. Try again.");
+            }
+
+            return new CheckoutDto { Url = checkout.Url };
+        }
+
+        // the page Stripe sends the buyer back to: the payment is checked, and the gift (with its link) is made once for that payment
+        public async Task<NitroGiftDto> ConfirmGiftAsync(string userId, ConfirmCheckoutDto model)
+        {
+            var sessionId = (model?.SessionId ?? string.Empty).Trim();
+            if (sessionId.Length == 0 || sessionId.Length > 200)
+            {
+                throw new BadRequestException("The payment could not be found.");
+            }
+
+            var gift = await CreateGiftFromSessionAsync(sessionId, userId);
+            return ToGiftDto(gift);
+        }
+
+        // by the return page (buyer known) or by the webhook (buyer taken from the payment)
+        private async Task<NitroGift> CreateGiftFromSessionAsync(string sessionId, string? expectedBuyerId)
+        {
+            var session = await _stripe.GetCheckoutAsync(sessionId) ?? throw new NotFoundException("The payment could not be found.");
+            if (session.Kind != "gift")
+            {
+                throw new BadRequestException("That payment is not a gift.");
+            }
+
+            if (expectedBuyerId is not null && session.UserId != expectedBuyerId)
+            {
+                throw new ForbiddenException("That payment belongs to someone else.");
+            }
+
+            if (!session.Paid || session.UserId.Length == 0)
+            {
+                throw new BadRequestException("The payment is not finished yet.");
+            }
+
+            await Gate.WaitAsync();
+            try
+            {
+                var existing = await _gifts.GetByStripeSessionAsync(sessionId);
+                if (existing is not null)
+                {
+                    return existing;
+                }
+
+                var gift = new NitroGift
+                {
+                    Code = NewGiftCode(),
+                    BuyerId = session.UserId,
+                    Days = NitroRules.GiftDays,
+                    AmountCents = session.AmountCents > 0 ? session.AmountCents : NitroRules.GiftPriceCents,
+                    StripeSessionId = sessionId
+                };
+                await _gifts.AddAsync(gift);
+                await LogAsync(session.UserId, NitroEventKind.GiftBought, NitroSource.Gift, "Bought a Nitro gift (" + gift.Days + " days)", gift.AmountCents, NitroRules.Currency, null, null);
+                return (await _gifts.GetByCodeAsync(gift.Code))!;
+            }
+            finally
+            {
+                Gate.Release();
+            }
+        }
+
+        public async Task<List<NitroGiftDto>> GetMyGiftsAsync(string userId)
+        {
+            return (await _gifts.GetBoughtByAsync(userId)).Select(ToGiftDto).ToList();
+        }
+
+        public async Task<NitroGiftInfoDto> GetGiftAsync(string viewerId, string code)
+        {
+            var gift = await _gifts.GetByCodeAsync((code ?? string.Empty).Trim().ToLowerInvariant()) ?? throw new NotFoundException("This gift link is not valid.");
+            var status = GiftStatus(gift);
+            var reason = string.Empty;
+            if (status == "revoked")
+            {
+                reason = "This gift was taken back.";
+            }
+            else if (status == "redeemed")
+            {
+                reason = gift.RedeemedById == viewerId ? "You already claimed this gift." : "Somebody already claimed this gift.";
+            }
+            else
+            {
+                var row = await _subscriptions.GetByUserAsync(viewerId);
+                if (row is not null && row.Source == NitroSource.Stripe && row.IsActive(DateTime.UtcNow))
+                {
+                    reason = "You already pay for Nitro. Claim the gift after your subscription ends.";
+                }
+            }
+
+            return new NitroGiftInfoDto
+            {
+                Code = gift.Code,
+                FromUserName = gift.Buyer.UserName ?? string.Empty,
+                FromDisplayName = Name(gift.Buyer),
+                FromAvatarUrl = gift.Buyer.AvatarUrl ?? string.Empty,
+                Days = gift.Days,
+                Status = status,
+                CanRedeem = reason.Length == 0,
+                Reason = reason
+            };
+        }
+
+        public async Task<(NitroStatusDto Status, NitroChangeDto Change)> RedeemGiftAsync(string userId, string code)
+        {
+            var change = new NitroChangeDto { UserIds = { userId } };
+            await Gate.WaitAsync();
+            try
+            {
+                var gift = await _gifts.GetByCodeAsync((code ?? string.Empty).Trim().ToLowerInvariant()) ?? throw new NotFoundException("This gift link is not valid.");
+                if (gift.RevokedAt is not null)
+                {
+                    throw new BadRequestException("This gift was taken back.");
+                }
+
+                if (gift.RedeemedAt is not null)
+                {
+                    throw new BadRequestException(gift.RedeemedById == userId ? "You already claimed this gift." : "Somebody already claimed this gift.");
+                }
+
+                var now = DateTime.UtcNow;
+                var row = await _subscriptions.GetByUserAsync(userId);
+                if (row is not null && row.Source == NitroSource.Stripe && row.IsActive(now))
+                {
+                    throw new BadRequestException("You already pay for Nitro. Claim the gift after your subscription ends.");
+                }
+
+                // a gift is added to what the person still has from an earlier gift or from an admin
+                var start = row is not null && row.IsActive(now) ? row.CurrentPeriodEnd : now;
+                if (row is null)
+                {
+                    row = new NitroSubscription { UserId = userId, StartedAt = now };
+                    row.Source = NitroSource.Gift;
+                    row.Status = NitroStatus.Active;
+                    row.CurrentPeriodEnd = start.AddDays(gift.Days);
+                    await _subscriptions.AddAsync(row);
+                }
+                else
+                {
+                    if (!row.IsActive(now))
+                    {
+                        row.StartedAt = now;
+                    }
+
+                    row.Source = NitroSource.Gift;
+                    row.Status = NitroStatus.Active;
+                    row.StripeCustomerId = string.Empty;
+                    row.StripeSubscriptionId = string.Empty;
+                    row.CancelAtPeriodEnd = false;
+                    row.EndedAt = null;
+                    row.CurrentPeriodEnd = start.AddDays(gift.Days);
+                    await _subscriptions.UpdateAsync(row);
+                }
+
+                gift.RedeemedById = userId;
+                gift.RedeemedAt = now;
+                await _gifts.UpdateAsync(gift);
+                await LogAsync(userId, NitroEventKind.GiftRedeemed, NitroSource.Gift, "Claimed a Nitro gift from " + (gift.Buyer.UserName ?? "someone") + " (" + gift.Days + " days)", null, null, null, null);
+                if (gift.BuyerId != userId)
+                {
+                    change.UserIds.Add(gift.BuyerId);
+                }
+            }
+            finally
+            {
+                Gate.Release();
+            }
+
+            return (await GetStatusAsync(userId), change);
+        }
+
+        // a super admin makes a gift link nobody paid for
+        public async Task<NitroGiftDto> CreateFreeGiftAsync(string actorId, CreateFreeGiftDto model)
+        {
+            var days = model?.Days ?? 0;
+            if (days < 1 || days > 3650)
+            {
+                throw new BadRequestException("Choose between 1 and 3650 days.");
+            }
+
+            var gift = new NitroGift { Code = NewGiftCode(), BuyerId = actorId, Days = days, IsFree = true };
+            await _gifts.AddAsync(gift);
+            await LogAsync(actorId, NitroEventKind.GiftBought, NitroSource.Gift, "Made a free Nitro gift (" + days + (days == 1 ? " day)" : " days)"), null, null, null, actorId);
+            return ToGiftDto((await _gifts.GetByCodeAsync(gift.Code))!);
+        }
+
+        public async Task RevokeGiftAsync(string actorId, int giftId)
+        {
+            await Gate.WaitAsync();
+            try
+            {
+                var gift = await _gifts.GetByIdAsync(giftId) ?? throw new NotFoundException("That gift does not exist.");
+                if (gift.RedeemedAt is not null)
+                {
+                    throw new BadRequestException("This gift was already claimed: take the Nitro away from the person instead.");
+                }
+
+                if (gift.RevokedAt is not null)
+                {
+                    throw new BadRequestException("This gift was already taken back.");
+                }
+
+                gift.RevokedAt = DateTime.UtcNow;
+                await _gifts.UpdateAsync(gift);
+                await LogAsync(gift.BuyerId, NitroEventKind.GiftRevoked, NitroSource.Gift, "A Nitro gift (" + gift.Code.Substring(0, 6) + "...) was taken back by an admin", null, null, null, actorId);
+            }
+            finally
+            {
+                Gate.Release();
+            }
+        }
+
+        public async Task<AdminNitroGiftPageDto> GetAdminGiftsAsync(string? search, int page)
+        {
+            const int size = 20;
+            page = Math.Max(1, page);
+            var (items, total) = await _gifts.GetPageAsync(search, page, size);
+            return new AdminNitroGiftPageDto
+            {
+                Page = page,
+                PageSize = size,
+                Total = total,
+                Items = items.Select(gift => new AdminNitroGiftDto
+                {
+                    Id = gift.Id,
+                    Code = gift.Code,
+                    Link = GiftLink(gift.Code),
+                    BuyerUserName = gift.Buyer.UserName ?? string.Empty,
+                    Days = gift.Days,
+                    AmountCents = gift.AmountCents,
+                    IsFree = gift.IsFree,
+                    Status = GiftStatus(gift),
+                    RedeemedByUserName = gift.RedeemedBy?.UserName ?? string.Empty,
+                    CreatedAt = Utc(gift.CreatedAt),
+                    RedeemedAt = gift.RedeemedAt is null ? null : Utc(gift.RedeemedAt.Value)
+                }).ToList()
+            };
         }
 
         // ---------- Stripe news
@@ -660,6 +956,11 @@ namespace Service.Services
                 StripeEventId = stripeEventId,
                 ActorId = actorId
             });
+        }
+
+        private static string SourceName(NitroSource source)
+        {
+            return source switch { NitroSource.Admin => "admin", NitroSource.Gift => "gift", _ => "stripe" };
         }
 
         private static bool IsRunning(string status)

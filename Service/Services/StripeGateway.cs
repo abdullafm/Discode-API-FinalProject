@@ -63,13 +63,50 @@ namespace Service.Services
             return new StripeCheckout(session.Url ?? string.Empty, session.Id);
         }
 
+        public async Task<StripeCheckout> CreateGiftCheckoutAsync(string userId, string email, string successUrl, string cancelUrl)
+        {
+            var options = new SessionCreateOptions
+            {
+                Mode = "payment",
+                ClientReferenceId = userId,
+                SuccessUrl = successUrl,
+                CancelUrl = cancelUrl,
+                Metadata = new Dictionary<string, string> { ["userId"] = userId, ["kind"] = "gift" },
+                LineItems = new List<SessionLineItemOptions>
+                {
+                    new SessionLineItemOptions
+                    {
+                        Quantity = 1,
+                        PriceData = new SessionLineItemPriceDataOptions
+                        {
+                            Currency = NitroRules.Currency,
+                            UnitAmount = NitroRules.GiftPriceCents,
+                            ProductData = new SessionLineItemPriceDataProductDataOptions
+                            {
+                                Name = "Discode Nitro gift",
+                                Description = NitroRules.GiftDays + " days of Nitro for a friend"
+                            }
+                        }
+                    }
+                }
+            };
+            if (!string.IsNullOrWhiteSpace(email))
+            {
+                options.CustomerEmail = email;
+            }
+
+            var session = await Run(() => new SessionService(Client()).CreateAsync(options));
+            return new StripeCheckout(session.Url ?? string.Empty, session.Id);
+        }
+
         public async Task<StripeCheckoutResult?> GetCheckoutAsync(string sessionId)
         {
             try
             {
                 var session = await new SessionService(Client()).GetAsync(sessionId);
                 var paid = session.Status == "complete" && (session.PaymentStatus == "paid" || session.PaymentStatus == "no_payment_required");
-                return new StripeCheckoutResult(session.Id, paid, session.ClientReferenceId ?? string.Empty, session.CustomerId ?? string.Empty, session.SubscriptionId ?? string.Empty);
+                var kind = session.Metadata is not null && session.Metadata.TryGetValue("kind", out var found) ? found : string.Empty;
+                return new StripeCheckoutResult(session.Id, paid, session.ClientReferenceId ?? string.Empty, session.CustomerId ?? string.Empty, session.SubscriptionId ?? string.Empty, kind, (int)(session.AmountTotal ?? 0));
             }
             catch (StripeException failure) when (failure.StripeError?.Code == "resource_missing" || failure.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
             {
@@ -144,7 +181,8 @@ namespace Service.Services
             {
                 case Stripe.Checkout.Session session:
                     return new StripeEventInfo(stripeEvent.Id, stripeEvent.Type, session.CustomerId ?? string.Empty, session.SubscriptionId ?? string.Empty,
-                        session.ClientReferenceId ?? string.Empty, string.Empty, null, false, null, string.Empty, string.Empty);
+                        session.ClientReferenceId ?? string.Empty, string.Empty, null, false, null, string.Empty, string.Empty,
+                        session.Metadata is not null && session.Metadata.TryGetValue("kind", out var sessionKind) ? sessionKind : string.Empty, session.Id ?? string.Empty);
                 case Subscription subscription:
                     var info = ToInfo(subscription);
                     return new StripeEventInfo(stripeEvent.Id, stripeEvent.Type, info.CustomerId, info.Id, info.UserId, info.Status,

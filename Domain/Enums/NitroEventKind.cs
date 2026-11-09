@@ -9,6 +9,9 @@ namespace Domain.Enums
         Expired = 5,
         PaymentFailed = 6,
         GrantedByAdmin = 7,
-        RevokedByAdmin = 8
+        RevokedByAdmin = 8,
+        GiftBought = 9,
+        GiftRedeemed = 10,
+        GiftRevoked = 11
     }
 }
