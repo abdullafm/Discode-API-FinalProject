@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Domain.Common;
 using Domain.Entities;
 using Domain.Enums;
@@ -23,6 +24,7 @@ namespace Service.Services
         private readonly IBoostService _boosts;
         private readonly IStripeGateway _stripe;
         private readonly AppSettings _app;
+        private readonly Microsoft.Extensions.Logging.ILogger _audit;
 
         public NitroService(INitroSubscriptionRepository subscriptions,
                             INitroEventRepository events,
@@ -32,8 +34,10 @@ namespace Service.Services
                             INitroAccessService access,
                             IBoostService boosts,
                             IStripeGateway stripe,
-                            IOptions<AppSettings> app)
+                            IOptions<AppSettings> app,
+                            Microsoft.Extensions.Logging.ILoggerFactory loggerFactory)
         {
+            _audit = loggerFactory.CreateLogger("Audit");
             _subscriptions = subscriptions;
             _events = events;
             _gifts = gifts;
@@ -141,9 +145,11 @@ namespace Service.Services
 
             if (await _events.ExistsForStripeEventAsync(info.Id))
             {
+                _audit.LogInformation("Stripe event {EventId} ({Type}) was already handled", info.Id, info.Type);
                 return new NitroChangeDto();
             }
 
+            _audit.LogInformation("Stripe event {EventId} ({Type}) for user {UserId}", info.Id, info.Type, info.UserId);
             switch (info.Type)
             {
                 case "checkout.session.completed":
@@ -254,6 +260,7 @@ namespace Service.Services
         {
             var name = (model?.UserName ?? string.Empty).Trim();
             var days = model?.Days ?? 0;
+            _audit.LogInformation("Nitro grant by {ActorId}: {UserName} for {Days} days", actorId, name, days);
             if (name.Length == 0)
             {
                 throw new BadRequestException("Enter a user name.");
@@ -330,6 +337,7 @@ namespace Service.Services
 
         public async Task<NitroChangeDto> RevokeAsync(string actorId, string userName)
         {
+            _audit.LogInformation("Nitro revoke by {ActorId}: {UserName}", actorId, userName);
             var user = await _accounts.GetByUserNameAsync((userName ?? string.Empty).Trim()) ?? throw new NotFoundException("That user does not exist.");
             await Gate.WaitAsync();
             try

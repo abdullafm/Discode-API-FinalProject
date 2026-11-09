@@ -15,24 +15,29 @@ namespace Discode_API_FinalProject.Hubs
 
         public async ValueTask<object?> InvokeMethodAsync(HubInvocationContext context, Func<HubInvocationContext, ValueTask<object?>> next)
         {
+            _logger.LogDebug("Hub call {Method} by {User}", context.HubMethodName, context.Context.UserIdentifier);
             try
             {
                 return await next(context);
             }
-            catch (HubException)
+            catch (HubException ex)
             {
+                _logger.LogInformation("Hub call {Method} by {User} was turned down: {Reason}", context.HubMethodName, context.Context.UserIdentifier, ex.Message);
                 throw;
             }
             catch (NotFoundException ex)
             {
+                _logger.LogInformation("Hub call {Method} by {User} was turned down: {Reason}", context.HubMethodName, context.Context.UserIdentifier, ex.Message);
                 throw new HubException(ex.Message);
             }
             catch (ForbiddenException ex)
             {
+                _logger.LogWarning("Hub call {Method} by {User} was forbidden: {Reason}", context.HubMethodName, context.Context.UserIdentifier, ex.Message);
                 throw new HubException(ex.Message);
             }
             catch (BadRequestException ex)
             {
+                _logger.LogInformation("Hub call {Method} by {User} was turned down: {Reason}", context.HubMethodName, context.Context.UserIdentifier, string.Join(" | ", ex.Errors));
                 throw new HubException(ex.Errors.Length > 0 ? ex.Errors[0] : ex.Message);
             }
             catch (OperationCanceledException)
@@ -56,6 +61,7 @@ namespace Discode_API_FinalProject.Hubs
             try
             {
                 await next(context);
+                _logger.LogInformation("Hub connected: {User} ({Connection})", context.Context.UserIdentifier, context.Context.ConnectionId);
             }
             catch (Exception ex)
             {
@@ -69,6 +75,7 @@ namespace Discode_API_FinalProject.Hubs
             try
             {
                 await next(context, exception);
+                _logger.LogInformation("Hub disconnected: {User} ({Connection}){Reason}", context.Context.UserIdentifier, context.Context.ConnectionId, exception is null ? string.Empty : " after " + exception.GetType().Name);
             }
             catch (Exception ex)
             {

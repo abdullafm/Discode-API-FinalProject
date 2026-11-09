@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Domain.Common;
 using AutoMapper;
 using Domain.Constants;
@@ -33,6 +34,7 @@ namespace Service.Services
         private readonly IPresenceService _presence;
         private readonly IMapper _mapper;
         private readonly AppSettings _appSettings;
+        private readonly Microsoft.Extensions.Logging.ILogger _audit;
 
         private const string InvalidCredentials = "Invalid email or password.";
 
@@ -50,8 +52,10 @@ namespace Service.Services
                               IEmailService emailService,
                               IPresenceService presence,
                               IMapper mapper,
-                              IOptions<AppSettings> appSettings)
+                              IOptions<AppSettings> appSettings,
+                              Microsoft.Extensions.Logging.ILoggerFactory loggerFactory)
         {
+            _audit = loggerFactory.CreateLogger("Audit");
             _boosts = boosts;
             _nitro = nitro;
             _accountRepository = accountRepository;
@@ -120,6 +124,8 @@ namespace Service.Services
             {
                 return Fail(roleResult.Errors.Select(e => e.Description).ToArray());
             }
+
+            _audit.LogInformation("Account registered: {UserName} ({UserId}) {Email}", user.UserName, user.Id, MaskEmail(user.Email));
 
             var sent = await SendVerificationCodeAsync(user);
             if (!sent)
@@ -308,36 +314,43 @@ namespace Service.Services
             var user = await _accountRepository.GetByEmailAsync(model.Email.Trim());
             if (user is null)
             {
+                _audit.LogWarning("Sign-in failed: no account for {Email}", MaskEmail(model.Email));
                 return FailLogin(InvalidCredentials);
             }
 
             if (!user.EmailConfirmed)
             {
+                _audit.LogInformation("Sign-in refused: email not confirmed for {UserName} ({UserId})", user.UserName, user.Id);
                 return FailLogin("Confirm your email first. Enter the 4-digit code we sent you.");
             }
 
             if (await _accountRepository.IsLockedOutAsync(user))
             {
+                _audit.LogWarning("Sign-in refused: {UserName} ({UserId}) is locked out after failed attempts", user.UserName, user.Id);
                 return FailLogin("Too many failed attempts. Try again in a few minutes.");
             }
 
             if (!await _accountRepository.CheckPasswordAsync(user, model.Password))
             {
                 await _accountRepository.RegisterFailedAttemptAsync(user);
+                _audit.LogWarning("Sign-in failed: wrong password for {UserName} ({UserId})", user.UserName, user.Id);
                 return FailLogin(InvalidCredentials);
             }
 
             if (user.IsDeleted)
             {
+                _audit.LogWarning("Sign-in refused: {UserName} ({UserId}) is deleted", user.UserName, user.Id);
                 return FailLogin(InvalidCredentials);
             }
 
             if (ModerationMessages.IsBanActive(user.IsBanned, user.BannedUntil, DateTime.UtcNow))
             {
+                _audit.LogWarning("Sign-in refused: {UserName} ({UserId}) is banned", user.UserName, user.Id);
                 return FailLogin(ModerationMessages.Banned(user.BannedUntil, user.BanReason));
             }
 
             await _accountRepository.ResetFailedAttemptsAsync(user);
+            _audit.LogInformation("Signed in: {UserName} ({UserId})", user.UserName, user.Id);
             var roles = await _accountRepository.GetRolesAsync(user);
             var (token, expiresAt) = _tokenService.CreateToken(user, roles);
 
@@ -346,6 +359,13 @@ namespace Service.Services
             response.ExpiresAt = expiresAt;
             response.Roles = roles.ToArray();
             return response;
+        }
+
+        private static string MaskEmail(string? email)
+        {
+            var text = (email ?? string.Empty).Trim();
+            var at = text.IndexOf('@');
+            return at <= 1 ? "***" : text[0] + "***" + text[at..];
         }
 
         private async Task<string> StaffRoleAsync(string userId)
@@ -505,6 +525,7 @@ namespace Service.Services
             }
 
             user.ProfileSetupDone = true;
+            _audit.LogInformation("First profile picture step finished: {UserName} ({UserId}) {Choice}", user.UserName, user.Id, avatar.Length > 0 ? "uploaded a photo" : "kept the letter");
             user.UpdatedAt = DateTime.UtcNow;
             var result = await _accountRepository.UpdateAsync(user);
             if (!result.Succeeded)
@@ -568,6 +589,7 @@ namespace Service.Services
                 return FailProfile(result.Errors.Select(e => e.Description).ToArray());
             }
 
+            _audit.LogInformation("Username changed: {UserId} is now {UserName}", user.Id, user.UserName);
             return new UpdateProfileResponse
             {
                 IsSuccess = true,
@@ -605,6 +627,7 @@ namespace Service.Services
                 return FailProfile(result.Errors.Select(e => e.Description).ToArray());
             }
 
+            _audit.LogInformation("Password changed: {UserName} ({UserId})", user.UserName, user.Id);
             return new UpdateProfileResponse
             {
                 IsSuccess = true

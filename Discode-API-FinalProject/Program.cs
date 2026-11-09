@@ -17,15 +17,18 @@ using Repository.Repositories.Interfaces;
 using Repository.Settings;
 using Service.Helpers.Settings;
 using System.Text;
+using Serilog;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddDiscodeLogging();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<Discode_API_FinalProject.Filters.AccountStatusCache>();
 builder.Services.AddScoped<Discode_API_FinalProject.Hubs.SystemMessenger>();
 builder.Services.AddControllers(options =>
 {
+    options.Filters.Add<Discode_API_FinalProject.Filters.AuditActionFilter>();
     options.Filters.Add<Discode_API_FinalProject.Filters.AccountStatusFilter>();
     options.Filters.Add<Discode_API_FinalProject.Filters.BannedServerFilter>();
 })
@@ -286,6 +289,20 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} -> {StatusCode} in {Elapsed:0} ms (user {UserId}, ip {ClientIp})";
+    options.GetLevel = (http, elapsed, error) =>
+        error is not null || http.Response.StatusCode >= 500 ? Serilog.Events.LogEventLevel.Error
+        : http.Response.StatusCode >= 400 ? Serilog.Events.LogEventLevel.Warning
+        : http.Request.Path.StartsWithSegments("/uploads") || http.Request.Path.StartsWithSegments("/swagger") ? Serilog.Events.LogEventLevel.Debug
+        : Serilog.Events.LogEventLevel.Information;
+    options.EnrichDiagnosticContext = (diagnostic, http) =>
+    {
+        diagnostic.Set("UserId", http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "anonymous");
+        diagnostic.Set("ClientIp", http.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+    };
+});
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseStatusCodePages(async context =>
