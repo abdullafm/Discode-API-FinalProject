@@ -104,6 +104,10 @@ namespace Service.Services
 
             var user = _mapper.Map<AppUser>(model);
             user.ProfileSetupDone = false;
+            if (string.IsNullOrWhiteSpace(user.AvatarUrl))
+            {
+                user.AvatarUrl = LetterAvatar.For(user.UserName);
+            }
 
             var result = await _accountRepository.RegisterAsync(user, model.Password);
             if (!result.Succeeded)
@@ -406,6 +410,11 @@ namespace Service.Services
             var displayName = string.IsNullOrWhiteSpace(model.DisplayName) ? user.DisplayName : model.DisplayName.Trim();
 
             var avatar = (model.AvatarUrl ?? string.Empty).Trim();
+            if (avatar.Length == 0)
+            {
+                avatar = LetterAvatar.For(user.UserName);
+            }
+
             var banner = model.BannerUrl is null ? user.BannerUrl : model.BannerUrl.Trim();
             if (banner.Length > 500 || avatar.Length > 500)
             {
@@ -546,6 +555,11 @@ namespace Service.Services
 
             user.UserName = userName;
             user.NormalizedUserName = userName.ToUpperInvariant();
+            if (string.IsNullOrEmpty(user.AvatarUrl) || LetterAvatar.IsLetter(user.AvatarUrl))
+            {
+                user.AvatarUrl = LetterAvatar.For(userName);
+            }
+
             user.UpdatedAt = DateTime.UtcNow;
 
             var result = await _accountRepository.UpdateAsync(user);
