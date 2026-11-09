@@ -1,10 +1,14 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Repository.Data;
 
 #nullable disable
 
 namespace Repository.Migrations
 {
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20261012154800_AddEmailVerification")]
     /// <inheritdoc />
     public partial class AddEmailVerification : Migration
     {

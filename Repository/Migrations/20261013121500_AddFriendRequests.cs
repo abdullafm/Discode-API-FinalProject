@@ -1,10 +1,14 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Repository.Data;
 
 #nullable disable
 
 namespace Repository.Migrations
 {
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20261013121500_AddFriendRequests")]
     /// <inheritdoc />
     public partial class AddFriendRequests : Migration
     {
