@@ -12,6 +12,7 @@ namespace Domain.Enums
         RevokedByAdmin = 8,
         GiftBought = 9,
         GiftRedeemed = 10,
-        GiftRevoked = 11
+        GiftRevoked = 11,
+        BoostTimeChanged = 12
     }
 }

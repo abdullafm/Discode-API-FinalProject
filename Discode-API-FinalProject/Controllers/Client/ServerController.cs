@@ -23,8 +23,9 @@ namespace Discode_API_FinalProject.Controllers.Client
         private readonly IServerPruneService _pruneService;
         private readonly IHubContext<PresenceHub> _hubContext;
         private readonly DiscoverBroadcaster _discover;
+        private readonly IBoostService _boosts;
 
-        public ServerController(IServerService serverService, IServerAuditService auditService, IServerBanService banService, IServerTimeoutService timeoutService, IServerPruneService pruneService, IHubContext<PresenceHub> hubContext, DiscoverBroadcaster discover)
+        public ServerController(IServerService serverService, IServerAuditService auditService, IServerBanService banService, IServerTimeoutService timeoutService, IServerPruneService pruneService, IHubContext<PresenceHub> hubContext, DiscoverBroadcaster discover, IBoostService boosts)
         {
             _serverService = serverService;
             _auditService = auditService;
@@ -33,6 +34,7 @@ namespace Discode_API_FinalProject.Controllers.Client
             _pruneService = pruneService;
             _hubContext = hubContext;
             _discover = discover;
+            _boosts = boosts;
         }
 
         private string UserId
@@ -161,7 +163,9 @@ namespace Discode_API_FinalProject.Controllers.Client
         [HttpPost("{id:int}/delete")]
         public async Task<IActionResult> Delete(int id, [FromBody] DeleteServerDto model)
         {
+            var boosters = await _boosts.GetBoosterIdsAsync(id);
             var memberIds = await _serverService.DeleteAsync(UserId, id, model);
+            await Helpers.NitroNotifier.TellAsync(_hubContext, _boosts, new Service.Helpers.DTOs.Nitro.NitroChangeDto { UserIds = boosters.ToList() });
             await _hubContext.Clients.Users(memberIds).SendAsync("ServersChanged");
             await _hubContext.Clients.Users(memberIds).SendAsync("ServerRemoved", new { serverId = id, reason = "deleted" });
             await _discover.PublishRemovedAsync(id);

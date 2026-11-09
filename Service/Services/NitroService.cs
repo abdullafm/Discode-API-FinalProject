@@ -314,6 +314,23 @@ namespace Service.Services
             }
         }
 
+        public async Task<NitroChangeDto> AdjustBoostTimeAsync(string actorId, string userName, int hours)
+        {
+            var user = await _accounts.GetByUserNameAsync((userName ?? string.Empty).Trim()) ?? throw new NotFoundException("That user does not exist.");
+            await _boosts.AdjustLockAsync(user.Id, hours);
+            await LogAsync(user.Id, NitroEventKind.BoostTimeChanged, NitroSource.Admin, "The wait on the boosts was made " + (hours > 0 ? "longer" : "shorter") + " by " + Math.Abs(hours) + (Math.Abs(hours) == 1 ? " hour" : " hours"), null, null, null, actorId);
+            var change = new NitroChangeDto { UserIds = { user.Id } };
+            foreach (var boost in await _boostRows.GetForUserAsync(user.Id))
+            {
+                if (!change.ServerIds.Contains(boost.ServerId))
+                {
+                    change.ServerIds.Add(boost.ServerId);
+                }
+            }
+
+            return change;
+        }
+
         public async Task<NitroChangeDto> RevokeAsync(string actorId, string userName)
         {
             var user = await _accounts.GetByUserNameAsync((userName ?? string.Empty).Trim()) ?? throw new NotFoundException("That user does not exist.");

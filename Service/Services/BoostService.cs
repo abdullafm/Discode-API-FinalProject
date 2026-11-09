@@ -201,6 +201,65 @@ namespace Service.Services
             return serverIds;
         }
 
+        // a server that is deleted or banned loses its boosts: the places are empty again, but a boost that was placed less than a day ago
+        // still has to wait out that day before it can be used somewhere else
+        public async Task ReleaseServerAsync(int serverId)
+        {
+            var all = await _boosts.GetForServerAsync(serverId);
+            if (all.Count == 0)
+            {
+                return;
+            }
+
+            var now = DateTime.UtcNow;
+            foreach (var boost in all)
+            {
+                var free = boost.CreatedAt.AddHours(NitroRules.BoostCooldownHours);
+                if (free > now)
+                {
+                    await _cooldowns.AddAsync(new BoostCooldown { UserId = boost.UserId, AvailableAt = free });
+                }
+            }
+
+            await _boosts.DeleteRangeAsync(all);
+        }
+
+        public async Task AdjustLockAsync(string userId, int hours)
+        {
+            if (hours == 0 || hours < -24 * 30 || hours > 24 * 30)
+            {
+                throw new BadRequestException("Choose a number of hours between -720 and 720 (not 0).");
+            }
+
+            var now = DateTime.UtcNow;
+            var mine = await _boosts.GetForUserAsync(userId);
+            var waiting = await _cooldowns.GetActiveAsync(userId, now);
+            if (mine.Count == 0 && waiting.Count == 0)
+            {
+                throw new BadRequestException("This person has no boost to change.");
+            }
+
+            // a boost can be moved a day after it was placed: placing it later (or earlier) moves that time
+            foreach (var boost in mine)
+            {
+                boost.CreatedAt = boost.CreatedAt.AddHours(hours);
+                await _boosts.UpdateAsync(boost);
+            }
+
+            foreach (var cooldown in waiting)
+            {
+                cooldown.AvailableAt = cooldown.AvailableAt.AddHours(hours);
+                if (cooldown.AvailableAt <= now)
+                {
+                    await _cooldowns.DeleteAsync(cooldown);
+                }
+                else
+                {
+                    await _cooldowns.UpdateAsync(cooldown);
+                }
+            }
+        }
+
         public async Task<bool> PerksUnlockedAsync(int serverId)
         {
             return await _boosts.CountForServerAsync(serverId) >= NitroRules.BoostsForPerks;

@@ -65,9 +65,11 @@ namespace Discode_API_FinalProject.Controllers.Admin
 
         [Authorize(Roles = Roles.SuperAdmin)]
         [HttpPost("servers/{id:int}/ban")]
-        public async Task<IActionResult> BanServer(int id, [FromBody] Service.Helpers.DTOs.Admin.BanServerDto model)
+        public async Task<IActionResult> BanServer(int id, [FromBody] Service.Helpers.DTOs.Admin.BanServerDto model, [FromServices] IBoostService boosts)
         {
+            var boosters = await boosts.GetBoosterIdsAsync(id);
             var memberIds = await _adminService.BanServerAsync(UserId, id, model);
+            await Discode_API_FinalProject.Helpers.NitroNotifier.TellAsync(_hubContext, boosts, new Service.Helpers.DTOs.Nitro.NitroChangeDto { UserIds = boosters.ToList() });
             await _hubContext.Clients.Users(memberIds).SendAsync("ServersChanged");
             await _hubContext.Clients.Users(memberIds).SendAsync("ServerRemoved", new { serverId = id, reason = "banned" });
             await _discover.PublishServerAsync(id);
@@ -88,9 +90,11 @@ namespace Discode_API_FinalProject.Controllers.Admin
 
         [Authorize(Roles = Roles.SuperAdmin)]
         [HttpDelete("servers/{id:int}")]
-        public async Task<IActionResult> DeleteServer(int id)
+        public async Task<IActionResult> DeleteServer(int id, [FromServices] IBoostService boosts)
         {
+            var boosters = await boosts.GetBoosterIdsAsync(id);
             var memberIds = await _adminService.DeleteServerAsync(UserId, id);
+            await Discode_API_FinalProject.Helpers.NitroNotifier.TellAsync(_hubContext, boosts, new Service.Helpers.DTOs.Nitro.NitroChangeDto { UserIds = boosters.ToList() });
             await _hubContext.Clients.Users(memberIds).SendAsync("ServersChanged");
             await _hubContext.Clients.Users(memberIds).SendAsync("ServerRemoved", new { serverId = id, reason = "deleted" });
             await _discover.PublishRemovedAsync(id);

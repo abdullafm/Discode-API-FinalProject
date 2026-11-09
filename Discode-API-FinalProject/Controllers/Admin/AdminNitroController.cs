@@ -66,6 +66,15 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return Ok();
         }
 
+        // makes the wait before a boost can be moved longer (hours above 0) or shorter (below 0)
+        [Authorize(Roles = Roles.SuperAdmin)]
+        [HttpPost("boost-time")]
+        public async Task<IActionResult> BoostTime([FromBody] AdjustBoostTimeDto model)
+        {
+            await NitroNotifier.TellAsync(_hubContext, _boosts, await _nitro.AdjustBoostTimeAsync(UserId, model?.UserName ?? string.Empty, model?.Hours ?? 0));
+            return Ok();
+        }
+
         [Authorize(Roles = Roles.SuperAdmin)]
         [HttpPost("revoke")]
         public async Task<IActionResult> Revoke([FromBody] GrantNitroDto model)

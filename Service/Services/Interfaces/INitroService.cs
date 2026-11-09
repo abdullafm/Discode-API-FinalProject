@@ -16,6 +16,8 @@ namespace Service.Services.Interfaces
         Task<NitroChangeDto> GrantAsync(string actorId, GrantNitroDto model);
         Task<NitroChangeDto> RevokeAsync(string actorId, string userName);
         Task<AdminNitroPageDto> GetAdminPageAsync(string? search, bool activeOnly, int page);
+        // longer or shorter wait before the boosts of a person can be moved
+        Task<NitroChangeDto> AdjustBoostTimeAsync(string actorId, string userName, int hours);
 
         // ---- gifts
         Task<CheckoutDto> CreateGiftCheckoutAsync(string userId, CreateCheckoutDto model);

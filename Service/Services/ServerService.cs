@@ -421,6 +421,7 @@ namespace Service.Services
             }
 
             var memberIds = await _members.GetUserIdsAsync(serverId);
+            await _boosts.ReleaseServerAsync(serverId);
             await _overwrites.DeleteForServerAsync(serverId);
             await _servers.DeleteAsync(server);
             return memberIds;
