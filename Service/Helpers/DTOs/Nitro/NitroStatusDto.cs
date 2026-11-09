@@ -16,5 +16,8 @@ namespace Service.Helpers.DTOs.Nitro
         public long MaxFileBytes { get; set; }
         public int PriceCents { get; set; }
         public string Currency { get; set; } = string.Empty;
+        // a Nitro gift for somebody else: what it costs and how many days it gives
+        public int GiftPriceCents { get; set; }
+        public int GiftDays { get; set; }
     }
 }

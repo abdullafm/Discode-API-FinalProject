@@ -66,7 +66,9 @@ namespace Service.Services
                 MaxMessageLength = limits.MaxMessageLength,
                 MaxFileBytes = limits.MaxFileBytes,
                 PriceCents = NitroRules.MonthlyPriceCents,
-                Currency = NitroRules.Currency
+                Currency = NitroRules.Currency,
+                GiftPriceCents = NitroRules.GiftPriceCents,
+                GiftDays = NitroRules.GiftDays
             };
         }
 
