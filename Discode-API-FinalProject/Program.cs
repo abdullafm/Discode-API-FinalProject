@@ -227,13 +227,14 @@ builder.Services.AddRateLimiter(options =>
             partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = builder.Environment.IsDevelopment() ? 100 : 10,
+                PermitLimit = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing") ? 100 : 10,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
 });
 
 var app = builder.Build();
+var isTesting = app.Environment.IsEnvironment("Testing");
 var startupLog = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
 
 AppDomain.CurrentDomain.UnhandledException += (_, e) =>
@@ -249,13 +250,23 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     try
     {
-        await db.Database.MigrateAsync();
-        await scope.ServiceProvider.GetRequiredService<ICallRepository>().EndAllOpenAsync();
-        await scope.ServiceProvider.GetRequiredService<IGroupCallRepository>().EndAllOpenAsync();
+        if (isTesting)
+        {
+            await db.Database.EnsureCreatedAsync();
+        }
+        else
+        {
+            await db.Database.MigrateAsync();
+            await scope.ServiceProvider.GetRequiredService<ICallRepository>().EndAllOpenAsync();
+            await scope.ServiceProvider.GetRequiredService<IGroupCallRepository>().EndAllOpenAsync();
+        }
 
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         await RoleSeeder.SeedAsync(roleManager);
-        await RoleSeeder.SeedSuperAdminAsync(scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>(), app.Configuration["Seed:SuperAdminEmail"]);
+        if (!isTesting)
+        {
+            await RoleSeeder.SeedSuperAdminAsync(scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>(), app.Configuration["Seed:SuperAdminEmail"]);
+        }
         await SystemUserSeeder.SeedAsync(db);
     }
     catch (Exception ex)
@@ -264,22 +275,25 @@ using (var scope = app.Services.CreateScope())
         throw;
     }
 
-    try
+    if (!isTesting)
     {
-        await EmojiSeeder.SeedAsync(db);
-    }
-    catch (Exception ex)
-    {
-        startupLog.LogError(ex, "Seeding the emojis failed. The app starts without them.");
-    }
+        try
+        {
+            await EmojiSeeder.SeedAsync(db);
+        }
+        catch (Exception ex)
+        {
+            startupLog.LogError(ex, "Seeding the emojis failed. The app starts without them.");
+        }
 
-    try
-    {
-        await TranslationSeeder.SeedAsync(db);
-    }
-    catch (Exception ex)
-    {
-        startupLog.LogError(ex, "Seeding the translations failed. The app starts without them.");
+        try
+        {
+            await TranslationSeeder.SeedAsync(db);
+        }
+        catch (Exception ex)
+        {
+            startupLog.LogError(ex, "Seeding the translations failed. The app starts without them.");
+        }
     }
 }
 
@@ -320,7 +334,10 @@ app.UseStatusCodePages(async context =>
     await response.WriteAsJsonAsync(new { isSuccess = false, errors = new[] { message }, traceId = context.HttpContext.TraceIdentifier });
 });
 app.UseForwardedHeaders();
-app.UseHttpsRedirection();
+if (!isTesting)
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 app.UseCors("Client");
 app.UseRateLimiter();
@@ -329,3 +346,5 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<PresenceHub>("/hubs/presence");
 app.Run();
+
+public partial class Program { }
