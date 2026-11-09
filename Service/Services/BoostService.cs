@@ -9,7 +9,6 @@ namespace Service.Services
 {
     public class BoostService : IBoostService
     {
-        // two quick clicks must not squeeze a third boost out of two slots
         private static readonly SemaphoreSlim Gate = new(1, 1);
 
         private readonly IServerBoostRepository _boosts;
@@ -66,8 +65,6 @@ namespace Service.Services
             return await ChangeAsync(userId, serverId);
         }
 
-        // taking a boost off is allowed at any time, but its place is only free again after the cooldown (so boosts can not hop around at once)
-        // (it also works for a server the person has left: the boost stays there until they take it off)
         public async Task<BoostChangeDto> UnboostAsync(string userId, int serverId)
         {
             await Gate.WaitAsync();
@@ -92,7 +89,6 @@ namespace Service.Services
             return await ChangeAsync(userId, serverId);
         }
 
-        // one boost goes to another server (it has to have stayed where it is for the cooldown time); the old server may lose its perks
         public async Task<BoostChangeDto> MoveAsync(string userId, MoveBoostDto model)
         {
             var from = model?.FromServerId ?? 0;
@@ -201,8 +197,6 @@ namespace Service.Services
             return serverIds;
         }
 
-        // a server that is deleted or banned loses its boosts: the places are empty again, but a boost that was placed less than a day ago
-        // still has to wait out that day before it can be used somewhere else
         public async Task ReleaseServerAsync(int serverId)
         {
             var all = await _boosts.GetForServerAsync(serverId);
@@ -239,7 +233,6 @@ namespace Service.Services
                 throw new BadRequestException("This person has no boost to change.");
             }
 
-            // a boost can be moved a day after it was placed: placing it later (or earlier) moves that time
             foreach (var boost in mine)
             {
                 boost.CreatedAt = boost.CreatedAt.AddHours(hours);
@@ -290,8 +283,6 @@ namespace Service.Services
             return _members.GetUserIdsAsync(serverId);
         }
 
-        // below 14 boosts the server loses what the boosts unlocked: the animated icon, the banner and the short link
-        // (the random invite code keeps working)
         private async Task EnforcePerksAsync(int serverId)
         {
             if (await PerksUnlockedAsync(serverId))

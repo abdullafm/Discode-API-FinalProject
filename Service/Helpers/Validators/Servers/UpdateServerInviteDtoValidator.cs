@@ -15,7 +15,6 @@ namespace Service.Helpers.Validators.Servers
 
         public UpdateServerInviteDtoValidator()
         {
-            // an empty link is how the custom link is removed
             RuleFor(x => x.InviteCode)
                 .Must(code => string.IsNullOrWhiteSpace(code) || Regex.IsMatch(code.Trim(), "^[A-Za-z0-9_-]{3,32}$")).WithMessage("Use 3 to 32 letters, numbers, dashes or underscores.")
                 .Must(code => string.IsNullOrWhiteSpace(code) || !Reserved.Contains(code.Trim().ToLowerInvariant())).WithMessage("That link name is reserved.")

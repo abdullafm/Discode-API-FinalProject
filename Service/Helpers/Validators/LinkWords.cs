@@ -2,10 +2,8 @@ using System.Text;
 
 namespace Service.Helpers.Validators
 {
-    // Words a public link must not contain: swearing, insults and adult words in English, Russian (latin letters) and Azerbaijani/Turkish
     public static class LinkWords
     {
-        // forbidden anywhere inside the link
         private static readonly string[] Inside =
         {
             "fuck", "shit", "bitch", "cunt", "whore", "slut", "nigg", "fagg", "asshole", "bastard", "pussy", "dickhead",
@@ -14,13 +12,11 @@ namespace Service.Helpers.Validators
             "orospu", "siktir", "sikis", "sikik", "yarrak", "amcik", "amciq", "gotveren", "qehbe", "peyser", "pezevenk", "ananisik"
         };
 
-        // too short to look for inside other words (like "essex" or "class"): only when the whole link is that word
         private static readonly string[] Whole =
         {
             "rape", "pedo", "nazi", "nude", "ebat", "ebal", "sex", "xxx", "dick", "cock", "ass", "tits", "boob", "anal", "porno", "sik", "sikim", "amk", "got", "pox", "suka", "hui", "huy", "xuy", "nahuy", "nahui", "18plus", "adult"
         };
 
-        // real words and places that happen to contain a bad word
         private static readonly string[] Innocent = { "scunthorpe", "penistone", "cockburn", "cockermouth", "shiitake" };
 
         public static bool IsAllowed(string? link)
@@ -44,7 +40,6 @@ namespace Service.Helpers.Validators
                 }
             }
 
-            // the pieces between dashes and underscores are looked at one by one for the short words
             foreach (var piece in link.ToLowerInvariant().Split(new[] { '-', '_' }, StringSplitOptions.RemoveEmptyEntries))
             {
                 var word = Normalize(piece);
@@ -57,7 +52,6 @@ namespace Service.Helpers.Validators
             return !Whole.Contains(plain);
         }
 
-        // lower case, look-alike digits and symbols turned back into letters, everything else dropped
         private static string Normalize(string value)
         {
             var result = new StringBuilder(value.Length);

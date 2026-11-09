@@ -1,6 +1,5 @@
 namespace Service.Helpers.DTOs.Live
 {
-    // The host asks a viewer to come on stream as a guest
     public class LiveGuestInviteDto
     {
         public int StreamId { get; set; }
@@ -11,7 +10,6 @@ namespace Service.Helpers.DTOs.Live
         public string Title { get; set; } = string.Empty;
     }
 
-    // What happened to an invitation: the host hears about it, and the guest (if there is one) starts
     public class LiveGuestInviteAnswerDto
     {
         public string HostConnectionId { get; set; } = string.Empty;

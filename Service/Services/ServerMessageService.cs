@@ -192,7 +192,6 @@ namespace Service.Services
                 throw new NotFoundException("Message not found.");
             }
 
-            // only the author edits a message; a poll is not text
             if (message.SenderId != userId)
             {
                 throw new ForbiddenException("You can only edit your own messages.");
@@ -218,7 +217,6 @@ namespace Service.Services
 
         private const int MaxPinnedMessages = 50;
 
-        // pinning needs Manage Messages (the owner has it); everybody who can see the channel can read the pins
         public async Task<ServerMessageUpdateDto> PinAsync(string userId, int serverId, int channelId, int messageId, PinServerMessageDto model)
         {
             var (channel, perms) = await RequireViewAsync(userId, serverId, channelId);
@@ -363,7 +361,6 @@ namespace Service.Services
             var everyone = canEveryone && EveryoneMention.IsMatch(text);
             var here = canEveryone && HereMention.IsMatch(text);
 
-            // @username: anybody may mention one member
             var named = PersonalMention.Matches(text)
                 .Select(m => m.Groups[1].Value.ToLowerInvariant())
                 .Where(name => name != "everyone" && name != "here")

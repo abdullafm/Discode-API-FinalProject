@@ -1,6 +1,5 @@
 namespace Service.Helpers.DTOs.Nitro
 {
-    // Who has to be told (live) that something about Nitro or a boost changed
     public class NitroChangeDto
     {
         public List<string> UserIds { get; set; } = new();

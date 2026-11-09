@@ -404,7 +404,6 @@ namespace Service.Services
 
             var displayName = string.IsNullOrWhiteSpace(model.DisplayName) ? user.DisplayName : model.DisplayName.Trim();
 
-            // an animated avatar and a banner are Nitro perks
             var avatar = (model.AvatarUrl ?? string.Empty).Trim();
             var banner = model.BannerUrl is null ? user.BannerUrl : model.BannerUrl.Trim();
             if (banner.Length > 500 || avatar.Length > 500)

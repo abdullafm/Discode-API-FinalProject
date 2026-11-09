@@ -4,7 +4,6 @@ using Service.Services.Interfaces;
 
 namespace Discode_API_FinalProject.Helpers
 {
-    // Ends the Nitro of people whose paid time is over, even if Stripe's news never reached us
     public class NitroExpiryWorker : BackgroundService
     {
         private static readonly TimeSpan Interval = TimeSpan.FromMinutes(1);
@@ -34,7 +33,6 @@ namespace Discode_API_FinalProject.Helpers
                 }
                 catch (Exception ex)
                 {
-                    // one bad round (database restarting, Stripe unreachable) must not stop the loop
                     _logger.LogError(ex, "Nitro expiry sweep failed");
                 }
             }

@@ -5,7 +5,6 @@ using Service.Services.Interfaces;
 
 namespace Service.Services
 {
-    // "X is typing...": works out who should see it. Nothing is stored.
     public class TypingService : ITypingService
     {
         private readonly IAccountRepository _accounts;
@@ -61,7 +60,6 @@ namespace Service.Services
                         return null;
                     }
 
-                    // the other person knows this chat by the name of the one who writes
                     result.Key = result.UserName.ToLowerInvariant();
                     result.AudienceIds.Add(other.Id);
                     return result;
@@ -96,7 +94,6 @@ namespace Service.Services
                         return null;
                     }
 
-                    // only somebody who can write in the channel is shown as typing
                     var perms = await _permissions.GetInChannelAsync(userId, serverId, channel);
                     var needed = channel.Kind == ServerChannelKind.Announcement || channel.IsReadOnly ? ServerPermission.ManageMessages : ServerPermission.SendMessages;
                     if ((perms & ServerPermission.ViewChannels) != ServerPermission.ViewChannels || (perms & needed) != needed)

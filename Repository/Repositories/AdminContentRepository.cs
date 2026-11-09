@@ -79,7 +79,6 @@ namespace Repository.Repositories
             return (storyRows, storyTotal);
         }
 
-        // reports about content that was just removed are closed together with it
         public async Task<int> ResolveReportsAsync(ReportTargetType type, string targetId, string adminId)
         {
             var now = DateTime.UtcNow;

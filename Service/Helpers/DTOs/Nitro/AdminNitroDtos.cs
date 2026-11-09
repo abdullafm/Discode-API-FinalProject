@@ -13,7 +13,6 @@ namespace Service.Helpers.DTOs.Nitro
         public DateTime CurrentPeriodEnd { get; set; }
         public bool CancelAtPeriodEnd { get; set; }
         public int Boosts { get; set; }
-        // what this person paid for Nitro in all (subscription, renewals, gifts they bought), how many payments, and the last one
         public long TotalPaidCents { get; set; }
         public int Payments { get; set; }
         public DateTime? LastPaymentAt { get; set; }
@@ -41,7 +40,6 @@ namespace Service.Helpers.DTOs.Nitro
         public int ActiveCount { get; set; }
         public int TotalSubscriptions { get; set; }
         public int TotalEvents { get; set; }
-        // all money taken for Nitro, and the part of it in this calendar month
         public long RevenueCents { get; set; }
         public long RevenueThisMonthCents { get; set; }
         public int Page { get; set; }

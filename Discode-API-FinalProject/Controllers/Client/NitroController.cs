@@ -60,7 +60,6 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(await _nitro.CreatePortalAsync(UserId, model));
         }
 
-        // the page Stripe sends the buyer back to: the payment is checked with Stripe, so Nitro starts even before the webhook arrives
         [HttpPost("confirm")]
         public async Task<IActionResult> Confirm([FromBody] ConfirmCheckoutDto model)
         {
@@ -68,8 +67,6 @@ namespace Discode_API_FinalProject.Controllers.Client
             await TellAsync(result.Change);
             return Ok(result.Status);
         }
-
-        // ---- gifts: one month of Nitro for somebody else, paid once
 
         [HttpPost("gift/checkout")]
         public async Task<IActionResult> GiftCheckout([FromBody] CreateCheckoutDto model)
@@ -103,7 +100,6 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(result.Status);
         }
 
-        // Stripe calls this one itself: it has no login, the signature is what proves it is Stripe
         [AllowAnonymous]
         [HttpPost("webhook")]
         public async Task<IActionResult> Webhook()

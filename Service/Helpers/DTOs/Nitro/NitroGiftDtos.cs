@@ -1,20 +1,17 @@
 namespace Service.Helpers.DTOs.Nitro
 {
-    // A gift the signed-in person bought: the link to send, and what happened to it
     public class NitroGiftDto
     {
         public int Id { get; set; }
         public string Code { get; set; } = string.Empty;
         public string Link { get; set; } = string.Empty;
         public int Days { get; set; }
-        // available, redeemed or revoked
         public string Status { get; set; } = "available";
         public DateTime CreatedAt { get; set; }
         public string RedeemedByUserName { get; set; } = string.Empty;
         public DateTime? RedeemedAt { get; set; }
     }
 
-    // What the person who opens a gift link sees before pressing Accept
     public class NitroGiftInfoDto
     {
         public string Code { get; set; } = string.Empty;
@@ -24,7 +21,6 @@ namespace Service.Helpers.DTOs.Nitro
         public int Days { get; set; }
         public string Status { get; set; } = "available";
         public bool CanRedeem { get; set; }
-        // when it can not be claimed: why
         public string Reason { get; set; } = string.Empty;
     }
 

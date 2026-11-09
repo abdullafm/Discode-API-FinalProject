@@ -147,7 +147,6 @@ namespace Service.Services
             var restriction = await _restrictions.GetAsync(serverId, userId);
             if (restriction is not null && (restriction.Muted || restriction.Deafened))
             {
-                // a moderator's mute / deafen follows the person into every voice channel of the server, however often they leave and come back
                 model.IsMuted = model.IsMuted || restriction.Muted || restriction.Deafened;
                 model.IsDeafened = model.IsDeafened || restriction.Deafened;
             }
@@ -237,7 +236,6 @@ namespace Service.Services
 
         public async Task<ServerVoiceModerationDto> ModerateAsync(string actorId, int serverId, string targetUserId, ModerateServerVoiceDto model)
         {
-            // a moderator may also server-mute themselves; for anybody else the role order applies
             var (state, name) = await LoadTargetAsync(actorId, serverId, targetUserId, "change the voice of", allowSelf: true);
 
             var found = await _restrictions.GetAsync(serverId, targetUserId);
@@ -294,7 +292,6 @@ namespace Service.Services
                 await _restrictions.DeleteAsync(found);
             }
 
-            // the room list reads the effective state, so a server deafen also marks the stored state
             if (restriction.Deafened && !state.IsDeafened)
             {
                 state.IsDeafened = true;
@@ -369,7 +366,6 @@ namespace Service.Services
             return (await _permissions.GetAsync(userId, serverId) & ServerPermission.MuteMembers) == ServerPermission.MuteMembers;
         }
 
-        // the actor needs Mute Members; for another person a higher role too, and the target must be in voice on this server
         private async Task<(ServerVoiceState State, string Name)> LoadTargetAsync(string actorId, int serverId, string targetUserId, string verb, bool allowSelf)
         {
             await EnsureMemberAsync(actorId, serverId);

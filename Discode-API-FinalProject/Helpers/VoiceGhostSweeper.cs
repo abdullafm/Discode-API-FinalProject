@@ -33,7 +33,6 @@ namespace Discode_API_FinalProject.Helpers
                 }
                 catch (Exception ex)
                 {
-                    // one bad sweep (database restarting, ...) must not stop the loop, the next tick tries again
                     _logger.LogError(ex, "Voice ghost sweep failed");
                 }
             }

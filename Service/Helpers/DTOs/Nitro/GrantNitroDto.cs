@@ -9,7 +9,6 @@ namespace Service.Helpers.DTOs.Nitro
     public class AdjustBoostTimeDto
     {
         public string UserName { get; set; } = string.Empty;
-        // above 0: the wait gets longer by this many hours; below 0: shorter
         public int Hours { get; set; }
     }
 }

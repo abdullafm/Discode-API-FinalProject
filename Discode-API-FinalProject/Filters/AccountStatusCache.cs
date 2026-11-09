@@ -3,7 +3,6 @@ using Repository.Repositories.Interfaces;
 
 namespace Discode_API_FinalProject.Filters
 {
-    // keeps the ban / timeout / forced-logout state of a signed-in user for a few seconds so every request does not hit the database
     public class AccountStatusCache
     {
         private static readonly TimeSpan Lifetime = TimeSpan.FromSeconds(5);

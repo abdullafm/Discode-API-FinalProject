@@ -9,7 +9,6 @@ using System.Security.Claims;
 
 namespace Discode_API_FinalProject.Controllers.Client
 {
-    // The "Server Boosts" page of the settings
     [Route("api/boost")]
     [ApiController]
     [Authorize]

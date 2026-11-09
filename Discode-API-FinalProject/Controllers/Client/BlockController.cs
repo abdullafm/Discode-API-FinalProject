@@ -43,7 +43,6 @@ namespace Discode_API_FinalProject.Controllers.Client
                 await PresenceHub.AnnounceCallEndAsync(_hubContext.Clients, ended);
             }
 
-            // nobody stays in the live stream of someone who is blocked either way
             foreach (var left in await _liveStreamService.EjectBlockedAsync(UserId, result.UserId))
             {
                 await _hubContext.Groups.RemoveFromGroupAsync(left.ConnectionId, PresenceHub.LiveGroup(left.StreamId));

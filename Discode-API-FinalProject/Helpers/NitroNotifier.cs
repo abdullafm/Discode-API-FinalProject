@@ -5,7 +5,6 @@ using Service.Services.Interfaces;
 
 namespace Discode_API_FinalProject.Helpers
 {
-    // Live news: the person's own pages learn that Nitro changed, the members of a boosted server that its boosts changed
     public static class NitroNotifier
     {
         public static async Task TellAsync(IHubContext<PresenceHub> hub, IBoostService boosts, NitroChangeDto change)

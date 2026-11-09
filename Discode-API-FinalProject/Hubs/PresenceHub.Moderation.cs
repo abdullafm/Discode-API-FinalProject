@@ -44,7 +44,6 @@ namespace Discode_API_FinalProject.Hubs
             }
         }
 
-        // Lets the page re-sync the timeout (changed from anywhere, not only through the admin API)
         public async Task CheckTimeout()
         {
             using var scope = _scopes.CreateScope();

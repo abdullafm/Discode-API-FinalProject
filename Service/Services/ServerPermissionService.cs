@@ -101,7 +101,6 @@ namespace Service.Services
             return server is not null && server.OwnerId == userId;
         }
 
-        // staff = holds any moderation / management power (the owner always does)
         public async Task<bool> IsStaffAsync(string userId, int serverId)
         {
             return ((await GetAsync(userId, serverId)) & StaffBits) != ServerPermission.None;

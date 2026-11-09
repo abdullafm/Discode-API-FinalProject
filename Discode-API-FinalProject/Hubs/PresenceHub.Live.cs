@@ -106,7 +106,6 @@ namespace Discode_API_FinalProject.Hubs
             }
         }
 
-        // the host asks someone who is watching to come on stream as a guest
         public async Task InviteLiveGuest(int streamId, string userName)
         {
             try
@@ -145,8 +144,6 @@ namespace Discode_API_FinalProject.Hubs
                 throw new HubException(ex.Message);
             }
         }
-
-        // ---- the host and the moderators look after the chat
 
         public async Task SetLiveModerator(int streamId, string userName, bool on)
         {

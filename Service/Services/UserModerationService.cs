@@ -185,7 +185,6 @@ namespace Service.Services
 
             await _moderation.SetRoleAsync(userId, role);
 
-            // the role lives inside the sign-in token, so the old token has to stop working
             user.ForcedLogoutAt = DateTime.UtcNow;
             await LogAsync(actor, user, AdminActionKind.ChangeRole, current + " to " + role, "Signed out to apply the new role");
             await _moderation.SaveChangesAsync();
@@ -342,7 +341,6 @@ namespace Service.Services
 
             await _nitro.EndForDeletedAccountAsync(userId);
 
-            // the log keeps the old username: the repository scrubs the account right after
             await _moderation.DeleteAccountAsync(user, actor.UserId, new AdminAction
             {
                 AdminId = actor.UserId,

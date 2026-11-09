@@ -4,7 +4,6 @@ using Service.Services.Interfaces;
 
 namespace Discode_API_FinalProject.Helpers
 {
-    // A status line with a "clear after" time empties itself when the time comes, and everybody who can see it is told
     public class StatusClearWorker : BackgroundService
     {
         private static readonly TimeSpan Interval = TimeSpan.FromSeconds(30);
@@ -39,7 +38,6 @@ namespace Discode_API_FinalProject.Helpers
                 }
                 catch (Exception ex)
                 {
-                    // one bad round (database restarting) must not stop the loop
                     _logger.LogError(ex, "Status clearing failed");
                 }
             }

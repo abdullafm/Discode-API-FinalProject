@@ -50,7 +50,6 @@ namespace Service.Services
 
             await _permissions.EnsureCanActOnAsync(userId, serverId, targetUserId, "time out");
 
-            // staff can only be timed out (or have it lifted) by the owner: not by higher or lower staff
             if (await _permissions.IsStaffAsync(targetUserId, serverId) && !await _permissions.IsOwnerAsync(userId, serverId))
             {
                 throw new ForbiddenException("Only the server owner can time out a staff member.");
@@ -70,7 +69,6 @@ namespace Service.Services
             membership.TimeoutUntil = DateTime.UtcNow.AddSeconds(totalSeconds);
             await _members.UpdateAsync(membership);
 
-            // a timed-out member can't stay in a voice channel of this server
             await _voiceStates.DeleteForUserInServerAsync(serverId, targetUserId);
 
             var reason = string.IsNullOrWhiteSpace(model.Reason) ? string.Empty : ". Reason: " + model.Reason.Trim();

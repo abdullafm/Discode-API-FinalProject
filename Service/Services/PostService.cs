@@ -87,7 +87,6 @@ namespace Service.Services
             return _mapper.Map<PostDto>(post, ForViewer(viewerId));
         }
 
-        // every picked friend gets the link in their direct messages (the chat turns it into a post card), then the note if there is one
         public async Task<IEnumerable<SentMessageDto>> ShareAsync(string userId, int postId, SharePostDto model)
         {
             if (!await _posts.IsVisibleAsync(userId, postId))
@@ -112,7 +111,6 @@ namespace Service.Services
                 throw new BadRequestException("The message can be at most 500 characters.");
             }
 
-            // only friends: a post is not pushed into the messages of somebody who is not one
             var recipients = new List<AppUser>();
             foreach (var name in names)
             {

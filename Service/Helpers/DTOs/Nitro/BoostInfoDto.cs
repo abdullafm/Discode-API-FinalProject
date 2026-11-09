@@ -9,7 +9,6 @@ namespace Service.Helpers.DTOs.Nitro
         public int MyBoosts { get; set; }
         public int MyBoostsLeft { get; set; }
         public bool CanBoost { get; set; }
-        // a boost that was taken off is free again at this time
         public DateTime? CooldownUntil { get; set; }
         public List<BoosterDto> Boosters { get; set; } = new();
     }

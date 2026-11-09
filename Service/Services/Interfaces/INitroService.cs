@@ -9,17 +9,13 @@ namespace Service.Services.Interfaces
         Task<CheckoutDto> CreatePortalAsync(string userId, CreatePortalDto model);
         Task<(NitroStatusDto Status, NitroChangeDto Change)> ConfirmCheckoutAsync(string userId, ConfirmCheckoutDto model);
         Task<NitroChangeDto> HandleWebhookAsync(string payload, string signature);
-        // ends the Nitro of everybody whose paid time is over
         Task<NitroChangeDto> ExpireOverdueAsync();
-        // an account was deleted: its Nitro ends, its boosts go and the Stripe billing stops
         Task<NitroChangeDto> EndForDeletedAccountAsync(string userId);
         Task<NitroChangeDto> GrantAsync(string actorId, GrantNitroDto model);
         Task<NitroChangeDto> RevokeAsync(string actorId, string userName);
         Task<AdminNitroPageDto> GetAdminPageAsync(string? search, bool activeOnly, int page);
-        // longer or shorter wait before the boosts of a person can be moved
         Task<NitroChangeDto> AdjustBoostTimeAsync(string actorId, string userName, int hours);
 
-        // ---- gifts
         Task<CheckoutDto> CreateGiftCheckoutAsync(string userId, CreateCheckoutDto model);
         Task<NitroGiftDto> ConfirmGiftAsync(string userId, ConfirmCheckoutDto model);
         Task<List<NitroGiftDto>> GetMyGiftsAsync(string userId);

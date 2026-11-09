@@ -12,7 +12,6 @@ namespace Service.Services
 {
     public class NitroService : INitroService
     {
-        // Stripe can send the same news by two roads at once (the webhook and the page we return to): one at a time
         private static readonly SemaphoreSlim Gate = new(1, 1);
 
         private readonly INitroSubscriptionRepository _subscriptions;
@@ -187,7 +186,6 @@ namespace Service.Services
                         continue;
                     }
 
-                    // a renewal whose webhook did not arrive (yet): Stripe knows better than the clock
                     if (fresh.Source == NitroSource.Stripe && fresh.StripeSubscriptionId.Length > 0)
                     {
                         var live = await TryGetSubscriptionAsync(fresh.StripeSubscriptionId);
@@ -230,7 +228,6 @@ namespace Service.Services
                     }
                     catch (BadRequestException)
                     {
-                        // Stripe could not be reached: the account is still closed, the billing has to be stopped in Stripe by hand
                     }
                 }
 
@@ -343,7 +340,6 @@ namespace Service.Services
                     throw new BadRequestException("This person does not have Nitro.");
                 }
 
-                // a subscription that is paid through Stripe is stopped there too, so the person is not charged again
                 if (row.Source == NitroSource.Stripe && row.StripeSubscriptionId.Length > 0)
                 {
                     await _stripe.CancelSubscriptionAsync(row.StripeSubscriptionId);
@@ -425,8 +421,6 @@ namespace Service.Services
             return result;
         }
 
-        // ---------- gifts
-
         private string GiftLink(string code)
         {
             return _app.ClientUrl.TrimEnd('/') + "/gift/" + code;
@@ -477,7 +471,6 @@ namespace Service.Services
             return new CheckoutDto { Url = checkout.Url };
         }
 
-        // the page Stripe sends the buyer back to: the payment is checked, and the gift (with its link) is made once for that payment
         public async Task<NitroGiftDto> ConfirmGiftAsync(string userId, ConfirmCheckoutDto model)
         {
             var sessionId = (model?.SessionId ?? string.Empty).Trim();
@@ -490,7 +483,6 @@ namespace Service.Services
             return ToGiftDto(gift);
         }
 
-        // by the return page (buyer known) or by the webhook (buyer taken from the payment)
         private async Task<NitroGift> CreateGiftFromSessionAsync(string sessionId, string? expectedBuyerId)
         {
             var session = await _stripe.GetCheckoutAsync(sessionId) ?? throw new NotFoundException("The payment could not be found.");
@@ -600,7 +592,6 @@ namespace Service.Services
                     throw new BadRequestException("You already pay for Nitro. Claim the gift after your subscription ends.");
                 }
 
-                // a gift is added to what the person still has from an earlier gift or from an admin
                 var start = row is not null && row.IsActive(now) ? row.CurrentPeriodEnd : now;
                 if (row is null)
                 {
@@ -644,7 +635,6 @@ namespace Service.Services
             return (await GetStatusAsync(userId), change);
         }
 
-        // a super admin makes a gift link nobody paid for
         public async Task<NitroGiftDto> CreateFreeGiftAsync(string actorId, CreateFreeGiftDto model)
         {
             var days = model?.Days ?? 0;
@@ -712,8 +702,6 @@ namespace Service.Services
             };
         }
 
-        // ---------- Stripe news
-
         private async Task<NitroChangeDto> ActivateAsync(string userId, string customerId, string subscriptionId, string? stripeEventId)
         {
             var live = await _stripe.GetSubscriptionAsync(subscriptionId) ?? throw new NotFoundException("The subscription could not be found.");
@@ -776,7 +764,6 @@ namespace Service.Services
                 var row = await FindAsync(info);
                 if (row is null)
                 {
-                    // the first invoice can come before the checkout news: that one logs the start
                     return new NitroChangeDto();
                 }
 
@@ -843,7 +830,6 @@ namespace Service.Services
                     return await EndAsync(row, NitroEventKind.Expired, "The subscription ended (" + info.Status + ")", info.Id, null);
                 }
 
-                // a late "updated" news must not bring back a subscription that already ended
                 if (row.Status == NitroStatus.Ended)
                 {
                     return new NitroChangeDto();
@@ -895,9 +881,6 @@ namespace Service.Services
             }
         }
 
-        // ---------- helpers
-
-        // takes Nitro away: marks the row, logs it, removes the boosts and the perks that were bound to it
         private async Task<NitroChangeDto> EndAsync(NitroSubscription row, NitroEventKind kind, string details, string? stripeEventId, string? actorId)
         {
             var change = new NitroChangeDto { UserIds = { row.UserId } };
@@ -1010,7 +993,6 @@ namespace Service.Services
             return DateTime.SpecifyKind(value, DateTimeKind.Utc);
         }
 
-        // the return pages must be on our own site: otherwise Stripe could be made to send people anywhere
         private string EnsureOwnUrl(string? value, string what)
         {
             var text = (value ?? string.Empty).Trim();

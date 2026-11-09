@@ -4,7 +4,6 @@ using System.Text.Json;
 
 namespace Discode_API_FinalProject.Middlewares
 {
-    // The one place where an exception becomes an HTTP answer. Every response has the same shape: { isSuccess:false, errors:[...], traceId }
     public class ExceptionHandlingMiddleware
     {
         private readonly RequestDelegate _next;
@@ -36,11 +35,9 @@ namespace Discode_API_FinalProject.Middlewares
             }
             catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
             {
-                // the client went away, nobody is waiting for an answer
             }
             catch (BadHttpRequestException ex)
             {
-                // oversized body, broken framing, unreadable request
                 await WriteAsync(context, ex.StatusCode, "The request could not be read.");
             }
             catch (JsonException)
@@ -54,13 +51,11 @@ namespace Discode_API_FinalProject.Middlewares
             }
             catch (DbUpdateConcurrencyException ex)
             {
-                // somebody else changed or removed the same row between our read and our write
                 _logger.LogWarning(ex, "Concurrency conflict: {Method} {Path}", context.Request.Method, context.Request.Path);
                 await WriteAsync(context, StatusCodes.Status409Conflict, "This was just changed by someone else. Refresh and try again.");
             }
             catch (DbUpdateException ex)
             {
-                // unique index, foreign key or length limit hit at the database
                 _logger.LogWarning(ex, "Database rejected the change: {Method} {Path}", context.Request.Method, context.Request.Path);
                 await WriteAsync(context, StatusCodes.Status409Conflict, "That conflicts with existing data. Refresh and try again.");
             }
@@ -71,7 +66,6 @@ namespace Discode_API_FinalProject.Middlewares
             }
             catch (HttpRequestException ex)
             {
-                // an outside service the API depends on (e-mail provider) is down
                 _logger.LogError(ex, "Outside service failed: {Method} {Path}", context.Request.Method, context.Request.Path);
                 await WriteAsync(context, StatusCodes.Status503ServiceUnavailable, "A service we depend on is unavailable. Please try again later.");
             }
@@ -94,7 +88,6 @@ namespace Discode_API_FinalProject.Middlewares
                 return;
             }
 
-            // keep CORS and other headers set earlier in the pipeline, only the body and status change
             context.Response.StatusCode = statusCode;
             context.Response.ContentType = "application/json; charset=utf-8";
             context.Response.ContentLength = null;

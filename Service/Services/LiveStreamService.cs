@@ -283,7 +283,6 @@ namespace Service.Services
                 throw new NotFoundException("This stream is not live.");
             }
 
-            // only the host and the moderators get to see who is a moderator and who is muted
             var stream = await _streams.GetByIdAsync(streamId);
             var hostConnection = await _tracker.GetHostConnectionAsync(streamId);
             var callerId = hostConnection == connectionId ? stream?.HostId : await _tracker.GetViewerUserIdAsync(streamId, connectionId);
@@ -386,7 +385,6 @@ namespace Service.Services
             return new LiveGuestRequestDto { HostConnectionId = hostConnection, Guest = guest };
         }
 
-        // the host picks someone who is watching and asks them to come on stream
         public async Task<LiveGuestInviteDto> InviteGuestAsync(string hostConnectionId, int streamId, string userName)
         {
             if (await _tracker.GetHostConnectionAsync(streamId) != hostConnectionId)

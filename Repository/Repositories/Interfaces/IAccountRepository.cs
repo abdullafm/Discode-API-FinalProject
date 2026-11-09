@@ -12,13 +12,11 @@ namespace Repository.Repositories.Interfaces
         Task<AppUser?> GetByUserNameAsync(string userName);
         Task<bool> CheckPasswordAsync(AppUser user, string password);
         Task<IEnumerable<string>> GetRolesAsync(AppUser user);
-        // "admin" or "superadmin" for the staff among these people (everybody else is left out)
         Task<Dictionary<string, string>> GetStaffRolesAsync(IEnumerable<string> userIds);
         Task<bool> IsLockedOutAsync(AppUser user);
         Task RegisterFailedAttemptAsync(AppUser user);
         Task ResetFailedAttemptsAsync(AppUser user);
         Task<IdentityResult> UpdateAsync(AppUser user);
-        // empties the status line of everybody whose clear time has come and says who they are
         Task<List<string>> ClearExpiredStatusesAsync(DateTime now);
         Task<IdentityResult> ChangePasswordAsync(AppUser user, string currentPassword, string newPassword);
         Task<string> GeneratePasswordResetTokenAsync(AppUser user);

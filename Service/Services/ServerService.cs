@@ -223,7 +223,6 @@ namespace Service.Services
             var viewerIsOwner = viewerId == server.OwnerId;
             foreach (var member in server.Members)
             {
-                // staff can only be timed out by the owner; everybody else by someone whose top role is higher
                 var canTimeout = viewerMayTimeout && member.UserId != viewerId && member.UserId != server.OwnerId
                     && (viewerIsOwner || await IsLowerNonStaffAsync(server.Id, member.UserId, viewerTop, roleLinks));
                 var memberTop = member.UserId == server.OwnerId ? int.MaxValue : roleLinks.TryGetValue(member.UserId, out var tops) && tops.Count > 0 ? tops.Max(r => r.Position) : 0;
@@ -358,7 +357,6 @@ namespace Service.Services
             var oldLink = server.CustomLink;
             if (code.Length == 0)
             {
-                // no link: the random invite code is all that is left
                 server.CustomLink = null;
             }
             else
@@ -374,7 +372,6 @@ namespace Service.Services
                     throw new BadRequestException("That link is already taken.");
                 }
 
-                // links are not case sensitive: they are kept in lower case so two servers can never differ only by it
                 server.CustomLink = code;
             }
 

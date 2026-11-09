@@ -6,7 +6,6 @@ using Service.Services.Interfaces;
 
 namespace Service.Services
 {
-    // The host and the moderators the host picked look after the chat of the host's streams
     public class LiveModerationService : ILiveModerationService
     {
         public const int MaxMinutes = 60 * 24 * 365;
@@ -71,7 +70,6 @@ namespace Service.Services
                     throw new BadRequestException("That person is not watching right now.");
                 }
 
-                // somebody who is going to look after the chat is not on the mute list any more
                 await _moderation.RemoveMuteAsync(actor.Stream.HostId, target.Id);
                 await _moderation.AddModeratorAsync(actor.Stream.HostId, target.Id);
             }
@@ -128,7 +126,6 @@ namespace Service.Services
             DateTime? until = minutes == 0 ? null : DateTime.UtcNow.AddMinutes(minutes);
             await _moderation.SetMuteAsync(actor.Stream.HostId, target.Id, until, userId);
 
-            // somebody who may only watch can not stay on stream as a guest
             var connections = await _tracker.GetViewerConnectionsAsync(streamId, target.Id);
             var guest = await _tracker.GetGuestAsync(streamId);
             string? endedGuest = null;

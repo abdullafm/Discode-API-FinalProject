@@ -4,8 +4,6 @@ using Service.Helpers.Exceptions;
 
 namespace Discode_API_FinalProject.Hubs
 {
-    // Hub methods have no middleware. Without this, a domain exception reaches the browser as the vague
-    // "An unexpected error occurred invoking ..." and a real failure is not logged with the user and method.
     public class HubExceptionFilter : IHubFilter
     {
         private readonly ILogger<HubExceptionFilter> _logger;
@@ -61,7 +59,6 @@ namespace Discode_API_FinalProject.Hubs
             }
             catch (Exception ex)
             {
-                // a failure while connecting must not leave a half-registered connection: drop it, the client reconnects
                 _logger.LogError(ex, "Hub connect failed for {User}", context.Context.UserIdentifier);
                 context.Context.Abort();
             }

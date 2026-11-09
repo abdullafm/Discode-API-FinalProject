@@ -76,7 +76,6 @@ namespace Repository.Repositories
                               join role in _dbContext.Roles.AsNoTracking() on userRole.RoleId equals role.Id
                               where ids.Contains(userRole.UserId) && (role.Name == Domain.Constants.Roles.Admin || role.Name == Domain.Constants.Roles.SuperAdmin)
                               select new { userRole.UserId, role.Name }).ToListAsync();
-            // a super admin who somehow also holds the admin role still shows as a super admin
             return rows.GroupBy(x => x.UserId).ToDictionary(g => g.Key, g => g.Any(x => x.Name == Domain.Constants.Roles.SuperAdmin) ? "superadmin" : "admin");
         }
 

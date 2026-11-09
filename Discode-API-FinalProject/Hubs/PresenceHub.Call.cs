@@ -147,7 +147,6 @@ namespace Discode_API_FinalProject.Hubs
             }
             catch (Exception ex)
             {
-                // runs detached from any request: nobody awaits it, so a failure would otherwise vanish and leave the calls open
                 scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger<PresenceHub>()
                     .LogError(ex, "Ending the calls of {UserId} after the grace period failed", userId);
             }

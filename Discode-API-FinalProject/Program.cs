@@ -31,13 +31,10 @@ builder.Services.AddControllers(options =>
 })
 .ConfigureApiBehaviorOptions(options =>
 {
-    // a bad model answers in the same { isSuccess, errors } shape as every other failure, so clients show the real message
     options.InvalidModelStateResponseFactory = context =>
     {
         var all = context.ModelState.Values.SelectMany(entry => entry.Errors).ToList();
 
-        // a body that is not JSON carries parser internals ("'b' is an invalid start of a property name..."): keep those out of the answer.
-        // The JSON parser reports under the key "$" or "$.property".
         var errors = all.Any(error => error.Exception is not null) || context.ModelState.Keys.Any(key => key.StartsWith('$'))
             ? new[] { "The request body is not valid." }
             : all.Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage) ? "The request is not valid." : error.ErrorMessage)
@@ -142,7 +139,6 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("App"));
-// the Stripe keys live in "Stripe"; "Logging:Stripe" is read too because that is where an early copy of the key was put
 builder.Services.Configure<StripeSettings>(options =>
 {
     var section = builder.Configuration.GetSection("Stripe");
@@ -237,7 +233,6 @@ builder.Services.AddRateLimiter(options =>
 var app = builder.Build();
 var startupLog = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
 
-// Exceptions nobody catches (fire-and-forget tasks, timers) would otherwise disappear or kill the process without a trace
 AppDomain.CurrentDomain.UnhandledException += (_, e) =>
     startupLog.LogCritical(e.ExceptionObject as Exception, "Unhandled exception, terminating: {Terminating}", e.IsTerminating);
 TaskScheduler.UnobservedTaskException += (_, e) =>
@@ -251,7 +246,6 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     try
     {
-        // without these the app cannot work, so a failure stops the start with a clear reason
         await db.Database.MigrateAsync();
         await scope.ServiceProvider.GetRequiredService<ICallRepository>().EndAllOpenAsync();
         await scope.ServiceProvider.GetRequiredService<IGroupCallRepository>().EndAllOpenAsync();
@@ -267,7 +261,6 @@ using (var scope = app.Services.CreateScope())
         throw;
     }
 
-    // emojis and translations are content, the app still works without them: log and carry on
     try
     {
         await EmojiSeeder.SeedAsync(db);
@@ -295,7 +288,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-// 401, 403, a route that does not exist, a wrong method: they have no body, give them the same JSON shape as every other failure
 app.UseStatusCodePages(async context =>
 {
     var response = context.HttpContext.Response;

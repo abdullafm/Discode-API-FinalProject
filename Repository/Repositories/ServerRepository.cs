@@ -53,7 +53,6 @@ namespace Repository.Repositories
 
         public async Task<bool> LinkTakenAsync(string link, int exceptServerId)
         {
-            // links do not care about upper and lower case, whatever the database collation is
             var lower = link.ToLower();
             return await _dbSet.AnyAsync(x => x.Id != exceptServerId && (x.InviteCode.ToLower() == lower || (x.CustomLink != null && x.CustomLink.ToLower() == lower)));
         }

@@ -4,7 +4,6 @@ namespace Service.Helpers.DTOs.ServerVoice
     {
         public List<ServerVoiceChannelDto> Channels { get; set; } = new();
         public ServerVoiceCurrentDto? Current { get; set; }
-        // the viewer may mute, deafen and disconnect other people here (owner, or the Mute Members permission)
         public bool CanModerate { get; set; }
     }
 }

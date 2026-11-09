@@ -71,7 +71,6 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok();
         }
 
-        // everyone sees the new room list; the person it happened to is also told directly, so their client can obey it
         private async Task TellAsync(int serverId, ServerVoiceModerationDto result)
         {
             await NotifyAsync(result.Change);

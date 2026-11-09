@@ -75,7 +75,6 @@ namespace Repository.Repositories
 
         public async Task DeleteRangeAsync(IEnumerable<ServerBoost> boosts)
         {
-            // the rows are looked up again so a copy that is already tracked is the one that is removed
             var ids = boosts.Select(b => b.Id).ToList();
             _dbSet.RemoveRange(await _dbSet.Where(x => ids.Contains(x.Id)).ToListAsync());
             await _dbContext.SaveChangesAsync();

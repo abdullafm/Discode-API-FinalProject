@@ -9,7 +9,6 @@ namespace Discode_API_FinalProject.Hubs
         private static readonly ConcurrentDictionary<string, long> LastTyping = new();
         private const int TypingEveryMs = 1500;
 
-        // "X is typing...": the page sends this every few seconds while somebody writes
         public async Task Typing(string kind, string key)
         {
             var now = Environment.TickCount64;

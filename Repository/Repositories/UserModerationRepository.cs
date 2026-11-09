@@ -22,7 +22,6 @@ namespace Repository.Repositories
 
         public Task SaveChangesAsync() => _dbContext.SaveChangesAsync();
 
-        // The account is removed but its content keeps working, so the personal data is scrubbed instead of dropping rows
         public async Task DeleteAccountAsync(AppUser user, string actorId, AdminAction log)
         {
             var now = DateTime.UtcNow;
@@ -52,7 +51,6 @@ namespace Repository.Repositories
             await _dbContext.SaveChangesAsync();
         }
 
-        // every account holds exactly one role
         public async Task SetRoleAsync(string userId, string role)
         {
             var roleId = await _dbContext.Roles.Where(x => x.Name == role).Select(x => x.Id).FirstAsync();

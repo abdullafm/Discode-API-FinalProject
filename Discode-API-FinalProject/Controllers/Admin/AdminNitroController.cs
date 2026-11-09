@@ -28,14 +28,12 @@ namespace Discode_API_FinalProject.Controllers.Admin
 
         private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
 
-        // every admin can read who bought Nitro and what happened to it
         [HttpGet]
         public async Task<IActionResult> Get([FromQuery] string? search, [FromQuery] bool activeOnly = false, [FromQuery] int page = 1)
         {
             return Ok(await _nitro.GetAdminPageAsync(search, activeOnly, page));
         }
 
-        // every admin can read the gift links too
         [HttpGet("gifts")]
         public async Task<IActionResult> Gifts([FromQuery] string? search, [FromQuery] int page = 1)
         {
@@ -57,7 +55,6 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return NoContent();
         }
 
-        // giving and taking Nitro away by hand is for the super admin only
         [Authorize(Roles = Roles.SuperAdmin)]
         [HttpPost("grant")]
         public async Task<IActionResult> Grant([FromBody] GrantNitroDto model)
@@ -66,7 +63,6 @@ namespace Discode_API_FinalProject.Controllers.Admin
             return Ok();
         }
 
-        // makes the wait before a boost can be moved longer (hours above 0) or shorter (below 0)
         [Authorize(Roles = Roles.SuperAdmin)]
         [HttpPost("boost-time")]
         public async Task<IActionResult> BoostTime([FromBody] AdjustBoostTimeDto model)
