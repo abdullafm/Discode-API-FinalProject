@@ -239,6 +239,9 @@ namespace Repository.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(0);
 
+                    b.Property<bool>("ProfileSetupDone")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Pronouns")
                         .IsRequired()
                         .HasMaxLength(40)

@@ -9,6 +9,7 @@ namespace Domain.Entities
         public string DisplayName { get; set; } = string.Empty;
         public DateTime BirthDay { get; set; }
         public string AvatarUrl { get; set; } = string.Empty;
+        public bool ProfileSetupDone { get; set; } = true;
         public string Bio { get; set; } = string.Empty;
         public string BannerUrl { get; set; } = string.Empty;
         public string BannerColor { get; set; } = string.Empty;

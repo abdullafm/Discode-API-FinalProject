@@ -9,6 +9,7 @@ namespace Service.Helpers.DTOs.Accounts
         public DateTime BirthDay { get; set; }
         public DateTime CreatedAt { get; set; }
         public string AvatarUrl { get; set; } = string.Empty;
+        public bool ProfileSetupDone { get; set; } = true;
         public string Bio { get; set; } = string.Empty;
         public string BannerUrl { get; set; } = string.Empty;
         public string BannerColor { get; set; } = string.Empty;

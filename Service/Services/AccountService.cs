@@ -103,6 +103,7 @@ namespace Service.Services
             }
 
             var user = _mapper.Map<AppUser>(model);
+            user.ProfileSetupDone = false;
 
             var result = await _accountRepository.RegisterAsync(user, model.Password);
             if (!result.Succeeded)
@@ -460,6 +461,53 @@ namespace Service.Services
 
             var updated = _mapper.Map<ProfileDto>(user);
             updated.CustomStatusClearAt = user.CustomStatusClearAt is null ? null : DateTime.SpecifyKind(user.CustomStatusClearAt.Value, DateTimeKind.Utc);
+            updated.HasNitro = await _nitro.HasNitroAsync(userId);
+            updated.IsBooster = await _boosts.IsBoosterAsync(userId);
+            updated.StaffRole = await StaffRoleAsync(userId);
+            return new UpdateProfileResponse
+            {
+                IsSuccess = true,
+                Profile = updated
+            };
+        }
+
+        public async Task<UpdateProfileResponse> CompleteProfileSetupAsync(string userId, CompleteProfileSetupDto model)
+        {
+            var user = await _accountRepository.GetByIdAsync(userId);
+            if (user is null)
+            {
+                throw new NotFoundException("User not found.");
+            }
+
+            var avatar = (model?.AvatarUrl ?? string.Empty).Trim();
+            if (avatar.Length > 0)
+            {
+                if (avatar.Length > 500 || !avatar.StartsWith("/uploads/avatars/" + userId, StringComparison.Ordinal))
+                {
+                    return FailProfile(new[] { "Choose a picture from the upload." });
+                }
+
+                if (NitroRules.IsAnimatedImage(avatar) && !await _nitro.HasNitroAsync(userId))
+                {
+                    return FailProfile(new[] { "An animated avatar needs Nitro." });
+                }
+
+                user.AvatarUrl = avatar;
+            }
+
+            user.ProfileSetupDone = true;
+            user.UpdatedAt = DateTime.UtcNow;
+            var result = await _accountRepository.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                return new UpdateProfileResponse
+                {
+                    IsSuccess = false,
+                    Errors = result.Errors.Select(e => e.Description).ToArray()
+                };
+            }
+
+            var updated = _mapper.Map<ProfileDto>(user);
             updated.HasNitro = await _nitro.HasNitroAsync(userId);
             updated.IsBooster = await _boosts.IsBoosterAsync(userId);
             updated.StaffRole = await StaffRoleAsync(userId);
