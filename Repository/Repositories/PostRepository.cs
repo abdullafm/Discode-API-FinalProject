@@ -14,6 +14,19 @@ namespace Repository.Repositories
         {
         }
 
+        public Task<Post?> GetWithDetailsAsync(int postId)
+        {
+            return _dbSet
+                .AsNoTracking()
+                .AsSplitQuery()
+                .Include(x => x.Author)
+                .Include(x => x.Likes)
+                .Include(x => x.Reposts)
+                .Include(x => x.Comments).ThenInclude(c => c.Author)
+                .Include(x => x.Comments).ThenInclude(c => c.Likes)
+                .FirstOrDefaultAsync(x => x.Id == postId);
+        }
+
         public async Task<IEnumerable<Post>> GetExploreAsync(string viewerId)
         {
             return await _dbSet

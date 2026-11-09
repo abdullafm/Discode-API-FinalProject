@@ -46,6 +46,25 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(result);
         }
 
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetOne(int id)
+        {
+            return Ok(await _postService.GetAsync(UserId, id));
+        }
+
+        [HttpPost("{id:int}/share")]
+        public async Task<IActionResult> Share(int id, [FromBody] SharePostDto model)
+        {
+            var sent = await _postService.ShareAsync(UserId, id, model);
+            foreach (var item in sent)
+            {
+                await _hubContext.Clients.User(item.SenderId).SendAsync("DirectMessage", new { message = item.MessageForSender, conversation = item.ConversationForSender });
+                await _hubContext.Clients.User(item.RecipientId).SendAsync("DirectMessage", new { message = item.MessageForRecipient, conversation = item.ConversationForRecipient });
+            }
+
+            return Ok(new { shared = sent.Select(x => x.RecipientId).Distinct().Count() });
+        }
+
         [HttpGet("explore")]
         public async Task<IActionResult> Explore()
         {
