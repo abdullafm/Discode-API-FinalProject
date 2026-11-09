@@ -326,12 +326,13 @@ namespace Service.Services
                     throw new BadRequestException("This person does not have Nitro.");
                 }
 
-                if (row.Source == NitroSource.Stripe)
+                // a subscription that is paid through Stripe is stopped there too, so the person is not charged again
+                if (row.Source == NitroSource.Stripe && row.StripeSubscriptionId.Length > 0)
                 {
-                    throw new BadRequestException("This person pays through Stripe: cancel their subscription in Stripe instead.");
+                    await _stripe.CancelSubscriptionAsync(row.StripeSubscriptionId);
                 }
 
-                return await EndAsync(row, NitroEventKind.RevokedByAdmin, "Nitro taken away by an admin", null, actorId);
+                return await EndAsync(row, NitroEventKind.RevokedByAdmin, row.Source == NitroSource.Stripe ? "Nitro cancelled by an admin and the Stripe subscription stopped" : "Nitro taken away by an admin", null, actorId);
             }
             finally
             {
@@ -361,6 +362,10 @@ namespace Service.Services
                 TotalEvents = events.Total,
                 ActiveCount = (await _subscriptions.GetPageAsync(null, true, now, 1, 1)).Total
             };
+            var revenue = await _events.GetRevenueAsync(new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc));
+            result.RevenueCents = revenue.Total;
+            result.RevenueThisMonthCents = revenue.Since;
+            var paid = (await _events.GetPaymentTotalsAsync(subs.Items.Select(row => row.UserId))).ToDictionary(x => x.UserId);
             foreach (var row in subs.Items)
             {
                 result.Subscriptions.Add(new AdminNitroSubscriptionDto
@@ -375,7 +380,10 @@ namespace Service.Services
                     StartedAt = Utc(row.StartedAt),
                     CurrentPeriodEnd = Utc(row.CurrentPeriodEnd),
                     CancelAtPeriodEnd = row.CancelAtPeriodEnd,
-                    Boosts = await _boostRows.CountForUserAsync(row.UserId)
+                    Boosts = await _boostRows.CountForUserAsync(row.UserId),
+                    TotalPaidCents = paid.TryGetValue(row.UserId, out var total) ? total.Cents : 0,
+                    Payments = paid.TryGetValue(row.UserId, out var made) ? made.Count : 0,
+                    LastPaymentAt = paid.TryGetValue(row.UserId, out var last) && last.LastAt is not null ? Utc(last.LastAt.Value) : null
                 });
             }
 
