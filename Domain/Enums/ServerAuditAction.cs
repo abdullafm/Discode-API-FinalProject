@@ -24,6 +24,7 @@ namespace Domain.Enums
         MemberVoiceDisconnect = 20,
         MemberTimeout = 21,
         MemberTimeoutRemove = 22,
-        MemberPrune = 23
+        MemberPrune = 23,
+        OwnershipTransfer = 24
     }
 }

@@ -12,6 +12,7 @@ namespace Service.Helpers.DTOs.Servers
         public string BannerUrl { get; set; } = string.Empty;
         public string BannerColor { get; set; } = "ink";
         public bool IsPrivate { get; set; }
+        public bool OwoEnabled { get; set; }
         public int OnlineCount { get; set; }
         public long Permissions { get; set; }
         public string OwnerUserName { get; set; } = string.Empty;

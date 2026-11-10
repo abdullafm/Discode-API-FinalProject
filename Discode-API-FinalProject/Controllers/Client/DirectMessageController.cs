@@ -119,7 +119,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [HttpPost("messages/{id:int}/forward")]
-        public async Task<IActionResult> Forward(int id, [FromBody] ForwardMessageDto model)
+        public async Task<IActionResult> Forward(int id, [FromBody] ForwardMessageDto model, [FromServices] IGroupShareService groupShare, [FromServices] Discode_API_FinalProject.Helpers.GroupPublisher publisher)
         {
             var sent = await _directMessages.ForwardAsync(UserId, id, model);
 
@@ -129,7 +129,9 @@ namespace Discode_API_FinalProject.Controllers.Client
                 await _hubContext.Clients.User(item.RecipientId).SendAsync("DirectMessage", new { message = item.MessageForRecipient, conversation = item.ConversationForRecipient });
             }
 
-            return Ok(new { forwarded = model.UserNames.Count });
+            var groups = await groupShare.ForwardFromDmAsync(UserId, id, model.GroupIds, model.Note);
+            await publisher.PublishAsync(groups);
+            return Ok(new { forwarded = model.UserNames.Count, groups = groups.Select(x => x.GroupId).Distinct().Count() });
         }
 
         [HttpDelete("messages/{id:int}")]

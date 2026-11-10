@@ -14,6 +14,7 @@ namespace Service.Services.Interfaces
         Task<GroupChangeDto> SendPollAsync(string userId, int groupId, CreatePollDto model);
         Task<GroupMessageDeletedDto> DeleteMessageAsync(string userId, int groupId, int messageId);
         Task<IEnumerable<SentMessageDto>> ForwardMessageAsync(string userId, int groupId, int messageId, ForwardMessageDto model);
+        Task<ForwardSourceDto> GetForwardSourceAsync(string userId, int groupId, int messageId);
         Task<GroupMessageUpdateDto> ToggleReactionAsync(string userId, int groupId, int messageId, ToggleReactionDto model);
         Task<GroupMessageUpdateDto> VotePollAsync(string userId, int groupId, int messageId, VotePollDto model);
         Task<GroupChangeDto> UpdateAsync(string userId, int groupId, UpdateGroupDto model);

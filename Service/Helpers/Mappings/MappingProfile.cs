@@ -111,6 +111,7 @@ namespace Service.Helpers.Mappings
             CreateMap<ServerMessageAttachment, MessageAttachmentDto>();
 
             CreateMap<ServerMessage, ServerMessageDto>()
+                .ForMember(d => d.SenderIsBot, o => o.MapFrom(s => s.Sender != null && s.Sender.IsSystem))
                 .ForMember(d => d.IsPoll, o => o.MapFrom(s => s.Poll != null))
                 .ForMember(d => d.Poll, o => o.MapFrom((s, d, m, context) => s.Poll == null
                     ? null

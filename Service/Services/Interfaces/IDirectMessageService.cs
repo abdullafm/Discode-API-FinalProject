@@ -15,6 +15,7 @@ namespace Service.Services.Interfaces
         Task<PollUpdatedDto> VotePollAsync(string userId, int messageId, VotePollDto model);
         Task<EditedMessageDto> EditAsync(string userId, int messageId, SendMessageDto model);
         Task<IEnumerable<SentMessageDto>> ForwardAsync(string userId, int messageId, ForwardMessageDto model);
+        Task<ForwardSourceDto> GetForwardSourceAsync(string userId, int messageId);
         Task<IEnumerable<SentMessageDto>> ForwardContentAsync(string userId, string originalSenderId, string text, IEnumerable<MessageAttachmentDto> attachments, ForwardMessageDto model);
         Task<SentMessageDto> StartCallMessageAsync(string callerId, string calleeId);
         Task<EditedMessageDto> FinishCallMessageAsync(string callerId, string calleeId, int messageId, int? seconds, bool missed);

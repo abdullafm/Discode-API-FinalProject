@@ -192,7 +192,7 @@ namespace Service.Services
             return result;
         }
 
-        public async Task<LiveInviteResultDto> InviteAsync(string userId, int streamId, IEnumerable<string> userNames)
+        public async Task<LiveInviteResultDto> InviteAsync(string userId, int streamId, IEnumerable<string> userNames, bool allowNobody = false)
         {
             var stream = await _streams.GetActiveVisibleByIdAsync(userId, streamId);
             if (stream is null || await _tracker.GetHostConnectionAsync(streamId) is null)
@@ -221,7 +221,7 @@ namespace Service.Services
                 names.Add(friend.UserName ?? name);
             }
 
-            if (invited.Count == 0)
+            if (invited.Count == 0 && !allowNobody)
             {
                 throw new BadRequestException("Pick at least one friend.");
             }

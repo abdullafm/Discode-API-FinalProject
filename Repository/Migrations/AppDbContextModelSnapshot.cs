@@ -1483,6 +1483,100 @@ namespace Repository.Migrations
                     b.ToTable("Notifications");
                 });
 
+            modelBuilder.Entity("Domain.Entities.OwoAnimal", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AnimalKey")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<int>("Count")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "AnimalKey")
+                        .IsUnique();
+
+                    b.ToTable("OwoAnimals");
+                });
+
+            modelBuilder.Entity("Domain.Entities.OwoProfile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BattlesLost")
+                        .HasColumnType("int");
+
+                    b.Property<int>("BattlesWon")
+                        .HasColumnType("int");
+
+                    b.Property<long>("Cowoncy")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DailyStreak")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Hunts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("LastBattleAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastDailyAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastGambleAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastHuntAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastOwoAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LastPrayAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Luck")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Cowoncy");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("OwoProfiles");
+                });
+
             modelBuilder.Entity("Domain.Entities.Poll", b =>
                 {
                     b.Property<int>("Id")
@@ -1832,6 +1926,9 @@ namespace Repository.Migrations
                         .HasMaxLength(450)
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<bool>("OwoEnabled")
+                        .HasColumnType("bit");
+
                     b.Property<string>("PublicId")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -2042,6 +2139,9 @@ namespace Repository.Migrations
                         .HasColumnType("int");
 
                     b.Property<int>("ServerId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SlowModeSeconds")
                         .HasColumnType("int");
 
                     b.Property<bool>("SyncWithCategory")
@@ -2371,6 +2471,61 @@ namespace Repository.Migrations
                         .IsUnique();
 
                     b.ToTable("ServerRoles");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatedById")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
+
+                    b.Property<int>("ServerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Snapshot")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("SyncedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("UsageCount")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("ServerId")
+                        .IsUnique();
+
+                    b.ToTable("ServerTemplates");
                 });
 
             modelBuilder.Entity("Domain.Entities.ServerVoiceRestriction", b =>
@@ -3319,6 +3474,28 @@ namespace Repository.Migrations
                     b.Navigation("Story");
                 });
 
+            modelBuilder.Entity("Domain.Entities.OwoAnimal", b =>
+                {
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Domain.Entities.OwoProfile", b =>
+                {
+                    b.HasOne("Domain.Entities.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Domain.Entities.Poll", b =>
                 {
                     b.HasOne("Domain.Entities.GroupMessage", "GroupMessage")
@@ -3654,6 +3831,17 @@ namespace Repository.Migrations
                 {
                     b.HasOne("Domain.Entities.Server", "Server")
                         .WithMany("Roles")
+                        .HasForeignKey("ServerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Server");
+                });
+
+            modelBuilder.Entity("Domain.Entities.ServerTemplate", b =>
+                {
+                    b.HasOne("Domain.Entities.Server", "Server")
+                        .WithMany()
                         .HasForeignKey("ServerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

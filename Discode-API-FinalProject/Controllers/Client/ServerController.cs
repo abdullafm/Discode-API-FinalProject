@@ -209,6 +209,24 @@ namespace Discode_API_FinalProject.Controllers.Client
             return Ok(change.Server);
         }
 
+        [HttpPut("{id:int}/owo")]
+        public async Task<IActionResult> SetOwo(int id, [FromBody] UpdateServerOwoDto model, [FromServices] IOwoService owo)
+        {
+            await owo.SetEnabledAsync(UserId, id, model.Enabled);
+            await _hubContext.Clients.All.SendAsync("ServerAuditChanged", new { serverId = id });
+            return Ok(await _serverService.GetAsync(UserId, id));
+        }
+
+        [HttpPost("{id:int}/owner")]
+        public async Task<IActionResult> TransferOwner(int id, [FromBody] TransferServerOwnerDto model)
+        {
+            var change = await _serverService.TransferOwnerAsync(UserId, id, model);
+            await _hubContext.Clients.All.SendAsync("ServerUpdated", new { serverId = change.Server.Id, memberCount = change.Server.MemberCount });
+            await _hubContext.Clients.All.SendAsync("ServerAuditChanged", new { serverId = change.Server.Id });
+            await _hubContext.Clients.All.SendAsync("ServerOwnerChanged", new { serverId = change.Server.Id, ownerId = model.UserId });
+            return Ok(change.Server);
+        }
+
         [HttpPut("order")]
         public async Task<IActionResult> Reorder([FromBody] ReorderServersDto model)
         {

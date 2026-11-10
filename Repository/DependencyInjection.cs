@@ -18,6 +18,8 @@ namespace Repository
             services.AddScoped<IServerRoleRepository, ServerRoleRepository>();
             services.AddScoped<IServerAuditLogRepository, ServerAuditLogRepository>();
             services.AddScoped<IServerBanRepository, ServerBanRepository>();
+            services.AddScoped<IServerTemplateRepository, ServerTemplateRepository>();
+            services.AddScoped<IOwoRepository, OwoRepository>();
             services.AddScoped<IDiscoverRepository, DiscoverRepository>();
             services.AddScoped<ITranslationRepository, TranslationRepository>();
             services.AddScoped<ISiteSettingRepository, SiteSettingRepository>();

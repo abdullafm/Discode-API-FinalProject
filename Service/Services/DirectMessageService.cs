@@ -340,6 +340,28 @@ namespace Service.Services
             };
         }
 
+        public async Task<ForwardSourceDto> GetForwardSourceAsync(string userId, int messageId)
+        {
+            var message = await _messages.GetAsync(messageId, userId);
+            if (message is null || message.IsCall || message.IsPoll)
+            {
+                throw new NotFoundException("Message not found.");
+            }
+
+            var conversation = await _conversations.GetByIdAsync(message.ConversationId, userId);
+            if (conversation is null)
+            {
+                throw new NotFoundException("Message not found.");
+            }
+
+            return new ForwardSourceDto
+            {
+                OriginalSenderId = message.Mine ? userId : conversation.UserId,
+                Text = message.Text,
+                Attachments = message.Attachments.Select(a => new MessageAttachmentDto { Url = a.Url, FileName = a.FileName, ContentType = a.ContentType, Size = a.Size }).ToList()
+            };
+        }
+
         public async Task<IEnumerable<SentMessageDto>> ForwardAsync(string userId, int messageId, ForwardMessageDto model)
         {
             await _forwardValidator.EnsureValidAsync(model);

@@ -162,6 +162,11 @@ namespace Service.Services
                 throw new BadRequestException("Enter a channel name.");
             }
 
+            if (!SlowModeRules.IsAllowed(model.SlowModeSeconds))
+            {
+                throw new BadRequestException("Choose a slowmode time from the list.");
+            }
+
             var channel = new ServerChannel
             {
                 ServerId = serverId,
@@ -170,6 +175,7 @@ namespace Service.Services
                 Kind = kind,
                 SyncWithCategory = category is not null && !model.IsPrivate,
                 UserLimit = kind == ServerChannelKind.Voice ? model.UserLimit : 0,
+                SlowModeSeconds = kind == ServerChannelKind.Voice ? 0 : model.SlowModeSeconds,
                 Position = await _channels.NextPositionAsync(serverId, category?.Id)
             };
             await _channels.AddAsync(channel);
@@ -239,6 +245,17 @@ namespace Service.Services
             {
                 changes.Add("Changed the user limit from " + (channel.UserLimit == 0 ? "no limit" : channel.UserLimit.ToString()) + " to " + (model.UserLimit.Value == 0 ? "no limit" : model.UserLimit.Value.ToString()));
                 channel.UserLimit = model.UserLimit.Value;
+            }
+
+            if (channel.Kind != ServerChannelKind.Voice && model.SlowModeSeconds.HasValue && model.SlowModeSeconds.Value != channel.SlowModeSeconds)
+            {
+                if (!SlowModeRules.IsAllowed(model.SlowModeSeconds.Value))
+                {
+                    throw new BadRequestException("Choose a slowmode time from the list.");
+                }
+
+                changes.Add("Changed slowmode from " + SlowModeRules.Describe(channel.SlowModeSeconds) + " to " + SlowModeRules.Describe(model.SlowModeSeconds.Value));
+                channel.SlowModeSeconds = model.SlowModeSeconds.Value;
             }
 
             var wasPrivate = channel.IsPrivate;
@@ -631,6 +648,7 @@ namespace Service.Services
                 IsReadOnly = channel.IsReadOnly,
                 Position = channel.Position,
                 UserLimit = channel.UserLimit,
+                SlowModeSeconds = channel.SlowModeSeconds,
                 CanSend = channel.Kind != ServerChannelKind.Voice && (perms & sendBit) == sendBit,
                 CanManageMessages = (perms & ServerPermission.ManageMessages) == ServerPermission.ManageMessages
             };

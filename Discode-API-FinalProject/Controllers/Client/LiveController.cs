@@ -34,9 +34,9 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [HttpPost("{id:int}/invite")]
-        public async Task<IActionResult> Invite(int id, [FromBody] InviteToLiveDto model)
+        public async Task<IActionResult> Invite(int id, [FromBody] InviteToLiveDto model, [FromServices] IGroupShareService groupShare, [FromServices] Discode_API_FinalProject.Helpers.GroupPublisher publisher, [FromServices] Microsoft.Extensions.Options.IOptions<Service.Helpers.Settings.AppSettings> app)
         {
-            var invited = await _liveStreamService.InviteAsync(UserId, id, model.UserNames ?? new List<string>());
+            var invited = await _liveStreamService.InviteAsync(UserId, id, model.UserNames ?? new List<string>(), (model.GroupIds?.Count ?? 0) > 0);
             var share = new LiveShareDto
             {
                 StreamId = invited.StreamId,
@@ -62,7 +62,9 @@ namespace Discode_API_FinalProject.Controllers.Client
                 }
             }
 
-            return Ok(new { invited = invited.UserNames.Count });
+            var groups = await groupShare.SendTextAsync(UserId, model.GroupIds, "📺 **" + invited.HostName + "** is live: **" + invited.Title + "**\n" + app.Value.ClientUrl.TrimEnd('/') + "/Social/Index?live=" + invited.StreamId);
+            await publisher.PublishAsync(groups);
+            return Ok(new { invited = invited.UserNames.Count, groups = groups.Select(x => x.GroupId).Distinct().Count() });
         }
 
         [HttpGet]
