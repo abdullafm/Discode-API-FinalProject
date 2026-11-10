@@ -3,6 +3,9 @@ using Domain.Entities;
 using Domain.Enums;
 using FluentValidation;
 using Repository.Repositories.Interfaces;
+using Service.Helpers.Settings;
+using Service.Helpers.DTOs.DirectMessages;
+using Microsoft.Extensions.Options;
 using Service.Helpers.DTOs.Posts;
 using Service.Helpers.Exceptions;
 using Service.Helpers.Mappings;
@@ -19,6 +22,9 @@ namespace Service.Services
         private readonly INotificationService _notifications;
         private readonly IAccountRepository _accounts;
         private readonly IMentionService _mentions;
+        private readonly IDirectMessageService _directMessages;
+        private readonly IFriendRequestRepository _friendRequests;
+        private readonly AppSettings _app;
         private readonly IValidator<CreatePostDto> _validator;
         private readonly IMapper _mapper;
 
@@ -28,6 +34,9 @@ namespace Service.Services
                            INotificationService notifications,
                            IAccountRepository accounts,
                            IMentionService mentions,
+                           IDirectMessageService directMessages,
+                           IFriendRequestRepository friendRequests,
+                           IOptions<AppSettings> app,
                            IValidator<CreatePostDto> validator,
                            IMapper mapper)
         {
@@ -37,6 +46,9 @@ namespace Service.Services
             _notifications = notifications;
             _accounts = accounts;
             _mentions = mentions;
+            _directMessages = directMessages;
+            _friendRequests = friendRequests;
+            _app = app.Value;
             _validator = validator;
             _mapper = mapper;
         }
@@ -62,6 +74,69 @@ namespace Service.Services
             await _mentions.NotifyAsync(NotificationType.PostMention, userId, post.Text, postId: post.Id);
             post.Author = author;
             return _mapper.Map<PostDto>(post, ForViewer(userId));
+        }
+
+        public async Task<PostDto> GetAsync(string viewerId, int postId)
+        {
+            if (!await _posts.IsVisibleAsync(viewerId, postId))
+            {
+                throw new NotFoundException("Post not found.");
+            }
+
+            var post = await _posts.GetWithDetailsAsync(postId) ?? throw new NotFoundException("Post not found.");
+            return _mapper.Map<PostDto>(post, ForViewer(viewerId));
+        }
+
+        public async Task<IEnumerable<SentMessageDto>> ShareAsync(string userId, int postId, SharePostDto model)
+        {
+            if (!await _posts.IsVisibleAsync(userId, postId))
+            {
+                throw new NotFoundException("Post not found.");
+            }
+
+            var names = (model?.UserNames ?? new List<string>()).Select(n => (n ?? string.Empty).Trim()).Where(n => n.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            if (names.Count == 0)
+            {
+                throw new BadRequestException("Pick at least one friend.");
+            }
+
+            if (names.Count > 20)
+            {
+                throw new BadRequestException("Pick at most 20 friends.");
+            }
+
+            var note = (model?.Note ?? string.Empty).Trim();
+            if (note.Length > 500)
+            {
+                throw new BadRequestException("The message can be at most 500 characters.");
+            }
+
+            var recipients = new List<AppUser>();
+            foreach (var name in names)
+            {
+                var friend = await _accounts.GetByUserNameAsync(name);
+                var friendship = friend is null ? null : await _friendRequests.GetBetweenAsync(userId, friend.Id);
+                if (friend is null || friend.Id == userId || friendship is null || friendship.Status != FriendRequestStatus.Accepted)
+                {
+                    throw new NotFoundException("You can only share a post with your friends.");
+                }
+
+                recipients.Add(friend);
+            }
+
+            var link = _app.ClientUrl.TrimEnd('/') + "/Social/Index?post=" + postId;
+            var sent = new List<SentMessageDto>();
+            foreach (var recipient in recipients)
+            {
+                var name = recipient.UserName ?? string.Empty;
+                sent.Add(await _directMessages.SendAsync(userId, name, new SendMessageDto { Text = link }));
+                if (note.Length > 0)
+                {
+                    sent.Add(await _directMessages.SendAsync(userId, name, new SendMessageDto { Text = note }));
+                }
+            }
+
+            return sent;
         }
 
         public async Task<IEnumerable<PostDto>> GetExploreAsync(string viewerId)

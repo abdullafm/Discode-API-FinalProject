@@ -21,6 +21,7 @@ namespace Service.Services
         private static readonly Regex PersonalMention = new(@"(?<![\w@])@([A-Za-z0-9._+-]{2,64})", RegexOptions.Compiled);
         private static readonly Regex HereMention = new(@"(?<![\w@])@here\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+        private readonly INitroAccessService _nitro;
         private readonly IServerMessageRepository _messages;
         private readonly IServerChannelRepository _channels;
         private readonly IServerMemberRepository _members;
@@ -33,7 +34,8 @@ namespace Service.Services
         private readonly IPresenceService _presence;
         private readonly IMapper _mapper;
 
-        public ServerMessageService(IServerMessageRepository messages,
+        public ServerMessageService(INitroAccessService nitro,
+                                    IServerMessageRepository messages,
                                     IServerChannelRepository channels,
                                     IServerMemberRepository members,
                                     IServerOverwriteRepository overwrites,
@@ -45,6 +47,7 @@ namespace Service.Services
                                     IPresenceService presence,
                                     IMapper mapper)
         {
+            _nitro = nitro;
             _pollValidator = pollValidator;
             _polls = polls;
             _messages = messages;
@@ -68,6 +71,7 @@ namespace Service.Services
         public async Task<ServerMessageChangeDto> SendAsync(string userId, int serverId, int channelId, SendServerMessageDto model)
         {
             await _sendValidator.EnsureValidAsync(model);
+            await _nitro.EnsureCanSendAsync(userId, model.Text, model.Attachments.Select(a => a.Size));
             var (channel, perms) = await RequireViewAsync(userId, serverId, channelId);
             await EnsureNotTimedOutAsync(userId, serverId);
             EnsureCanPost(channel, perms);
@@ -188,7 +192,6 @@ namespace Service.Services
                 throw new NotFoundException("Message not found.");
             }
 
-            // only the author edits a message; a poll is not text
             if (message.SenderId != userId)
             {
                 throw new ForbiddenException("You can only edit your own messages.");
@@ -200,10 +203,7 @@ namespace Service.Services
                 throw new BadRequestException("Write a message.");
             }
 
-            if (text.Length > 2000)
-            {
-                throw new BadRequestException("The message can be at most 2000 characters.");
-            }
+            await _nitro.EnsureCanSendAsync(userId, text, Array.Empty<long>());
 
             if (text != message.Text)
             {
@@ -217,7 +217,6 @@ namespace Service.Services
 
         private const int MaxPinnedMessages = 50;
 
-        // pinning needs Manage Messages (the owner has it); everybody who can see the channel can read the pins
         public async Task<ServerMessageUpdateDto> PinAsync(string userId, int serverId, int channelId, int messageId, PinServerMessageDto model)
         {
             var (channel, perms) = await RequireViewAsync(userId, serverId, channelId);
@@ -362,7 +361,6 @@ namespace Service.Services
             var everyone = canEveryone && EveryoneMention.IsMatch(text);
             var here = canEveryone && HereMention.IsMatch(text);
 
-            // @username: anybody may mention one member
             var named = PersonalMention.Matches(text)
                 .Select(m => m.Groups[1].Value.ToLowerInvariant())
                 .Where(name => name != "everyone" && name != "here")

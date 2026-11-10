@@ -7,7 +7,6 @@ using Repository.Notifications;
 
 namespace Repository.Interceptors
 {
-    // Tells the admin panel which areas changed after a successful save, so it can refresh live
     public class AdminChangeInterceptor : SaveChangesInterceptor
     {
         private readonly IServiceProvider _services;
@@ -164,7 +163,6 @@ namespace Repository.Interceptors
             }
             catch (Exception)
             {
-                // a failed live notification must never break the save that already succeeded
             }
         }
 

@@ -10,6 +10,8 @@ namespace Service.Services.Interfaces
         Task EnsureAsync(string userId, int serverId, ServerPermission needed);
         Task EnsureEveryoneAsync(int serverId);
         Task<bool> CanViewChannelAsync(string userId, int serverId, ServerChannel channel);
+        Task<bool> IsOwnerAsync(string userId, int serverId);
+        Task<bool> IsStaffAsync(string userId, int serverId);
         Task<int> GetTopPositionAsync(string userId, int serverId);
         Task EnsureCanActOnAsync(string actorId, int serverId, string targetId, string verb);
         Task EnsureRoleBelowAsync(string actorId, int serverId, ServerRole role);

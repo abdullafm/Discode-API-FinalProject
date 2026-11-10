@@ -11,7 +11,6 @@ namespace Repository.Repositories
         {
         }
 
-        // newest pin first, the same order the list shows
         public async Task<List<string>> GetKeysAsync(string userId)
         {
             return await _dbSet.AsNoTracking().Where(x => x.UserId == userId).OrderByDescending(x => x.Id).Select(x => x.Key).ToListAsync();

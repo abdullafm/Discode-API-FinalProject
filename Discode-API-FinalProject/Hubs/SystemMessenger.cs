@@ -3,7 +3,6 @@ using Service.Services.Interfaces;
 
 namespace Discode_API_FinalProject.Hubs
 {
-    // Sends a direct message from the built-in "Discode" account and pushes it live
     public class SystemMessenger
     {
         private readonly IDirectMessageService _directMessages;

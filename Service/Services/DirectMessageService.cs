@@ -18,6 +18,7 @@ namespace Service.Services
         private const string CallPreview = "Started a call";
         private const int MaxPinnedMessages = 50;
 
+        private readonly INitroAccessService _nitro;
         private readonly IConversationService _conversations;
         private readonly IMessageService _messages;
         private readonly IDirectMessageRepository _directMessages;
@@ -34,7 +35,8 @@ namespace Service.Services
         private readonly IPollRepository _polls;
         private readonly IMapper _mapper;
 
-        public DirectMessageService(IConversationService conversations,
+        public DirectMessageService(INitroAccessService nitro,
+                                    IConversationService conversations,
                                     IMessageService messages,
                                     IDirectMessageRepository directMessages,
                                     IMessageReactionService reactions,
@@ -50,6 +52,7 @@ namespace Service.Services
                                     IPollRepository polls,
                                     IMapper mapper)
         {
+            _nitro = nitro;
             _conversations = conversations;
             _messages = messages;
             _directMessages = directMessages;
@@ -173,6 +176,7 @@ namespace Service.Services
             if (live is null)
             {
                 await _validator.EnsureValidAsync(model);
+                await _nitro.EnsureCanSendAsync(senderId, model.Text, model.Attachments.Select(a => a.Size));
             }
 
             var recipient = await GetChatPartnerAsync(senderId, userName, requireFriendship: false);
@@ -301,6 +305,7 @@ namespace Service.Services
         public async Task<EditedMessageDto> EditAsync(string userId, int messageId, SendMessageDto model)
         {
             await _validator.EnsureValidAsync(model);
+            await _nitro.EnsureCanSendAsync(userId, model.Text, model.Attachments.Select(a => a.Size));
 
             var original = await _messages.GetAsync(messageId, userId);
             if (original is null || !original.Mine || original.IsCall || original.IsPoll)

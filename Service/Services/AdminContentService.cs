@@ -100,7 +100,6 @@ namespace Service.Services
             var kind = Parse(type);
             var (authorId, label, snippet) = await FindAsync(type, id);
 
-            // the permission check and the activity log come first: they refuse an Admin acting on a SuperAdmin's content
             await _moderation.LogContentActionAsync(actor, authorId, AdminActionKind.ContentDelete, reason, label + " #" + id + (snippet.Length > 0 ? ": " + snippet : string.Empty));
 
             switch (kind)

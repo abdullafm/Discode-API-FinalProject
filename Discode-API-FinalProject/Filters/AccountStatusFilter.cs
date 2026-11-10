@@ -7,7 +7,6 @@ using System.Security.Claims;
 
 namespace Discode_API_FinalProject.Filters
 {
-    // Banned, deleted, kicked and timed-out accounts are stopped here, whatever token they still hold
     public class AccountStatusFilter : IAsyncActionFilter
     {
         private static readonly HashSet<string> WritingControllers = new(StringComparer.OrdinalIgnoreCase)

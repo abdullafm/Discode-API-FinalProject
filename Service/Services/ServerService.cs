@@ -1,3 +1,4 @@
+using Domain.Common;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
@@ -19,6 +20,8 @@ namespace Service.Services
         private const string Digits = "23456789";
         private const int CodeLength = 7;
 
+        private readonly INitroAccessService _nitro;
+        private readonly IBoostService _boosts;
         private readonly IServerRepository _servers;
         private readonly IServerMemberRepository _members;
         private readonly IAccountRepository _accounts;
@@ -39,7 +42,9 @@ namespace Service.Services
         private readonly IValidator<UpdateServerInviteDto> _inviteValidator;
         private readonly IMapper _mapper;
 
-        public ServerService(IServerRepository servers,
+        public ServerService(INitroAccessService nitro,
+                             IBoostService boosts,
+                             IServerRepository servers,
                              IServerMemberRepository members,
                              IAccountRepository accounts,
                              IServerMemberRoleRepository memberRoles,
@@ -59,6 +64,8 @@ namespace Service.Services
                              IValidator<UpdateServerInviteDto> inviteValidator,
                              IMapper mapper)
         {
+            _nitro = nitro;
+            _boosts = boosts;
             _servers = servers;
             _members = members;
             _accounts = accounts;
@@ -209,11 +216,22 @@ namespace Service.Services
                 .GroupBy(link => link.ServerMember.UserId)
                 .ToDictionary(group => group.Key, group => group.Select(link => link.Role).OrderByDescending(role => role.Position).ToList());
             var viewerTop = await _permissions.GetTopPositionAsync(viewerId, server.Id);
+            var nitroIds = await _nitro.GetNitroUserIdsAsync(server.Members.Select(m => m.UserId));
+            var boosterIds = await _boosts.GetBoostersAmongAsync(server.Members.Select(m => m.UserId));
+            var staffRoles = await _accounts.GetStaffRolesAsync(server.Members.Select(m => m.UserId));
+            var viewerMayTimeout = (await _permissions.GetAsync(viewerId, server.Id) & ServerPermission.ModerateMembers) == ServerPermission.ModerateMembers;
+            var viewerIsOwner = viewerId == server.OwnerId;
             foreach (var member in server.Members)
             {
+                var canTimeout = viewerMayTimeout && member.UserId != viewerId && member.UserId != server.OwnerId
+                    && (viewerIsOwner || await IsLowerNonStaffAsync(server.Id, member.UserId, viewerTop, roleLinks));
                 var memberTop = member.UserId == server.OwnerId ? int.MaxValue : roleLinks.TryGetValue(member.UserId, out var tops) && tops.Count > 0 ? tops.Max(r => r.Position) : 0;
                 members.Add(new ServerMemberDto
                 {
+                    CanTimeout = canTimeout,
+                    HasNitro = nitroIds.Contains(member.UserId),
+                    IsBooster = boosterIds.Contains(member.UserId),
+                    StaffRole = staffRoles.TryGetValue(member.UserId, out var staff) ? staff : string.Empty,
                     CanModerate = member.UserId != viewerId && member.UserId != server.OwnerId && viewerTop > memberTop,
                     TimeoutUntil = member.TimeoutUntil is not null && member.TimeoutUntil > DateTime.UtcNow ? DateTime.SpecifyKind(member.TimeoutUntil.Value, DateTimeKind.Utc) : null,
                     Id = member.UserId,
@@ -236,6 +254,12 @@ namespace Service.Services
             return members;
         }
 
+        private async Task<bool> IsLowerNonStaffAsync(int serverId, string memberId, int viewerTop, Dictionary<string, List<ServerRole>> roleLinks)
+        {
+            var top = roleLinks.TryGetValue(memberId, out var tops) && tops.Count > 0 ? tops.Max(r => r.Position) : 0;
+            return viewerTop > top && !await _permissions.IsStaffAsync(memberId, serverId);
+        }
+
         public async Task<ServerChangeDto> UpdateProfileAsync(string userId, int serverId, UpdateServerProfileDto model)
         {
             await _profileValidator.EnsureValidAsync(model);
@@ -247,6 +271,11 @@ namespace Service.Services
             }
 
             await _permissions.EnsureAsync(userId, serverId, ServerPermission.ManageServer);
+
+            if (model.IconUrl is not null && NitroRules.IsAnimatedImage(model.IconUrl) && server.IconUrl != model.IconUrl.Trim() && !await _boosts.PerksUnlockedAsync(serverId))
+            {
+                throw new ForbiddenException("An animated server icon needs " + NitroRules.BoostsForPerks + " boosts.");
+            }
 
             var changes = new List<string>();
             var name = model.Name.Trim();
@@ -302,6 +331,11 @@ namespace Service.Services
 
             var server = await GetOwnedAsync(userId, serverId);
             var bannerUrl = model.BannerUrl.Trim();
+            if (bannerUrl.Length > 0 && bannerUrl != server.BannerUrl && !await _boosts.PerksUnlockedAsync(serverId))
+            {
+                throw new ForbiddenException("A server banner needs " + NitroRules.BoostsForPerks + " boosts.");
+            }
+
             var bannerChanged = server.BannerUrl != bannerUrl;
             var bannerRemoved = string.IsNullOrEmpty(bannerUrl);
             server.BannerUrl = bannerUrl;
@@ -319,19 +353,33 @@ namespace Service.Services
             await _inviteValidator.EnsureValidAsync(model);
 
             var server = await GetOwnedAsync(userId, serverId);
-            var code = model.InviteCode.Trim();
-            var taken = await _servers.GetByInviteCodeAsync(code);
-            if (taken is not null && taken.Id != serverId)
+            var code = (model.InviteCode ?? string.Empty).Trim();
+            var oldLink = server.CustomLink;
+            if (code.Length == 0)
             {
-                throw new BadRequestException("That link is already taken.");
+                server.CustomLink = null;
+            }
+            else
+            {
+                if (!await _boosts.PerksUnlockedAsync(serverId))
+                {
+                    throw new ForbiddenException("A custom link needs " + NitroRules.BoostsForPerks + " boosts on this server.");
+                }
+
+                code = code.ToLowerInvariant();
+                if (await _servers.LinkTakenAsync(code, serverId) || string.Equals(code, server.InviteCode, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new BadRequestException("That link is already taken.");
+                }
+
+                server.CustomLink = code;
             }
 
-            var oldCode = server.InviteCode;
-            server.InviteCode = code;
             await _servers.UpdateAsync(server);
-            if (oldCode != code)
+            if (!string.Equals(oldLink, server.CustomLink, StringComparison.Ordinal))
             {
-                await _audit.LogAsync(serverId, userId, ServerAuditAction.InviteUpdate, "Server", serverId.ToString(), server.Name, "Changed the invite link from " + oldCode + " to " + code);
+                await _audit.LogAsync(serverId, userId, ServerAuditAction.InviteUpdate, "Server", serverId.ToString(), server.Name,
+                    server.CustomLink is null ? "Removed the custom link" : "Changed the custom link from " + (oldLink ?? "(none)") + " to " + server.CustomLink);
             }
 
             return Change((await _servers.GetWithMembersAsync(serverId))!, userId, false);
@@ -370,6 +418,7 @@ namespace Service.Services
             }
 
             var memberIds = await _members.GetUserIdsAsync(serverId);
+            await _boosts.ReleaseServerAsync(serverId);
             await _overwrites.DeleteForServerAsync(serverId);
             await _servers.DeleteAsync(server);
             return memberIds;

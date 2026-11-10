@@ -17,27 +17,27 @@ using Repository.Repositories.Interfaces;
 using Repository.Settings;
 using Service.Helpers.Settings;
 using System.Text;
+using Serilog;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.AddDiscodeLogging();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<Discode_API_FinalProject.Filters.AccountStatusCache>();
 builder.Services.AddScoped<Discode_API_FinalProject.Hubs.SystemMessenger>();
 builder.Services.AddControllers(options =>
 {
+    options.Filters.Add<Discode_API_FinalProject.Filters.AuditActionFilter>();
     options.Filters.Add<Discode_API_FinalProject.Filters.AccountStatusFilter>();
     options.Filters.Add<Discode_API_FinalProject.Filters.BannedServerFilter>();
 })
 .ConfigureApiBehaviorOptions(options =>
 {
-    // a bad model answers in the same { isSuccess, errors } shape as every other failure, so clients show the real message
     options.InvalidModelStateResponseFactory = context =>
     {
         var all = context.ModelState.Values.SelectMany(entry => entry.Errors).ToList();
 
-        // a body that is not JSON carries parser internals ("'b' is an invalid start of a property name..."): keep those out of the answer.
-        // The JSON parser reports under the key "$" or "$.property".
         var errors = all.Any(error => error.Exception is not null) || context.ModelState.Keys.Any(key => key.StartsWith('$'))
             ? new[] { "The request body is not valid." }
             : all.Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage) ? "The request is not valid." : error.ErrorMessage)
@@ -56,6 +56,8 @@ builder.Services.AddSignalR(options =>
     options.AddFilter<Discode_API_FinalProject.Hubs.HubExceptionFilter>();
 });
 builder.Services.AddHostedService<VoiceGhostSweeper>();
+builder.Services.AddHostedService<NitroExpiryWorker>();
+builder.Services.AddHostedService<StatusClearWorker>();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -140,6 +142,13 @@ builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.Configure<AppSettings>(builder.Configuration.GetSection("App"));
+builder.Services.Configure<StripeSettings>(options =>
+{
+    var section = builder.Configuration.GetSection("Stripe");
+    var early = builder.Configuration.GetSection("Logging:Stripe");
+    options.SecretKey = section["SecretKey"] ?? early["SecretKey"] ?? string.Empty;
+    options.WebhookSecret = section["WebhookSecret"] ?? early["WebhookSecret"] ?? string.Empty;
+});
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 builder.Services.Configure<JwtSettings>(jwtSection);
@@ -218,16 +227,16 @@ builder.Services.AddRateLimiter(options =>
             partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = builder.Environment.IsDevelopment() ? 100 : 10,
+                PermitLimit = builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("Testing") ? 100 : 10,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
 });
 
 var app = builder.Build();
+var isTesting = app.Environment.IsEnvironment("Testing");
 var startupLog = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
 
-// Exceptions nobody catches (fire-and-forget tasks, timers) would otherwise disappear or kill the process without a trace
 AppDomain.CurrentDomain.UnhandledException += (_, e) =>
     startupLog.LogCritical(e.ExceptionObject as Exception, "Unhandled exception, terminating: {Terminating}", e.IsTerminating);
 TaskScheduler.UnobservedTaskException += (_, e) =>
@@ -241,14 +250,23 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     try
     {
-        // without these the app cannot work, so a failure stops the start with a clear reason
-        await db.Database.MigrateAsync();
-        await scope.ServiceProvider.GetRequiredService<ICallRepository>().EndAllOpenAsync();
-        await scope.ServiceProvider.GetRequiredService<IGroupCallRepository>().EndAllOpenAsync();
+        if (isTesting)
+        {
+            await db.Database.EnsureCreatedAsync();
+        }
+        else
+        {
+            await db.Database.MigrateAsync();
+            await scope.ServiceProvider.GetRequiredService<ICallRepository>().EndAllOpenAsync();
+            await scope.ServiceProvider.GetRequiredService<IGroupCallRepository>().EndAllOpenAsync();
+        }
 
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         await RoleSeeder.SeedAsync(roleManager);
-        await RoleSeeder.SeedSuperAdminAsync(scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>(), app.Configuration["Seed:SuperAdminEmail"]);
+        if (!isTesting)
+        {
+            await RoleSeeder.SeedSuperAdminAsync(scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>(), app.Configuration["Seed:SuperAdminEmail"]);
+        }
         await SystemUserSeeder.SeedAsync(db);
     }
     catch (Exception ex)
@@ -257,23 +275,25 @@ using (var scope = app.Services.CreateScope())
         throw;
     }
 
-    // emojis and translations are content, the app still works without them: log and carry on
-    try
+    if (!isTesting)
     {
-        await EmojiSeeder.SeedAsync(db);
-    }
-    catch (Exception ex)
-    {
-        startupLog.LogError(ex, "Seeding the emojis failed. The app starts without them.");
-    }
+        try
+        {
+            await EmojiSeeder.SeedAsync(db);
+        }
+        catch (Exception ex)
+        {
+            startupLog.LogError(ex, "Seeding the emojis failed. The app starts without them.");
+        }
 
-    try
-    {
-        await TranslationSeeder.SeedAsync(db);
-    }
-    catch (Exception ex)
-    {
-        startupLog.LogError(ex, "Seeding the translations failed. The app starts without them.");
+        try
+        {
+            await TranslationSeeder.SeedAsync(db);
+        }
+        catch (Exception ex)
+        {
+            startupLog.LogError(ex, "Seeding the translations failed. The app starts without them.");
+        }
     }
 }
 
@@ -283,9 +303,22 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} -> {StatusCode} in {Elapsed:0} ms (user {UserId}, ip {ClientIp})";
+    options.GetLevel = (http, elapsed, error) =>
+        error is not null || http.Response.StatusCode >= 500 ? Serilog.Events.LogEventLevel.Error
+        : http.Response.StatusCode >= 400 ? Serilog.Events.LogEventLevel.Warning
+        : http.Request.Path.StartsWithSegments("/uploads") || http.Request.Path.StartsWithSegments("/swagger") ? Serilog.Events.LogEventLevel.Debug
+        : Serilog.Events.LogEventLevel.Information;
+    options.EnrichDiagnosticContext = (diagnostic, http) =>
+    {
+        diagnostic.Set("UserId", http.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "anonymous");
+        diagnostic.Set("ClientIp", http.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+    };
+});
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-// 401, 403, a route that does not exist, a wrong method: they have no body, give them the same JSON shape as every other failure
 app.UseStatusCodePages(async context =>
 {
     var response = context.HttpContext.Response;
@@ -301,7 +334,10 @@ app.UseStatusCodePages(async context =>
     await response.WriteAsJsonAsync(new { isSuccess = false, errors = new[] { message }, traceId = context.HttpContext.TraceIdentifier });
 });
 app.UseForwardedHeaders();
-app.UseHttpsRedirection();
+if (!isTesting)
+{
+    app.UseHttpsRedirection();
+}
 app.UseStaticFiles();
 app.UseCors("Client");
 app.UseRateLimiter();
@@ -310,3 +346,5 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<PresenceHub>("/hubs/presence");
 app.Run();
+
+public partial class Program { }

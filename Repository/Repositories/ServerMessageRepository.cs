@@ -43,7 +43,6 @@ namespace Repository.Repositories
             return await WithDetails().FirstOrDefaultAsync(x => x.Id == id);
         }
 
-        // newest pin first
         public async Task<List<ServerMessage>> GetPinnedAsync(int channelId)
         {
             return await WithDetails()

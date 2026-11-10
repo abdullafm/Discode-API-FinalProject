@@ -27,6 +27,23 @@ namespace Repository.Repositories
             return _userManager.AddToRoleAsync(user, role);
         }
 
+        public async Task<List<string>> ClearExpiredStatusesAsync(DateTime now)
+        {
+            var users = await _dbContext.Users.Where(x => x.CustomStatusClearAt != null && x.CustomStatusClearAt <= now).ToListAsync();
+            foreach (var user in users)
+            {
+                user.CustomStatus = string.Empty;
+                user.CustomStatusClearAt = null;
+            }
+
+            if (users.Count > 0)
+            {
+                await _dbContext.SaveChangesAsync();
+            }
+
+            return users.Select(x => x.Id).ToList();
+        }
+
         public Task<AppUser?> GetByIdAsync(string id)
         {
             return _userManager.FindByIdAsync(id);
@@ -45,6 +62,21 @@ namespace Repository.Repositories
         public Task<bool> CheckPasswordAsync(AppUser user, string password)
         {
             return _userManager.CheckPasswordAsync(user, password);
+        }
+
+        public async Task<Dictionary<string, string>> GetStaffRolesAsync(IEnumerable<string> userIds)
+        {
+            var ids = userIds.Distinct().ToList();
+            if (ids.Count == 0)
+            {
+                return new Dictionary<string, string>();
+            }
+
+            var rows = await (from userRole in _dbContext.UserRoles.AsNoTracking()
+                              join role in _dbContext.Roles.AsNoTracking() on userRole.RoleId equals role.Id
+                              where ids.Contains(userRole.UserId) && (role.Name == Domain.Constants.Roles.Admin || role.Name == Domain.Constants.Roles.SuperAdmin)
+                              select new { userRole.UserId, role.Name }).ToListAsync();
+            return rows.GroupBy(x => x.UserId).ToDictionary(g => g.Key, g => g.Any(x => x.Name == Domain.Constants.Roles.SuperAdmin) ? "superadmin" : "admin");
         }
 
         public async Task<IEnumerable<string>> GetRolesAsync(AppUser user)

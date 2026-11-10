@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using Domain.Common;
 using AutoMapper;
 using Domain.Constants;
 using Domain.Entities;
@@ -17,6 +19,8 @@ namespace Service.Services
 {
     public class AccountService : IAccountService
     {
+        private readonly IBoostService _boosts;
+        private readonly INitroAccessService _nitro;
         private readonly IAccountRepository _accountRepository;
         private readonly IValidator<RegisterDto> _registerValidator;
         private readonly IValidator<VerifyEmailDto> _verifyValidator;
@@ -30,10 +34,13 @@ namespace Service.Services
         private readonly IPresenceService _presence;
         private readonly IMapper _mapper;
         private readonly AppSettings _appSettings;
+        private readonly Microsoft.Extensions.Logging.ILogger _audit;
 
         private const string InvalidCredentials = "Invalid email or password.";
 
-        public AccountService(IAccountRepository accountRepository,
+        public AccountService(IBoostService boosts,
+                              INitroAccessService nitro,
+                              IAccountRepository accountRepository,
                               IValidator<RegisterDto> registerValidator,
                               IValidator<VerifyEmailDto> verifyValidator,
                               IValidator<LoginDto> loginValidator,
@@ -45,8 +52,12 @@ namespace Service.Services
                               IEmailService emailService,
                               IPresenceService presence,
                               IMapper mapper,
-                              IOptions<AppSettings> appSettings)
+                              IOptions<AppSettings> appSettings,
+                              Microsoft.Extensions.Logging.ILoggerFactory loggerFactory)
         {
+            _audit = loggerFactory.CreateLogger("Audit");
+            _boosts = boosts;
+            _nitro = nitro;
             _accountRepository = accountRepository;
             _registerValidator = registerValidator;
             _verifyValidator = verifyValidator;
@@ -96,6 +107,11 @@ namespace Service.Services
             }
 
             var user = _mapper.Map<AppUser>(model);
+            user.ProfileSetupDone = false;
+            if (string.IsNullOrWhiteSpace(user.AvatarUrl))
+            {
+                user.AvatarUrl = LetterAvatar.For(user.UserName);
+            }
 
             var result = await _accountRepository.RegisterAsync(user, model.Password);
             if (!result.Succeeded)
@@ -108,6 +124,8 @@ namespace Service.Services
             {
                 return Fail(roleResult.Errors.Select(e => e.Description).ToArray());
             }
+
+            _audit.LogInformation("Account registered: {UserName} ({UserId}) {Email}", user.UserName, user.Id, MaskEmail(user.Email));
 
             var sent = await SendVerificationCodeAsync(user);
             if (!sent)
@@ -296,36 +314,43 @@ namespace Service.Services
             var user = await _accountRepository.GetByEmailAsync(model.Email.Trim());
             if (user is null)
             {
+                _audit.LogWarning("Sign-in failed: no account for {Email}", MaskEmail(model.Email));
                 return FailLogin(InvalidCredentials);
             }
 
             if (!user.EmailConfirmed)
             {
+                _audit.LogInformation("Sign-in refused: email not confirmed for {UserName} ({UserId})", user.UserName, user.Id);
                 return FailLogin("Confirm your email first. Enter the 4-digit code we sent you.");
             }
 
             if (await _accountRepository.IsLockedOutAsync(user))
             {
+                _audit.LogWarning("Sign-in refused: {UserName} ({UserId}) is locked out after failed attempts", user.UserName, user.Id);
                 return FailLogin("Too many failed attempts. Try again in a few minutes.");
             }
 
             if (!await _accountRepository.CheckPasswordAsync(user, model.Password))
             {
                 await _accountRepository.RegisterFailedAttemptAsync(user);
+                _audit.LogWarning("Sign-in failed: wrong password for {UserName} ({UserId})", user.UserName, user.Id);
                 return FailLogin(InvalidCredentials);
             }
 
             if (user.IsDeleted)
             {
+                _audit.LogWarning("Sign-in refused: {UserName} ({UserId}) is deleted", user.UserName, user.Id);
                 return FailLogin(InvalidCredentials);
             }
 
             if (ModerationMessages.IsBanActive(user.IsBanned, user.BannedUntil, DateTime.UtcNow))
             {
+                _audit.LogWarning("Sign-in refused: {UserName} ({UserId}) is banned", user.UserName, user.Id);
                 return FailLogin(ModerationMessages.Banned(user.BannedUntil, user.BanReason));
             }
 
             await _accountRepository.ResetFailedAttemptsAsync(user);
+            _audit.LogInformation("Signed in: {UserName} ({UserId})", user.UserName, user.Id);
             var roles = await _accountRepository.GetRolesAsync(user);
             var (token, expiresAt) = _tokenService.CreateToken(user, roles);
 
@@ -336,6 +361,18 @@ namespace Service.Services
             return response;
         }
 
+        private static string MaskEmail(string? email)
+        {
+            var text = (email ?? string.Empty).Trim();
+            var at = text.IndexOf('@');
+            return at <= 1 ? "***" : text[0] + "***" + text[at..];
+        }
+
+        private async Task<string> StaffRoleAsync(string userId)
+        {
+            return (await _accountRepository.GetStaffRolesAsync(new[] { userId })).TryGetValue(userId, out var role) ? role : string.Empty;
+        }
+
         public async Task<ProfileDto> GetProfileAsync(string userId)
         {
             var user = await _accountRepository.GetByIdAsync(userId);
@@ -344,7 +381,12 @@ namespace Service.Services
                 throw new NotFoundException("User not found.");
             }
 
-            return _mapper.Map<ProfileDto>(user);
+            var profile = _mapper.Map<ProfileDto>(user);
+            profile.CustomStatusClearAt = user.CustomStatusClearAt is null ? null : DateTime.SpecifyKind(user.CustomStatusClearAt.Value, DateTimeKind.Utc);
+            profile.HasNitro = await _nitro.HasNitroAsync(userId);
+            profile.IsBooster = await _boosts.IsBoosterAsync(userId);
+            profile.StaffRole = await StaffRoleAsync(userId);
+            return profile;
         }
 
         public async Task UpdateSettingsAsync(string userId, UpdateSettingsDto model)
@@ -372,6 +414,11 @@ namespace Service.Services
             await _accountRepository.UpdateAsync(user);
         }
 
+        public Task<List<string>> ClearExpiredStatusesAsync()
+        {
+            return _accountRepository.ClearExpiredStatusesAsync(DateTime.UtcNow);
+        }
+
         public async Task<UpdateProfileResponse> UpdateProfileAsync(string userId, UpdateProfileDto model)
         {
             var user = await _accountRepository.GetByIdAsync(userId);
@@ -382,9 +429,50 @@ namespace Service.Services
 
             var displayName = string.IsNullOrWhiteSpace(model.DisplayName) ? user.DisplayName : model.DisplayName.Trim();
 
+            var avatar = (model.AvatarUrl ?? string.Empty).Trim();
+            if (avatar.Length == 0)
+            {
+                avatar = LetterAvatar.For(user.UserName);
+            }
+
+            var banner = model.BannerUrl is null ? user.BannerUrl : model.BannerUrl.Trim();
+            if (banner.Length > 500 || avatar.Length > 500)
+            {
+                return FailProfile(new[] { "The image address is too long." });
+            }
+
+            var newAnimated = NitroRules.IsAnimatedImage(avatar) && avatar != user.AvatarUrl;
+            var newBanner = banner.Length > 0 && banner != user.BannerUrl;
+            if ((newAnimated || newBanner) && !await _nitro.HasNitroAsync(userId))
+            {
+                return FailProfile(new[] { newAnimated ? "An animated avatar needs Nitro." : "A profile banner needs Nitro." });
+            }
+
+            var color = model.BannerColor is null ? user.BannerColor : model.BannerColor.Trim();
+            if (color.Length > 0 && !System.Text.RegularExpressions.Regex.IsMatch(color, "^#[0-9a-fA-F]{6}$"))
+            {
+                return FailProfile(new[] { "Choose a colour like #5865f2." });
+            }
+
             user.DisplayName = displayName;
-            user.AvatarUrl = (model.AvatarUrl ?? string.Empty).Trim();
+            user.AvatarUrl = avatar;
+            user.BannerUrl = banner;
+            user.BannerColor = color.ToLowerInvariant();
             user.CustomStatus = (model.CustomStatus ?? string.Empty).Trim();
+            if (user.CustomStatus.Length == 0)
+            {
+                user.CustomStatusClearAt = null;
+            }
+            else if (model.StatusClearMinutes is int minutes)
+            {
+                if (minutes < 0 || minutes > 7 * 24 * 60)
+                {
+                    return FailProfile(new[] { "Choose a time up to a week." });
+                }
+
+                user.CustomStatusClearAt = minutes == 0 ? null : DateTime.UtcNow.AddMinutes(minutes);
+            }
+
             user.Pronouns = (model.Pronouns ?? string.Empty).Trim();
             user.Bio = (model.Bio ?? string.Empty).Trim();
             user.IsPublic = model.IsPublic;
@@ -400,10 +488,63 @@ namespace Service.Services
                 };
             }
 
+            var updated = _mapper.Map<ProfileDto>(user);
+            updated.CustomStatusClearAt = user.CustomStatusClearAt is null ? null : DateTime.SpecifyKind(user.CustomStatusClearAt.Value, DateTimeKind.Utc);
+            updated.HasNitro = await _nitro.HasNitroAsync(userId);
+            updated.IsBooster = await _boosts.IsBoosterAsync(userId);
+            updated.StaffRole = await StaffRoleAsync(userId);
             return new UpdateProfileResponse
             {
                 IsSuccess = true,
-                Profile = _mapper.Map<ProfileDto>(user)
+                Profile = updated
+            };
+        }
+
+        public async Task<UpdateProfileResponse> CompleteProfileSetupAsync(string userId, CompleteProfileSetupDto model)
+        {
+            var user = await _accountRepository.GetByIdAsync(userId);
+            if (user is null)
+            {
+                throw new NotFoundException("User not found.");
+            }
+
+            var avatar = (model?.AvatarUrl ?? string.Empty).Trim();
+            if (avatar.Length > 0)
+            {
+                if (avatar.Length > 500 || !avatar.StartsWith("/uploads/avatars/" + userId, StringComparison.Ordinal))
+                {
+                    return FailProfile(new[] { "Choose a picture from the upload." });
+                }
+
+                if (NitroRules.IsAnimatedImage(avatar) && !await _nitro.HasNitroAsync(userId))
+                {
+                    return FailProfile(new[] { "An animated avatar needs Nitro." });
+                }
+
+                user.AvatarUrl = avatar;
+            }
+
+            user.ProfileSetupDone = true;
+            _audit.LogInformation("First profile picture step finished: {UserName} ({UserId}) {Choice}", user.UserName, user.Id, avatar.Length > 0 ? "uploaded a photo" : "kept the letter");
+            user.UpdatedAt = DateTime.UtcNow;
+            var result = await _accountRepository.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                return new UpdateProfileResponse
+                {
+                    IsSuccess = false,
+                    Errors = result.Errors.Select(e => e.Description).ToArray()
+                };
+            }
+
+            var updated = _mapper.Map<ProfileDto>(user);
+            updated.HasNitro = await _nitro.HasNitroAsync(userId);
+            updated.IsBooster = await _boosts.IsBoosterAsync(userId);
+            updated.StaffRole = await StaffRoleAsync(userId);
+            return new UpdateProfileResponse
+            {
+                IsSuccess = true,
+                Profile = updated
             };
         }
 
@@ -435,6 +576,11 @@ namespace Service.Services
 
             user.UserName = userName;
             user.NormalizedUserName = userName.ToUpperInvariant();
+            if (string.IsNullOrEmpty(user.AvatarUrl) || LetterAvatar.IsLetter(user.AvatarUrl))
+            {
+                user.AvatarUrl = LetterAvatar.For(userName);
+            }
+
             user.UpdatedAt = DateTime.UtcNow;
 
             var result = await _accountRepository.UpdateAsync(user);
@@ -443,6 +589,7 @@ namespace Service.Services
                 return FailProfile(result.Errors.Select(e => e.Description).ToArray());
             }
 
+            _audit.LogInformation("Username changed: {UserId} is now {UserName}", user.Id, user.UserName);
             return new UpdateProfileResponse
             {
                 IsSuccess = true,
@@ -480,6 +627,7 @@ namespace Service.Services
                 return FailProfile(result.Errors.Select(e => e.Description).ToArray());
             }
 
+            _audit.LogInformation("Password changed: {UserName} ({UserId})", user.UserName, user.Id);
             return new UpdateProfileResponse
             {
                 IsSuccess = true
@@ -502,6 +650,9 @@ namespace Service.Services
 
             var (user, request) = result.Value;
             var profile = _mapper.Map<UserProfileDto>(user);
+            profile.HasNitro = await _nitro.HasNitroAsync(user.Id);
+            profile.IsBooster = await _boosts.IsBoosterAsync(user.Id);
+            profile.StaffRole = await StaffRoleAsync(user.Id);
             profile.Relation = GetRelation(viewerId, user.Id, request);
             profile.RequestId = profile.Relation == "pending-received" ? request!.Id : null;
             profile.IsPrivate = !user.IsPublic && profile.Relation != "self" && profile.Relation != "friend";

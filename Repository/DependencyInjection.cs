@@ -36,9 +36,16 @@ namespace Repository
             services.AddScoped<ICommentRepository, CommentRepository>();
             services.AddScoped<IStoryRepository, StoryRepository>();
             services.AddScoped<IConversationPinRepository, ConversationPinRepository>();
+            services.AddScoped<INitroSubscriptionRepository, NitroSubscriptionRepository>();
+            services.AddScoped<INitroEventRepository, NitroEventRepository>();
+            services.AddScoped<IChatReadMarkerRepository, ChatReadMarkerRepository>();
+            services.AddScoped<IServerBoostRepository, ServerBoostRepository>();
+            services.AddScoped<IBoostCooldownRepository, BoostCooldownRepository>();
             services.AddScoped<IStoryLikeRepository, StoryLikeRepository>();
             services.AddScoped<IStoryViewRepository, StoryViewRepository>();
             services.AddScoped<ILiveStreamRepository, LiveStreamRepository>();
+            services.AddScoped<ILiveModerationRepository, LiveModerationRepository>();
+            services.AddScoped<INitroGiftRepository, NitroGiftRepository>();
             services.AddScoped<IEmojiCategoryRepository, EmojiCategoryRepository>();
             services.AddScoped<INotificationRepository, NotificationRepository>();
             services.AddScoped<IConversationRepository, ConversationRepository>();

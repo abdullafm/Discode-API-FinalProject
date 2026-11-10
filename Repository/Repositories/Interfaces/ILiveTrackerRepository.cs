@@ -10,6 +10,10 @@ namespace Repository.Repositories.Interfaces
         Task<int> CountViewersAsync(int streamId);
         Task<IEnumerable<string>> GetViewerUserIdsAsync(int streamId);
         Task<string?> GetViewerUserIdAsync(int streamId, string connectionId);
+        Task<string?> GetViewerConnectionAsync(int streamId, string userId);
+        Task<List<string>> GetViewerConnectionsAsync(int streamId, string userId);
+        Task<bool> AddGuestInviteAsync(int streamId, string connectionId);
+        Task<bool> TakeGuestInviteAsync(int streamId, string connectionId);
         Task<bool> SetGuestAsync(int streamId, string connectionId);
         Task<string?> GetGuestAsync(int streamId);
         Task<string?> ClearGuestAsync(int streamId);

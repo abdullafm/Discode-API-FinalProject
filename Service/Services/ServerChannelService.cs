@@ -104,7 +104,7 @@ namespace Service.Services
             {
                 if (CanView(context, channel))
                 {
-                    result.Loose.Add(ToDto(channel));
+                    result.Loose.Add(ToDto(channel, context.ForChannel(channel)));
                 }
             }
 
@@ -121,7 +121,7 @@ namespace Service.Services
                 {
                     if (CanView(context, channel))
                     {
-                        dto.Channels.Add(ToDto(channel));
+                        dto.Channels.Add(ToDto(channel, context.ForChannel(channel)));
                     }
                 }
 
@@ -189,7 +189,7 @@ namespace Service.Services
 
             await _channels.UpdateAsync(channel);
             await _audit.LogAsync(serverId, userId, ServerAuditAction.ChannelCreate, "Channel", channel.Id.ToString(), channel.Name, DescribeCreate(channel, category));
-            return ToDto(channel);
+            return await ToViewerDtoAsync(userId, serverId, channel);
         }
 
         public async Task<ServerCategoryDto> CreateCategoryAsync(string userId, int serverId, CreateServerCategoryDto model)
@@ -254,7 +254,7 @@ namespace Service.Services
                 await _audit.LogAsync(serverId, userId, ServerAuditAction.ChannelUpdate, "Channel", channel.Id.ToString(), channel.Name, string.Join("; ", changes));
             }
 
-            return ToDto(channel);
+            return await ToViewerDtoAsync(userId, serverId, channel);
         }
 
         public async Task<ServerPermissionSetDto> GetChannelPermissionsAsync(string userId, int serverId, int channelId)
@@ -610,8 +610,17 @@ namespace Service.Services
             return category is null ? text : text + " in " + category.Name;
         }
 
-        private static ServerChannelDto ToDto(ServerChannel channel)
+        private async Task<ServerChannelDto> ToViewerDtoAsync(string userId, int serverId, ServerChannel channel)
         {
+            var context = await _permissions.GetContextAsync(userId, serverId);
+            return ToDto(channel, context.ForChannel(channel));
+        }
+
+        private static ServerChannelDto ToDto(ServerChannel channel, ServerPermission perms = ServerPermission.None)
+        {
+            var sendBit = channel.IsReadOnly || channel.Kind == ServerChannelKind.Announcement
+                ? ServerPermission.ManageMessages
+                : ServerPermission.SendMessages;
             return new ServerChannelDto
             {
                 Id = channel.Id,
@@ -621,7 +630,9 @@ namespace Service.Services
                 IsPrivate = channel.IsPrivate,
                 IsReadOnly = channel.IsReadOnly,
                 Position = channel.Position,
-                UserLimit = channel.UserLimit
+                UserLimit = channel.UserLimit,
+                CanSend = channel.Kind != ServerChannelKind.Voice && (perms & sendBit) == sendBit,
+                CanManageMessages = (perms & ServerPermission.ManageMessages) == ServerPermission.ManageMessages
             };
         }
     }

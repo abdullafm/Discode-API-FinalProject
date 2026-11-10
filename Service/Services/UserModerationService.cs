@@ -13,6 +13,7 @@ namespace Service.Services
 {
     public class UserModerationService : IUserModerationService
     {
+        private readonly INitroService _nitro;
         private readonly IUserModerationRepository _moderation;
         private readonly IAdminRepository _admin;
         private readonly IValidator<WarnUserDto> _warnValidator;
@@ -22,7 +23,8 @@ namespace Service.Services
         private readonly IValidator<DeleteUserDto> _deleteValidator;
         private readonly IValidator<AdminListFilterDto> _filterValidator;
 
-        public UserModerationService(IUserModerationRepository moderation,
+        public UserModerationService(INitroService nitro,
+                                     IUserModerationRepository moderation,
                                      IAdminRepository admin,
                                      IValidator<WarnUserDto> warnValidator,
                                      IValidator<TimeoutUserDto> timeoutValidator,
@@ -31,6 +33,7 @@ namespace Service.Services
                                      IValidator<DeleteUserDto> deleteValidator,
                                      IValidator<AdminListFilterDto> filterValidator)
         {
+            _nitro = nitro;
             _moderation = moderation;
             _admin = admin;
             _warnValidator = warnValidator;
@@ -182,7 +185,6 @@ namespace Service.Services
 
             await _moderation.SetRoleAsync(userId, role);
 
-            // the role lives inside the sign-in token, so the old token has to stop working
             user.ForcedLogoutAt = DateTime.UtcNow;
             await LogAsync(actor, user, AdminActionKind.ChangeRole, current + " to " + role, "Signed out to apply the new role");
             await _moderation.SaveChangesAsync();
@@ -337,7 +339,8 @@ namespace Service.Services
 
             var reason = model.Reason.Trim();
 
-            // the log keeps the old username: the repository scrubs the account right after
+            await _nitro.EndForDeletedAccountAsync(userId);
+
             await _moderation.DeleteAccountAsync(user, actor.UserId, new AdminAction
             {
                 AdminId = actor.UserId,

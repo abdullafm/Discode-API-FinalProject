@@ -1,9 +1,13 @@
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Repository.Data;
 
 #nullable disable
 
 namespace Repository.Migrations
 {
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20261011230700_DropUserAbout")]
     /// <inheritdoc />
     public partial class DropUserAbout : Migration
     {

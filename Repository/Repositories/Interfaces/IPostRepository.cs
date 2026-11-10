@@ -9,5 +9,6 @@ namespace Repository.Repositories.Interfaces
         Task<IEnumerable<Post>> GetByUserAsync(string viewerId, string authorId);
         Task<IEnumerable<Post>> GetRepostedByAsync(string viewerId, string userId);
         Task<bool> IsVisibleAsync(string viewerId, int postId);
+        Task<Post?> GetWithDetailsAsync(int postId);
     }
 }

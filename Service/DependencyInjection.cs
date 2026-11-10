@@ -18,7 +18,14 @@ namespace Service
             services.AddScoped<ICommentService, CommentService>();
             services.AddScoped<IStoryService, StoryService>();
             services.AddScoped<IConversationPinService, ConversationPinService>();
+            services.AddScoped<INitroAccessService, NitroAccessService>();
+            services.AddScoped<IChatReadMarkerService, ChatReadMarkerService>();
+            services.AddScoped<ITypingService, TypingService>();
+            services.AddScoped<IBoostService, BoostService>();
+            services.AddScoped<INitroService, NitroService>();
+            services.AddScoped<IStripeGateway, StripeGateway>();
             services.AddScoped<ILiveStreamService, LiveStreamService>();
+            services.AddScoped<ILiveModerationService, LiveModerationService>();
             services.AddScoped<IEmojiCategoryService, EmojiCategoryService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IDirectMessageService, DirectMessageService>();

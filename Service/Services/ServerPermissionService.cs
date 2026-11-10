@@ -92,6 +92,20 @@ namespace Service.Services
             return await _memberRoles.GetMaxPositionAsync(serverId, userId);
         }
 
+        private const ServerPermission StaffBits = ServerPermission.ManageChannels | ServerPermission.ManageRoles | ServerPermission.ManageServer
+            | ServerPermission.ManageMessages | ServerPermission.MuteMembers | ServerPermission.KickMembers | ServerPermission.BanMembers | ServerPermission.ModerateMembers;
+
+        public async Task<bool> IsOwnerAsync(string userId, int serverId)
+        {
+            var server = await _servers.GetByIdAsync(serverId);
+            return server is not null && server.OwnerId == userId;
+        }
+
+        public async Task<bool> IsStaffAsync(string userId, int serverId)
+        {
+            return ((await GetAsync(userId, serverId)) & StaffBits) != ServerPermission.None;
+        }
+
         public async Task EnsureCanActOnAsync(string actorId, int serverId, string targetId, string verb)
         {
             var server = await _servers.GetByIdAsync(serverId);

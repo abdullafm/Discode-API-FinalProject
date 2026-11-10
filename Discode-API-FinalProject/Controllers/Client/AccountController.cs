@@ -123,6 +123,19 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [Authorize]
+        [HttpPost("profile-setup")]
+        public async Task<IActionResult> CompleteProfileSetup([FromBody] CompleteProfileSetupDto model)
+        {
+            var result = await _accountService.CompleteProfileSetupAsync(UserId, model ?? new CompleteProfileSetupDto());
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+        [Authorize]
         [HttpPut("myprofileupdate")]
         [HttpPut("profile")]
         public async Task<IActionResult> MyProfileUpdate([FromBody] UpdateProfileDto model)

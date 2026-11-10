@@ -25,6 +25,11 @@ namespace Repository.Data
         public DbSet<ServerOverwrite> ServerOverwrites { get; set; }
         public DbSet<ServerVoiceState> ServerVoiceStates { get; set; }
         public DbSet<ConversationPin> ConversationPins { get; set; }
+        public DbSet<NitroSubscription> NitroSubscriptions { get; set; }
+        public DbSet<NitroEvent> NitroEvents { get; set; }
+        public DbSet<ChatReadMarker> ChatReadMarkers { get; set; }
+        public DbSet<ServerBoost> ServerBoosts { get; set; }
+        public DbSet<BoostCooldown> BoostCooldowns { get; set; }
         public DbSet<ServerVoiceRestriction> ServerVoiceRestrictions { get; set; }
         public DbSet<ServerMessage> ServerMessages { get; set; }
         public DbSet<ServerMessageAttachment> ServerMessageAttachments { get; set; }
@@ -39,6 +44,9 @@ namespace Repository.Data
         public DbSet<StoryLike> StoryLikes { get; set; }
         public DbSet<StoryView> StoryViews { get; set; }
         public DbSet<LiveStream> LiveStreams { get; set; }
+        public DbSet<NitroGift> NitroGifts { get; set; }
+        public DbSet<LiveModerator> LiveModerators { get; set; }
+        public DbSet<LiveChatMute> LiveChatMutes { get; set; }
         public DbSet<EmojiCategory> EmojiCategories { get; set; }
         public DbSet<Emoji> Emojis { get; set; }
         public DbSet<Notification> Notifications { get; set; }

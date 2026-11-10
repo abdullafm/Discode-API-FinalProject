@@ -1,6 +1,5 @@
 namespace Service.Helpers.DTOs.Accounts
 {
-    // null = leave as it is
     public class UpdateSettingsDto
     {
         public string? Theme { get; set; }

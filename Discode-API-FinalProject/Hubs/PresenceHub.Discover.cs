@@ -42,7 +42,6 @@ namespace Discode_API_FinalProject.Hubs
             }
             catch (Exception ex)
             {
-                // a live refresh of Discover is optional, but a failing one should still show up in the log
                 _logger.LogWarning(ex, "Publishing Discover for {UserId} failed", userId);
             }
         }

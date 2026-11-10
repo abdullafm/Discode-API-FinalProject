@@ -17,6 +17,7 @@ namespace Service.Services
         private readonly IServerMemberRepository _members;
         private readonly IServerOverwriteRepository _overwrites;
         private readonly IUserModerationRepository _moderation;
+        private readonly IBoostService _boosts;
 
         public AdminService(IAdminRepository admin,
                             FluentValidation.IValidator<AdminListFilterDto> filterValidator,
@@ -24,8 +25,10 @@ namespace Service.Services
                             IServerRepository servers,
                             IServerMemberRepository members,
                             IServerOverwriteRepository overwrites,
-                            IUserModerationRepository moderation)
+                            IUserModerationRepository moderation,
+                            IBoostService boosts)
         {
+            _boosts = boosts;
             _moderation = moderation;
             _admin = admin;
             _filterValidator = filterValidator;
@@ -135,6 +138,7 @@ namespace Service.Services
                 throw new Helpers.Exceptions.BadRequestException("That server is already banned.");
             }
 
+            await _boosts.ReleaseServerAsync(serverId);
             await _admin.SetServerBanAsync(serverId, true, model.Reason.Trim(), adminId);
             await LogServerAsync(adminId, server.Id, server.Name, AdminActionKind.ServerBan, model.Reason.Trim());
             return await _members.GetUserIdsAsync(serverId);
@@ -157,6 +161,7 @@ namespace Service.Services
         {
             var server = await _servers.GetByIdAsync(serverId) ?? throw new Helpers.Exceptions.NotFoundException("Server not found.");
             var memberIds = await _members.GetUserIdsAsync(serverId);
+            await _boosts.ReleaseServerAsync(serverId);
             await LogServerAsync(adminId, server.Id, server.Name, AdminActionKind.ServerDelete, "Server deleted");
             await _overwrites.DeleteForServerAsync(serverId);
             await _servers.DeleteAsync(server);

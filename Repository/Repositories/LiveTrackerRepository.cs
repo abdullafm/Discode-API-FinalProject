@@ -60,6 +60,7 @@ namespace Repository.Repositories
 
                 room.Viewers.Remove(connectionId);
                 room.ViewerUsers.Remove(connectionId);
+                room.GuestInvites.Remove(connectionId);
                 if (room.GuestConnectionId == connectionId)
                 {
                     room.GuestConnectionId = string.Empty;
@@ -88,6 +89,56 @@ namespace Repository.Repositories
                 }
 
                 return Task.FromResult(id);
+            }
+        }
+
+        public Task<string?> GetViewerConnectionAsync(int streamId, string userId)
+        {
+            lock (_lock)
+            {
+                string? found = null;
+                if (_rooms.TryGetValue(streamId, out var room))
+                {
+                    found = room.ViewerUsers.Where(x => x.Value == userId && room.Viewers.Contains(x.Key)).Select(x => x.Key).FirstOrDefault();
+                }
+
+                return Task.FromResult(found);
+            }
+        }
+
+        public Task<List<string>> GetViewerConnectionsAsync(int streamId, string userId)
+        {
+            lock (_lock)
+            {
+                var found = new List<string>();
+                if (_rooms.TryGetValue(streamId, out var room))
+                {
+                    found = room.ViewerUsers.Where(x => x.Value == userId && room.Viewers.Contains(x.Key)).Select(x => x.Key).ToList();
+                }
+
+                return Task.FromResult(found);
+            }
+        }
+
+        public Task<bool> AddGuestInviteAsync(int streamId, string connectionId)
+        {
+            lock (_lock)
+            {
+                if (!_rooms.TryGetValue(streamId, out var room) || !room.Viewers.Contains(connectionId))
+                {
+                    return Task.FromResult(false);
+                }
+
+                room.GuestInvites.Add(connectionId);
+                return Task.FromResult(true);
+            }
+        }
+
+        public Task<bool> TakeGuestInviteAsync(int streamId, string connectionId)
+        {
+            lock (_lock)
+            {
+                return Task.FromResult(_rooms.TryGetValue(streamId, out var room) && room.GuestInvites.Remove(connectionId));
             }
         }
 

@@ -17,6 +17,7 @@ namespace Service.Services
         private readonly ILiveStreamRepository _streams;
         private readonly ILiveTrackerService _tracker;
         private readonly IFriendRequestRepository _friendRequests;
+        private readonly ILiveModerationRepository _moderation;
         private readonly IAccountRepository _accounts;
         private readonly INotificationService _notifications;
         private readonly IValidator<StartLiveDto> _startValidator;
@@ -27,6 +28,7 @@ namespace Service.Services
         public LiveStreamService(ILiveStreamRepository streams,
                            ILiveTrackerService tracker,
                            IFriendRequestRepository friendRequests,
+                           ILiveModerationRepository moderation,
                            IAccountRepository accounts,
                            INotificationService notifications,
                            IValidator<StartLiveDto> startValidator,
@@ -37,12 +39,35 @@ namespace Service.Services
             _streams = streams;
             _tracker = tracker;
             _friendRequests = friendRequests;
+            _moderation = moderation;
             _accounts = accounts;
             _notifications = notifications;
             _startValidator = startValidator;
             _thumbnailValidator = thumbnailValidator;
             _messageValidator = messageValidator;
             _mapper = mapper;
+        }
+
+        public static string MuteText(DateTime? expiresAt)
+        {
+            return expiresAt is null
+                ? "You are muted in this chat. You can only watch."
+                : "You are muted in this chat until " + expiresAt.Value.ToString("yyyy-MM-dd HH:mm") + " UTC. You can only watch.";
+        }
+
+        private async Task EnsureNotMutedAsync(int streamId, string userId)
+        {
+            var stream = await _streams.GetByIdAsync(streamId);
+            if (stream is null || stream.HostId == userId)
+            {
+                return;
+            }
+
+            var mute = await _moderation.GetActiveMuteAsync(stream.HostId, userId, DateTime.UtcNow);
+            if (mute is not null)
+            {
+                throw new BadRequestException(MuteText(mute.ExpiresAt));
+            }
         }
 
         public async Task<LiveStreamDto> StartAsync(string userId, string connectionId, StartLiveDto model)
@@ -146,6 +171,27 @@ namespace Service.Services
             return result;
         }
 
+        public async Task<List<LiveEjectedDto>> EjectBlockedAsync(string blockerId, string blockedId)
+        {
+            var result = new List<LiveEjectedDto>();
+            foreach (var stream in await _streams.GetActiveAllAsync())
+            {
+                var leaving = stream.HostId == blockerId ? blockedId : stream.HostId == blockedId ? blockerId : null;
+                if (leaving is null)
+                {
+                    continue;
+                }
+
+                foreach (var connection in await _tracker.GetViewerConnectionsAsync(stream.Id, leaving))
+                {
+                    var count = await _tracker.RemoveViewerAsync(stream.Id, connection);
+                    result.Add(new LiveEjectedDto { StreamId = stream.Id, ConnectionId = connection, ViewerCount = count });
+                }
+            }
+
+            return result;
+        }
+
         public async Task<LiveInviteResultDto> InviteAsync(string userId, int streamId, IEnumerable<string> userNames)
         {
             var stream = await _streams.GetActiveVisibleByIdAsync(userId, streamId);
@@ -218,6 +264,8 @@ namespace Service.Services
                 Stream = await ToDtoAsync(stream, viewerId, friendIds),
                 HostConnectionId = hostConnection,
                 Guest = await GetGuestDtoAsync(streamId),
+                IsModerator = await _moderation.IsModeratorAsync(stream.HostId, viewerId),
+                Mute = await GetMuteDtoAsync(stream.HostId, viewerId, streamId),
                 Viewer = new LiveViewerDto
                 {
                     StreamId = streamId,
@@ -235,6 +283,20 @@ namespace Service.Services
                 throw new NotFoundException("This stream is not live.");
             }
 
+            var stream = await _streams.GetByIdAsync(streamId);
+            var hostConnection = await _tracker.GetHostConnectionAsync(streamId);
+            var callerId = hostConnection == connectionId ? stream?.HostId : await _tracker.GetViewerUserIdAsync(streamId, connectionId);
+            var moderators = new HashSet<string>();
+            var mutes = new Dictionary<string, DateTime?>();
+            if (stream is not null && callerId is not null && (callerId == stream.HostId || await _moderation.IsModeratorAsync(stream.HostId, callerId)))
+            {
+                moderators = await _moderation.GetModeratorIdsAsync(stream.HostId);
+                foreach (var mute in await _moderation.GetActiveMutesAsync(stream.HostId, DateTime.UtcNow))
+                {
+                    mutes[mute.UserId] = mute.ExpiresAt;
+                }
+            }
+
             var viewers = new List<LiveViewerDto>();
             foreach (var id in await _tracker.GetViewerUserIdsAsync(streamId))
             {
@@ -249,11 +311,25 @@ namespace Service.Services
                     StreamId = streamId,
                     UserName = user.UserName ?? string.Empty,
                     DisplayName = string.IsNullOrWhiteSpace(user.DisplayName) ? user.UserName ?? string.Empty : user.DisplayName,
-                    AvatarUrl = user.AvatarUrl ?? string.Empty
+                    AvatarUrl = user.AvatarUrl ?? string.Empty,
+                    IsModerator = moderators.Contains(id),
+                    IsMuted = mutes.ContainsKey(id),
+                    MutedUntil = mutes.TryGetValue(id, out var until) && until is not null ? DateTime.SpecifyKind(until.Value, DateTimeKind.Utc) : null
                 });
             }
 
             return viewers;
+        }
+
+        private async Task<LiveMuteDto?> GetMuteDtoAsync(string hostId, string userId, int streamId)
+        {
+            var mute = await _moderation.GetActiveMuteAsync(hostId, userId, DateTime.UtcNow);
+            return mute is null ? null : new LiveMuteDto
+            {
+                StreamId = streamId,
+                ExpiresAt = mute.ExpiresAt is null ? null : DateTime.SpecifyKind(mute.ExpiresAt.Value, DateTimeKind.Utc),
+                CreatedAt = DateTime.SpecifyKind(mute.CreatedAt, DateTimeKind.Utc)
+            };
         }
 
         private async Task<LiveGuestDto?> GetGuestDtoAsync(int streamId)
@@ -300,7 +376,88 @@ namespace Service.Services
                 throw new NotFoundException("User not found.");
             }
 
+            var askerId = await _tracker.GetViewerUserIdAsync(streamId, connectionId);
+            if (askerId is not null)
+            {
+                await EnsureNotMutedAsync(streamId, askerId);
+            }
+
             return new LiveGuestRequestDto { HostConnectionId = hostConnection, Guest = guest };
+        }
+
+        public async Task<LiveGuestInviteDto> InviteGuestAsync(string hostConnectionId, int streamId, string userName)
+        {
+            if (await _tracker.GetHostConnectionAsync(streamId) != hostConnectionId)
+            {
+                throw new NotFoundException("This stream is not live.");
+            }
+
+            if (await _tracker.GetGuestAsync(streamId) is not null)
+            {
+                throw new BadRequestException("Someone is already a guest in this stream.");
+            }
+
+            var user = await _accounts.GetByUserNameAsync((userName ?? string.Empty).Trim());
+            if (user is not null)
+            {
+                var hostStream = await _streams.GetByIdAsync(streamId);
+                if (hostStream is not null && await _moderation.GetActiveMuteAsync(hostStream.HostId, user.Id, DateTime.UtcNow) is not null)
+                {
+                    throw new BadRequestException("That person is muted in this chat and can only watch.");
+                }
+            }
+
+            var target = user is null ? null : await _tracker.GetViewerConnectionAsync(streamId, user.Id);
+            if (target is null || !await _tracker.AddGuestInviteAsync(streamId, target))
+            {
+                throw new BadRequestException("That person is not watching right now.");
+            }
+
+            var stream = await _streams.GetByIdAsync(streamId);
+            var host = stream is null ? null : await _accounts.GetByIdAsync(stream.HostId);
+            if (stream is null || host is null)
+            {
+                throw new NotFoundException("This stream is not live.");
+            }
+
+            return new LiveGuestInviteDto
+            {
+                StreamId = streamId,
+                TargetConnectionId = target,
+                HostUserName = host.UserName ?? string.Empty,
+                HostDisplayName = string.IsNullOrWhiteSpace(host.DisplayName) ? host.UserName ?? string.Empty : host.DisplayName,
+                HostAvatarUrl = host.AvatarUrl ?? string.Empty,
+                Title = stream.Title
+            };
+        }
+
+        public async Task<LiveGuestInviteAnswerDto> AnswerGuestInviteAsync(string connectionId, int streamId, bool accept)
+        {
+            var hostConnection = await _tracker.GetHostConnectionAsync(streamId);
+            if (hostConnection is null || !await _tracker.TakeGuestInviteAsync(streamId, connectionId))
+            {
+                throw new BadRequestException("This invitation is no longer valid.");
+            }
+
+            var me = await ToGuestDtoAsync(streamId, connectionId);
+            var answer = new LiveGuestInviteAnswerDto
+            {
+                HostConnectionId = hostConnection,
+                UserName = me?.UserName ?? string.Empty,
+                DisplayName = me?.DisplayName ?? string.Empty
+            };
+            if (!accept)
+            {
+                return answer;
+            }
+
+            if (!await _tracker.SetGuestAsync(streamId, connectionId))
+            {
+                throw new BadRequestException("Someone is already a guest in this stream.");
+            }
+
+            answer.Guest = me;
+            return answer;
         }
 
         public async Task<LiveGuestDto?> RespondGuestAsync(string hostConnectionId, int streamId, string targetConnectionId, bool accept)
@@ -360,6 +517,8 @@ namespace Service.Services
             {
                 throw new NotFoundException("User not found.");
             }
+
+            await EnsureNotMutedAsync(streamId, userId);
 
             return new LiveMessageDto
             {

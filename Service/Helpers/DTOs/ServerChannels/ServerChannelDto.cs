@@ -10,5 +10,7 @@ namespace Service.Helpers.DTOs.ServerChannels
         public bool IsReadOnly { get; set; }
         public int Position { get; set; }
         public int UserLimit { get; set; }
+        public bool CanSend { get; set; }
+        public bool CanManageMessages { get; set; }
     }
 }
