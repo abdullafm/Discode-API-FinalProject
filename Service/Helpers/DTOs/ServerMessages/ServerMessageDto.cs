@@ -12,6 +12,7 @@ namespace Service.Helpers.DTOs.ServerMessages
         public string SenderUserName { get; set; } = string.Empty;
         public string SenderDisplayName { get; set; } = string.Empty;
         public string SenderAvatarUrl { get; set; } = string.Empty;
+        public bool SenderIsBot { get; set; }
         public string Text { get; set; } = string.Empty;
         public ReplyDto? ReplyTo { get; set; }
         public bool IsPoll { get; set; }

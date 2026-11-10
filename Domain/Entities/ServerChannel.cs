@@ -16,5 +16,6 @@ namespace Domain.Entities
         public bool SyncWithCategory { get; set; } = true;
         public int Position { get; set; }
         public int UserLimit { get; set; }
+        public int SlowModeSeconds { get; set; }
     }
 }

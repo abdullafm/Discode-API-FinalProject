@@ -53,7 +53,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [HttpPost("{id:int}/share")]
-        public async Task<IActionResult> Share(int id, [FromBody] SharePostDto model)
+        public async Task<IActionResult> Share(int id, [FromBody] SharePostDto model, [FromServices] Discode_API_FinalProject.Helpers.GroupPublisher publisher)
         {
             var sent = await _postService.ShareAsync(UserId, id, model);
             foreach (var item in sent)
@@ -62,7 +62,9 @@ namespace Discode_API_FinalProject.Controllers.Client
                 await _hubContext.Clients.User(item.RecipientId).SendAsync("DirectMessage", new { message = item.MessageForRecipient, conversation = item.ConversationForRecipient });
             }
 
-            return Ok(new { shared = sent.Select(x => x.RecipientId).Distinct().Count() });
+            var groups = await _postService.ShareToGroupsAsync(UserId, id, model);
+            await publisher.PublishAsync(groups);
+            return Ok(new { shared = sent.Select(x => x.RecipientId).Distinct().Count(), groups = groups.Select(x => x.GroupId).Distinct().Count() });
         }
 
         [HttpGet("explore")]

@@ -13,6 +13,7 @@ namespace Domain.Entities
         public string? CustomLink { get; set; }
         public string BannerColor { get; set; } = "ink";
         public bool IsPrivate { get; set; }
+        public bool OwoEnabled { get; set; } = true;
         public bool IsBanned { get; set; }
         public DateTime? BannedAt { get; set; }
         public string BanReason { get; set; } = string.Empty;

@@ -23,6 +23,7 @@ namespace Service.Services
         private readonly IAccountRepository _accounts;
         private readonly IMentionService _mentions;
         private readonly IDirectMessageService _directMessages;
+        private readonly IGroupShareService _groupShare;
         private readonly IFriendRequestRepository _friendRequests;
         private readonly AppSettings _app;
         private readonly IValidator<CreatePostDto> _validator;
@@ -35,6 +36,7 @@ namespace Service.Services
                            IAccountRepository accounts,
                            IMentionService mentions,
                            IDirectMessageService directMessages,
+                           IGroupShareService groupShare,
                            IFriendRequestRepository friendRequests,
                            IOptions<AppSettings> app,
                            IValidator<CreatePostDto> validator,
@@ -47,6 +49,7 @@ namespace Service.Services
             _accounts = accounts;
             _mentions = mentions;
             _directMessages = directMessages;
+            _groupShare = groupShare;
             _friendRequests = friendRequests;
             _app = app.Value;
             _validator = validator;
@@ -87,6 +90,34 @@ namespace Service.Services
             return _mapper.Map<PostDto>(post, ForViewer(viewerId));
         }
 
+        public async Task<List<Service.Helpers.DTOs.Groups.GroupChangeDto>> ShareToGroupsAsync(string userId, int postId, SharePostDto model)
+        {
+            if (model?.GroupIds is null || model.GroupIds.Count == 0)
+            {
+                return new List<Service.Helpers.DTOs.Groups.GroupChangeDto>();
+            }
+
+            if (!await _posts.IsVisibleAsync(userId, postId))
+            {
+                throw new NotFoundException("Post not found.");
+            }
+
+            var note = (model.Note ?? string.Empty).Trim();
+            if (note.Length > 500)
+            {
+                throw new BadRequestException("The message can be at most 500 characters.");
+            }
+
+            var link = _app.ClientUrl.TrimEnd('/') + "/Social/Index?post=" + postId;
+            var changes = await _groupShare.SendTextAsync(userId, model.GroupIds, link);
+            if (note.Length > 0)
+            {
+                changes.AddRange(await _groupShare.SendTextAsync(userId, model.GroupIds, note));
+            }
+
+            return changes;
+        }
+
         public async Task<IEnumerable<SentMessageDto>> ShareAsync(string userId, int postId, SharePostDto model)
         {
             if (!await _posts.IsVisibleAsync(userId, postId))
@@ -97,7 +128,12 @@ namespace Service.Services
             var names = (model?.UserNames ?? new List<string>()).Select(n => (n ?? string.Empty).Trim()).Where(n => n.Length > 0).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
             if (names.Count == 0)
             {
-                throw new BadRequestException("Pick at least one friend.");
+                if (model?.GroupIds is { Count: > 0 })
+                {
+                    return new List<SentMessageDto>();
+                }
+
+                throw new BadRequestException("Pick at least one friend or group.");
             }
 
             if (names.Count > 20)

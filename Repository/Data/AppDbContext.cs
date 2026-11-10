@@ -45,6 +45,9 @@ namespace Repository.Data
         public DbSet<StoryView> StoryViews { get; set; }
         public DbSet<LiveStream> LiveStreams { get; set; }
         public DbSet<NitroGift> NitroGifts { get; set; }
+        public DbSet<ServerTemplate> ServerTemplates { get; set; }
+        public DbSet<OwoProfile> OwoProfiles { get; set; }
+        public DbSet<OwoAnimal> OwoAnimals { get; set; }
         public DbSet<LiveModerator> LiveModerators { get; set; }
         public DbSet<LiveChatMute> LiveChatMutes { get; set; }
         public DbSet<EmojiCategory> EmojiCategories { get; set; }

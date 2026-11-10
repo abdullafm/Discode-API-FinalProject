@@ -7,5 +7,6 @@ namespace Service.Helpers.DTOs.ServerChannels
         public int? CategoryId { get; set; }
         public bool IsPrivate { get; set; }
         public int UserLimit { get; set; }
+        public int SlowModeSeconds { get; set; }
     }
 }

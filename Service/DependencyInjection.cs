@@ -52,6 +52,9 @@ namespace Service
             services.AddScoped<IServerAuditService, ServerAuditService>();
             services.AddScoped<IServerBanService, ServerBanService>();
             services.AddScoped<IServerPruneService, ServerPruneService>();
+            services.AddScoped<IServerTemplateService, ServerTemplateService>();
+            services.AddScoped<IOwoService, OwoService>();
+            services.AddScoped<IGroupShareService, GroupShareService>();
             services.AddScoped<IDiscoverService, DiscoverService>();
             services.AddScoped<ITranslationService, TranslationService>();
             services.AddScoped<IBrandingService, BrandingService>();

@@ -47,6 +47,11 @@ namespace Discode_API_FinalProject.Controllers.Client
                 await _hubContext.Clients.User(mention.Key).SendAsync("ServerMentions", new { serverId, channelId, count = mention.Value });
             }
 
+            foreach (var reply in change.Replies)
+            {
+                await _hubContext.Clients.Users(change.ViewerIds).SendAsync("ServerMessage", new { serverId, channelId, message = reply });
+            }
+
             return Ok(change.Message);
         }
 

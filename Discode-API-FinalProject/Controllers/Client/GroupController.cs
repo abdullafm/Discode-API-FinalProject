@@ -95,7 +95,7 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [HttpPost("{id:int}/messages/{messageId:int}/forward")]
-        public async Task<IActionResult> Forward(int id, int messageId, [FromBody] ForwardMessageDto model)
+        public async Task<IActionResult> Forward(int id, int messageId, [FromBody] ForwardMessageDto model, [FromServices] IGroupShareService groupShare)
         {
             var sent = await _groupService.ForwardMessageAsync(UserId, id, messageId, model);
             foreach (var item in sent)
@@ -104,7 +104,13 @@ namespace Discode_API_FinalProject.Controllers.Client
                 await _hubContext.Clients.User(item.RecipientId).SendAsync("DirectMessage", new { message = item.MessageForRecipient, conversation = item.ConversationForRecipient });
             }
 
-            return Ok(new { forwarded = model.UserNames.Count });
+            var groups = await groupShare.ForwardFromGroupAsync(UserId, id, messageId, model.GroupIds, model.Note);
+            foreach (var change in groups)
+            {
+                await PublishAsync(change);
+            }
+
+            return Ok(new { forwarded = model.UserNames.Count, groups = groups.Select(x => x.GroupId).Distinct().Count() });
         }
 
         [HttpPut("{id:int}/messages/{messageId:int}/reactions")]

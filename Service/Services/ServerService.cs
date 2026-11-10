@@ -87,7 +87,17 @@ namespace Service.Services
             _mapper = mapper;
         }
 
-        public async Task<ServerChangeDto> CreateAsync(string userId, CreateServerDto model)
+        public Task<ServerChangeDto> CreateAsync(string userId, CreateServerDto model)
+        {
+            return BuildAsync(userId, model, true);
+        }
+
+        public Task<ServerChangeDto> CreateBlankAsync(string userId, CreateServerDto model)
+        {
+            return BuildAsync(userId, model, false);
+        }
+
+        private async Task<ServerChangeDto> BuildAsync(string userId, CreateServerDto model, bool withDefaults)
         {
             await _createValidator.EnsureValidAsync(model);
 
@@ -124,7 +134,11 @@ namespace Service.Services
                 }
             };
             await _servers.AddAsync(server);
-            await _channelService.EnsureDefaultsAsync(server.Id);
+            if (withDefaults)
+            {
+                await _channelService.EnsureDefaultsAsync(server.Id);
+            }
+
             await _audit.LogAsync(server.Id, userId, ServerAuditAction.ServerUpdate, "Server", server.Id.ToString(), server.Name, "Created the server");
 
             var fresh = (await _servers.GetWithMembersAsync(server.Id))!;
@@ -422,6 +436,46 @@ namespace Service.Services
             await _overwrites.DeleteForServerAsync(serverId);
             await _servers.DeleteAsync(server);
             return memberIds;
+        }
+
+        public async Task<ServerChangeDto> TransferOwnerAsync(string userId, int serverId, TransferServerOwnerDto model)
+        {
+            var server = await GetOwnedAsync(userId, serverId);
+            var targetId = (model?.UserId ?? string.Empty).Trim();
+            if (targetId.Length == 0)
+            {
+                throw new BadRequestException("Choose who becomes the new owner.");
+            }
+
+            if (targetId == userId)
+            {
+                throw new BadRequestException("You already own this server.");
+            }
+
+            var membership = await _members.GetAsync(serverId, targetId);
+            if (membership is null)
+            {
+                throw new BadRequestException("The new owner has to be a member of the server.");
+            }
+
+            var target = await _accounts.GetByIdAsync(targetId);
+            if (target is null || target.IsDeleted || target.IsBanned)
+            {
+                throw new BadRequestException("That account cannot own a server.");
+            }
+
+            server.OwnerId = targetId;
+            await _servers.UpdateAsync(server);
+            await _audit.LogAsync(serverId, userId, ServerAuditAction.OwnershipTransfer, "Member", targetId, target.DisplayName, "Transferred ownership of the server to " + target.DisplayName);
+
+            var fresh = (await _servers.GetWithMembersAsync(serverId))!;
+            return Change(fresh, userId, false);
+        }
+
+        public async Task<ServerChangeDto> ViewAsync(string userId, int serverId)
+        {
+            var fresh = await _servers.GetWithMembersAsync(serverId) ?? throw new NotFoundException("Server not found.");
+            return Change(fresh, userId, true);
         }
 
         public async Task<ServerChangeDto> LeaveAsync(string userId, int serverId)

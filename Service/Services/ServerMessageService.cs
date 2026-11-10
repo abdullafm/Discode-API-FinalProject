@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Enums;
@@ -33,6 +34,8 @@ namespace Service.Services
         private readonly IPollRepository _polls;
         private readonly IPresenceService _presence;
         private readonly IMapper _mapper;
+        private readonly Microsoft.Extensions.Caching.Memory.IMemoryCache _cache;
+        private readonly IOwoService _owo;
 
         public ServerMessageService(INitroAccessService nitro,
                                     IServerMessageRepository messages,
@@ -45,8 +48,12 @@ namespace Service.Services
                                     IValidator<CreatePollDto> pollValidator,
                                     IPollRepository polls,
                                     IPresenceService presence,
-                                    IMapper mapper)
+                                    IMapper mapper,
+                                    Microsoft.Extensions.Caching.Memory.IMemoryCache cache,
+                                    IOwoService owo)
         {
+            _owo = owo;
+            _cache = cache;
             _nitro = nitro;
             _pollValidator = pollValidator;
             _polls = polls;
@@ -75,6 +82,7 @@ namespace Service.Services
             var (channel, perms) = await RequireViewAsync(userId, serverId, channelId);
             await EnsureNotTimedOutAsync(userId, serverId);
             EnsureCanPost(channel, perms);
+            CheckSlowMode(userId, channel, perms);
 
             if (model.ReplyToMessageId.HasValue)
             {
@@ -97,15 +105,31 @@ namespace Service.Services
                     .ToList()
             };
             await _messages.AddAsync(message);
+            StartSlowMode(userId, channel, perms);
 
             var saved = await _messages.GetWithSenderAsync(message.Id);
             var viewerIds = await ViewersAsync(serverId, channel);
-            return new ServerMessageChangeDto
+            var change = new ServerMessageChangeDto
             {
                 Message = _mapper.Map<ServerMessageDto>(saved, options => options.Items[MappingProfile.ViewerIdKey] = string.Empty),
                 ViewerIds = viewerIds,
                 MentionCounts = await CountMentionsAsync(userId, serverId, perms, message.Text, viewerIds)
             };
+
+            if (channel.Kind == ServerChannelKind.Text)
+            {
+                var answer = await _owo.PlayAsync(serverId, userId, message.Text);
+                var botId = answer is null ? null : await _owo.GetBotIdAsync();
+                if (answer is not null && botId is not null)
+                {
+                    var reply = new ServerMessage { ServerId = serverId, ChannelId = channelId, SenderId = botId, Text = answer };
+                    await _messages.AddAsync(reply);
+                    var savedReply = await _messages.GetWithSenderAsync(reply.Id);
+                    change.Replies.Add(_mapper.Map<ServerMessageDto>(savedReply, options => options.Items[MappingProfile.ViewerIdKey] = string.Empty));
+                }
+            }
+
+            return change;
         }
 
         public async Task<ServerMessageChangeDto> SendPollAsync(string userId, int serverId, int channelId, CreatePollDto model)
@@ -118,6 +142,8 @@ namespace Service.Services
             {
                 throw new ForbiddenException("You don't have permission to create polls here.");
             }
+
+            CheckSlowMode(userId, channel, perms);
 
             var message = new ServerMessage
             {
@@ -136,6 +162,7 @@ namespace Service.Services
                 }
             };
             await _messages.AddAsync(message);
+            StartSlowMode(userId, channel, perms);
 
             var saved = await _messages.GetWithSenderAsync(message.Id);
             return new ServerMessageChangeDto
@@ -143,6 +170,40 @@ namespace Service.Services
                 Message = _mapper.Map<ServerMessageDto>(saved, options => options.Items[MappingProfile.ViewerIdKey] = string.Empty),
                 ViewerIds = await ViewersAsync(serverId, channel)
             };
+        }
+
+        private static bool SkipsSlowMode(ServerPermission perms)
+        {
+            return (perms & (ServerPermission.ManageMessages | ServerPermission.ManageChannels)) != ServerPermission.None;
+        }
+
+        private static string SlowKey(int channelId, string userId)
+        {
+            return "slowmode:" + channelId + ":" + userId;
+        }
+
+        private void CheckSlowMode(string userId, ServerChannel channel, ServerPermission perms)
+        {
+            if (channel.SlowModeSeconds <= 0 || SkipsSlowMode(perms))
+            {
+                return;
+            }
+
+            if (_cache.TryGetValue(SlowKey(channel.Id, userId), out DateTime until) && until > DateTime.UtcNow)
+            {
+                var left = (int)Math.Ceiling((until - DateTime.UtcNow).TotalSeconds);
+                throw new BadRequestException("Slowmode is on. You can send another message in " + left + (left == 1 ? " second." : " seconds."));
+            }
+        }
+
+        private void StartSlowMode(string userId, ServerChannel channel, ServerPermission perms)
+        {
+            if (channel.SlowModeSeconds <= 0 || SkipsSlowMode(perms))
+            {
+                return;
+            }
+
+            _cache.Set(SlowKey(channel.Id, userId), DateTime.UtcNow.AddSeconds(channel.SlowModeSeconds), TimeSpan.FromSeconds(channel.SlowModeSeconds));
         }
 
         public async Task<ServerMessageUpdateDto> VotePollAsync(string userId, int serverId, int channelId, int messageId, VotePollDto model)

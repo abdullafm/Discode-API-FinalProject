@@ -5,6 +5,7 @@ namespace Service.Services.Interfaces
     public interface IServerService
     {
         Task<ServerChangeDto> CreateAsync(string userId, CreateServerDto model);
+        Task<ServerChangeDto> CreateBlankAsync(string userId, CreateServerDto model);
         Task<ServerChangeDto> JoinAsync(string userId, JoinServerDto model);
         Task<IEnumerable<ServerDto>> GetMineAsync(string userId);
         Task<ServerDto> GetAsync(string userId, int serverId);
@@ -17,6 +18,8 @@ namespace Service.Services.Interfaces
         Task<ServerChangeDto> UpdateBannerAsync(string userId, int serverId, UpdateServerBannerDto model);
         Task<ServerChangeDto> UpdateInviteAsync(string userId, int serverId, UpdateServerInviteDto model);
         Task<List<string>> DeleteAsync(string userId, int serverId, DeleteServerDto model);
+        Task<ServerChangeDto> TransferOwnerAsync(string userId, int serverId, TransferServerOwnerDto model);
+        Task<ServerChangeDto> ViewAsync(string userId, int serverId);
         Task ReorderAsync(string userId, ReorderServersDto model);
     }
 }

@@ -250,6 +250,23 @@ namespace Service.Services
             return new GroupMessageDeletedDto { GroupId = groupId, MessageId = messageId, UserIds = group.Members.Select(m => m.UserId).ToList() };
         }
 
+        public async Task<ForwardSourceDto> GetForwardSourceAsync(string userId, int groupId, int messageId)
+        {
+            await EnsureMemberAsync(userId, groupId);
+            var message = await _messages.GetWithSenderAsync(messageId);
+            if (message is null || message.GroupId != groupId || message.IsSystem || message.Call is not null || message.Poll is not null)
+            {
+                throw new NotFoundException("Message not found.");
+            }
+
+            return new ForwardSourceDto
+            {
+                OriginalSenderId = message.SenderId,
+                Text = message.Text,
+                Attachments = message.Attachments.Select(a => new MessageAttachmentDto { Url = a.Url, FileName = a.FileName, ContentType = a.ContentType, Size = a.Size }).ToList()
+            };
+        }
+
         public async Task<IEnumerable<SentMessageDto>> ForwardMessageAsync(string userId, int groupId, int messageId, ForwardMessageDto model)
         {
             await EnsureMemberAsync(userId, groupId);
