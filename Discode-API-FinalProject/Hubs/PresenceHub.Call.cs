@@ -1,3 +1,4 @@
+using Discode_API_FinalProject.Helpers;
 using Microsoft.AspNetCore.SignalR;
 using Repository.Repositories.Interfaces;
 using Service.Helpers.DTOs.Calls;
@@ -11,11 +12,17 @@ namespace Discode_API_FinalProject.Hubs
         private const int MaxCallSignalLength = 16000;
         private static readonly TimeSpan CallReconnectGrace = TimeSpan.FromSeconds(8);
 
+        private Task LeaveOtherVoiceAsync(VoiceKind keep)
+        {
+            return new VoiceSessions(_callService, _groupCallService, _voiceService, _hubContext).LeaveOthersAsync(UserId, keep);
+        }
+
         public async Task<CallDto> StartCall(string userName, bool video)
         {
             try
             {
                 var pair = await _callService.StartAsync(UserId, userName, video);
+                await LeaveOtherVoiceAsync(VoiceKind.DirectCall);
                 if (pair.LeftPrevious is not null)
                 {
                     await AnnounceCallEndAsync(Clients, pair.LeftPrevious);
@@ -53,6 +60,7 @@ namespace Discode_API_FinalProject.Hubs
             try
             {
                 var pair = await _callService.AcceptAsync(UserId, callId);
+                await LeaveOtherVoiceAsync(VoiceKind.DirectCall);
                 await Clients.User(pair.CallerId).SendAsync("CallAccepted", pair.ForCaller);
                 await Clients.User(pair.CalleeId).SendAsync("CallAccepted", pair.ForCallee);
             }

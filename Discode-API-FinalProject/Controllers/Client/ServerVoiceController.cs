@@ -37,9 +37,10 @@ namespace Discode_API_FinalProject.Controllers.Client
         }
 
         [HttpPost("server/{serverId:int}/channels/{channelId:int}/voice")]
-        public async Task<IActionResult> Join(int serverId, int channelId, [FromBody] JoinServerVoiceDto model)
+        public async Task<IActionResult> Join(int serverId, int channelId, [FromBody] JoinServerVoiceDto model, [FromServices] Discode_API_FinalProject.Helpers.VoiceSessions sessions)
         {
             await NotifyAsync(await _voiceService.JoinAsync(UserId, serverId, channelId, model));
+            await sessions.LeaveOthersAsync(UserId, Discode_API_FinalProject.Helpers.VoiceKind.ServerChannel);
             return Ok();
         }
 

@@ -1,3 +1,4 @@
+using Discode_API_FinalProject.Helpers;
 using Microsoft.AspNetCore.SignalR;
 using Service.Helpers.DTOs.Groups;
 using Service.Helpers.Exceptions;
@@ -11,6 +12,7 @@ namespace Discode_API_FinalProject.Hubs
             try
             {
                 var change = await _groupCallService.StartAsync(UserId, groupId, video);
+                await LeaveOtherVoiceAsync(VoiceKind.GroupCall);
                 await AnnounceGroupCallAsync(Clients, change);
                 if (change.Started)
                 {
@@ -30,6 +32,7 @@ namespace Discode_API_FinalProject.Hubs
             try
             {
                 var change = await _groupCallService.JoinAsync(UserId, callId);
+                await LeaveOtherVoiceAsync(VoiceKind.GroupCall);
                 await AnnounceGroupCallAsync(Clients, change);
                 return change.Call;
             }
