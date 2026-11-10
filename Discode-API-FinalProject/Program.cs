@@ -99,6 +99,7 @@ builder.Services.AddDbContext<AppDbContext>((services, options) =>
 builder.Services.AddServiceLayer();
 builder.Services.AddScoped<DiscoverBroadcaster>();
 builder.Services.AddScoped<Discode_API_FinalProject.Helpers.GroupPublisher>();
+builder.Services.AddScoped<Discode_API_FinalProject.Helpers.VoiceSessions>();
 builder.Services.AddRepositoryLayer();
 
 builder.Services.AddHttpClient<IEmailRepository, EmailRepository>(client =>
